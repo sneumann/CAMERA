@@ -1,0 +1,10 @@
+import("methods")
+import("xcms")
+
+export("annotate","xsAnnotate","getPeaklist")
+exportClasses("xsAnnotate")
+exportMethods("groupFWHM")
+exportMethods("findIsotopes")
+exportMethods("groupCorr")
+exportMethods("findAdducts")
+exportMethods("show")
