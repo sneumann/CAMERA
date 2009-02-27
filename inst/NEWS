@@ -1,0 +1,17 @@
+2009-02-18 ckuhl	<ckuhl@ipb-halle.de>
+	* add neutral losses into ruleset
+	* other bugfixes
+2009-01-19 ckuhl	<ckuhl@ipb-halle.de>
+	* Change isotope nomination
+	* add lists for fragments, ions and neutral losses
+2008-10-15  ckuhl	<ckuhl@ipb-halle.de>
+	* Lot of bugfixes and speed up the correlation
+
+2008-10-13  ckuhl	<ckuhl@ipb-halle.de>
+	* First build for version 0.1.1
+
+2007-10-12  sneumann  <sneumann@ipb-halle.de>
+
+	* Inital release & collection of stuff
+
+	
