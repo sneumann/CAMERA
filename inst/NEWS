@@ -1,3 +1,8 @@
+2009-02-24 ckuhl        <ckuhl@ipb-halle.de>
+        * refactoring findAdducts
+        * add methods for pos/neg polarity comparison
+2009-02-20 ckuhl        <ckuhl@ipb-halle.de>
+        * replace na.omit with naOmit
 2009-02-18 ckuhl	<ckuhl@ipb-halle.de>
 	* add neutral losses into ruleset
 	* other bugfixes

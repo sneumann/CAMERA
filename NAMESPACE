@@ -1,7 +1,7 @@
 import("methods")
 import("xcms")
 
-export("annotate","xsAnnotate","getPeaklist")
+export("annotate","xsAnnotate","getPeaklist","getGroup")
 exportClasses("xsAnnotate")
 exportMethods("groupFWHM")
 exportMethods("findIsotopes")
