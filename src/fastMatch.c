@@ -48,6 +48,7 @@ int half,mid;
 SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
     double *px, *py, dtol;
     int nx, ny, yi, xi, lb, ub, txi, from, to, *pxidx, *pyidx, xoLength;
+    int lastlb=0;
     SEXP ans, residx;
 
     px = REAL(x);
@@ -66,7 +67,9 @@ SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
          pidxS[xi].from = nx+1;
     
     for (yi=0;yi < ny;yi++) {
-       lb = lowerBound(py[yi] - dtol, px, 0, nx); 
+       lb = lowerBound(py[yi] - dtol, px, lastlb, nx); 
+       if (lb < nx-1) 
+          lastlb=lb;
        
        if (lb >= nx-1){
             lb=nx-1;
