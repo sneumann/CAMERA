@@ -1,3 +1,5 @@
+useDynLib(CAMERA)
+
 import("methods")
 import("xcms")
 
