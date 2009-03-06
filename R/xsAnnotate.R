@@ -332,7 +332,7 @@ if(!is.null(polarity))
 # rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2)
 quasimolion<-which(rules[,"quasi"]==1)
 
-#Entferne Isotope aus dem Intensitätsvector, sollen nicht mitannotiert werden
+#Entferne Isotope aus dem Intensitätsvector, sollen nicht mit annotiert werden
 if(length(isotopes)>0){
 
         for(x in 1:length(isotopes))
@@ -372,8 +372,9 @@ for(i in 1:npspectra)
         {
                 mz <- imz[ipeak];
                 ML <- massDiffMatrix(mz,rules)
-                m <- find.matches(as.vector(ML),as.vector(ML),tol= max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs,scale=1,maxmatch=20)
-                if (is.null(dim(m$matches)))next;
+                m <- find.matches(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs,scale=1,maxmatch=20)
+# 		m2 <- fastMatches(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs)
+		if (is.null(dim(m$matches)))next;
                 c<-apply(m$matches,1,function(x) {length(which(naOmit(x)>0))})
                 index<-which(c>=4)
                 if(length(index)==0) next;
@@ -427,7 +428,7 @@ return(object)
 ###End xsAnnotate generic Methods###
 
 ###xsAnnotate exported Methods###
-getGroup <- function(object,grp){
+getpspectra <- function(object,grp){
         index<-object@pspectra[[grp]];
         peaktable<-object@peaks[index,]
         adduct<-vector("character",length(index));
@@ -1088,8 +1089,8 @@ for(i in 1:nrow(m$matches))
   cat(paste("i:",i,"ii:",ii," "));
   if(m$matches[i,ii]>0)
   {
-    grp.pos<-getGroup(xsa.pos,i);
-    grp.neg<-getGroup(xsa.neg,as.numeric(m$matches[i,ii]))
+    grp.pos<-getpspectra(xsa.pos,i);
+    grp.neg<-getpspectra(xsa.neg,as.numeric(m$matches[i,ii]))
     #Entferne Isotope aus dem Intensitätsvector, sollen nicht mitannotiert werden
     m.pos<-NA
     for(iii in 1:nrow(grp.pos))
