@@ -67,7 +67,7 @@ SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
          pidxS[xi].from = nx+1;
     
     for (yi=0;yi < ny;yi++) {
-       lb = lowerBound(py[yi] - dtol, px, lastlb, nx); 
+       lb = lowerBound(py[yi] - dtol, px, lastlb, nx-lastlb); 
        if (lb < nx-1) 
           lastlb=lb;
        

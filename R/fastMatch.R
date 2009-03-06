@@ -4,7 +4,10 @@ fastMatch <- function(x,y,tol=0.001) {
     if (any(is.na(y)))
         stop("NA's are not allowed in y !\n")
     
-    xidx <- order(x,na.last=NA)
+    ok <- !(is.na(x))
+    ans <- order(x)
+    keep <- seq_along(ok)[ok]
+    xidx <- ans[ans %in% keep]
     xs <- x[xidx]
     
     yidx <- order(y)
