@@ -329,7 +329,7 @@ if(!is.null(polarity))
 }else stop("polarity mode couldn't be estimated from the xcmsSet, please define variable polarity!")
 
 #Einlesen der Regeln
-# rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2)
+# rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=polarity)
 quasimolion<-which(rules[,"quasi"]==1)
 
 #Entferne Isotope aus dem Intensitätsvector, sollen nicht mit annotiert werden
@@ -358,7 +358,7 @@ npeaks<-0;
 #für alle Gruppen
 for(i in 1:npspectra)
 {
-# 	cat(i);
+#         cat(i);
         #Indizes der Peaks in einer Gruppe
         ipeak <- object@pspectra[[i]];
         #Zähler hochzählen und % ausgeben
@@ -371,15 +371,14 @@ for(i in 1:npspectra)
         if(length(ipeak)>1)
         {
                 mz <- imz[ipeak];
-                ML <- massDiffMatrix(mz,rules)
-                m <- find.matches(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs,scale=1,maxmatch=20)
-# 		m2 <- fastMatches(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs)
-		if (is.null(dim(m$matches)))next;
-                c<-apply(m$matches,1,function(x) {length(which(naOmit(x)>0))})
+                na_ini<-which(!is.na(mz))
+                ML <- massDiffMatrix(mz[na_ini],rules)
+ 		m <- fastMatch(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs)
+                c<-sapply(m,length)
                 index<-which(c>=4)
                 if(length(index)==0) next;
                 #Erstelle Hypothesen
-                hypothese<-create_hypothese(m,index,ML,rules)
+                hypothese<-create_hypothese(m,index,ML,rules,na_ini)
                 if(is.null(nrow(hypothese)))next;
 
                 #Entferne Hypothesen, welche gegen Isotopenladungen verstossen!
@@ -563,44 +562,61 @@ annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,
 ###End xsAnnotate exported Methods###
 
 ###xsAnnotate intern Function###
-create_hypothese<-function(m,index,ML,rules){
-a<-m$matches[index,];
-a[a==0]<-NA;
-if(is.null(nrow(a))) a <- matrix(a,byrow=F,ncol=20)
-a<-t(apply(a,1,function(x) {sort(x,na.last=TRUE)}));
-b<-a[which(duplicated(a)==FALSE),];
-if(is.null(nrow(b))) b = matrix(b,byrow=F,ncol=ncol(a))
-ini_old<-c();
-##TODO: Nötig?
-for(z in 1:nrow(b))
+
+create_hypothese<-function(m,index,ML,rules,na_ini){
+
+a<-m[index];
+b<-a[which(duplicated(a)==FALSE)];
+
+# ini_old<-c();
+# system.time(
+# for(z in 1:length(b))
+# {#     cat(z)
+#     ini<-which(sapply(b,function(x) {all((b[[z]]) %in% x)})==TRUE)
+#     ini<-ini[which(!ini==z)];
+#     if(length(ini)>0)
+#     {
+#         for(y in 1:length(ini))
+#         if(length(b[[ini[y]]])>length(b[[z]]))
+#         {
+#              ini_old<-append(ini_old,z);
+#         }
+#     }
+# })
+# if(length(ini_old>0))b<-b[-ini_old];
+
+b_length <- sapply(b,length);b_ini <- 1:length(b);
+b2 <- b[order(b_length)];b_ini<-b_ini[order(b_length)];
+add<-1;
+ini_new<-c();
+while(length(b2)>0)
 {
-    index<-which(apply(b,1,function(x) {all(naOmit(b[z,]) %in% x)})==TRUE)
-    index<-index[which(!index==z)];
-    if(length(index)>0)
-    {
-        if(length(naOmit(b[index,]))>length(naOmit(b[z,])))
-        {
-            ini_old<-append(ini_old,z);
-        }
-    }
+    ini<-which(sapply(b2,function(x) {all((b2[[1]]) %in% x)})==TRUE);
+    if(length(ini)>1){
+        ini_new<-append(ini_new,add);
+        b2<-b2[-1];
+        add<-add+1;
+    }else{
+    b2<-b2[-1];add<-add+1;}
 }
-if(length(ini_old>0))b<-b[-ini_old,]
-if(is.null(nrow(b))) b = matrix(b,byrow=F,ncol=ncol(a))
-nrow_b<-nrow(b);
-ncol_b<-apply(b,1,function(x) {length(naOmit(x))})
+ini_new<-b_ini[ini_new];
+b<-b[-ini_new];
+
+nrow_b<-length(b);
+ncol_b<-sapply(b,length)
 nrow_ML<-nrow(ML);
 ncol_ML<-ncol(ML);
 c<-as.vector(ML);
-hypomass<-apply(b,1,function(x) {mean(c[x],na.rm = TRUE)})
+hypomass<-sapply(b,function(x) {mean(c[x])})
 hypo<-matrix(NA,ncol=7)
 colnames(hypo)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips")
 for(row in 1:nrow_b)
 {
     for(col in 1:ncol_b[row])
     {
-        adduct<-b[row,col]%/%nrow_ML+1;
-        mass <- b[row,col]%%nrow_ML;if(mass==0){mass<-nrow_ML;adduct<-adduct-1;}
-        hypo <- rbind(hypo,c(mass,adduct,rules[adduct,"nmol"],rules[adduct,"charge"],hypomass[row],rules[adduct,"oidscore"],rules[adduct,"ips"]));
+        adduct<-b[[row]][col]%/%nrow_ML+1;
+        mass <- b[[row]][col]%%nrow_ML;if(mass==0){mass<-nrow_ML;adduct<-adduct-1;}
+        hypo <- rbind(hypo,c(na_ini[mass],adduct,rules[adduct,"nmol"],rules[adduct,"charge"],hypomass[row],rules[adduct,"oidscore"],rules[adduct,"ips"]));
     }
 }
 hypo<-hypo[-1,]
@@ -610,6 +626,7 @@ colnames(hypothese)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips"
 hypothese<-cbind(hypo,check);
 return(hypothese)
 }
+
 
 check_ips<- function(hypothese){
 for(hyp in 1:nrow(hypothese))
@@ -1078,41 +1095,41 @@ combine_xsanno <- function(xsa.pos,xsa.neg,sample_pos=1,sample_neg=1){
 
 rt1 <- sapply(xsa.pos@pspectra, function(x) {mean(xsa.pos@peaks[x,"rt"])})
 rt2 <- sapply(xsa.neg@pspectra, function(x) {mean(xsa.neg@peaks[x,"rt"])})
-m<-find.matches(rt1,rt2,tol=1.5)
-if (is.null(dim(m$matches)))next;
+m2<-find.matches(rt1,rt2,tol=1.5)
+m<-fastMatch(rt1,rt2,tol=1.5)
+# if (is.null(dim(m$matches)))next;
 rule_hh<-data.frame("[M-H+H]",1,1,2.0152,1,1,1)
 colnames(rule_hh)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips")
-for(i in 1:nrow(m$matches))
+for(i in 1:length(m))
 {
- for(ii in 1:ncol(m$matches))
- {
-  cat(paste("i:",i,"ii:",ii," "));
-  if(m$matches[i,ii]>0)
-  {
-    grp.pos<-getpspectra(xsa.pos,i);
-    grp.neg<-getpspectra(xsa.neg,as.numeric(m$matches[i,ii]))
-    #Entferne Isotope aus dem Intensitätsvector, sollen nicht mitannotiert werden
-    m.pos<-NA
-    for(iii in 1:nrow(grp.pos))
-     {
-         if(!is.null(xsa.pos@isotopes[[xsa.pos@pspectra[[i]][iii]]]))
+    if(is.null(m[[i]])) next;
+    for(j in 1:length(m[[i]]))
+    {
+        grp.pos<-getpspectra(xsa.pos,i);
+        grp.neg<-getpspectra(xsa.neg,m[[i]][j]);
+
+        #Entferne Isotope aus dem Intensitätsvector, sollen nicht mitannotiert werden
+        m.pos<-NA
+        for(k in 1:nrow(grp.pos))
+        {
+         if(!is.null(xsa.pos@isotopes[[xsa.pos@pspectra[[i]][k]]]))
          {
-             if(xsa.pos@isotopes[[xsa.pos@pspectra[[i]][iii]]]$iso>0){m.pos<-append(m.pos,NA);next}
+             if(xsa.pos@isotopes[[xsa.pos@pspectra[[i]][k]]]$iso>0){m.pos<-append(m.pos,NA);next}
          }
-         m.pos <-append(m.pos,grp.pos[iii,1])
-     }
-    m.pos<-m.pos[-1];
-    m.neg<-NA
-    for(iii in 1:nrow(grp.neg))
-     {
-         if(!is.null(xsa.neg@isotopes[[xsa.neg@pspectra[[m$matches[i,ii]]][iii]]]))
+         m.pos <-append(m.pos,grp.pos[k,1])
+        }
+        m.pos<-m.pos[-1];
+        
+        m.neg<-NA
+        for(k in 1:nrow(grp.neg))
+        {
+         if(!is.null(xsa.neg@isotopes[[xsa.neg@pspectra[[m[[i]][j]]][k]]]))
          {
-             if(xsa.neg@isotopes[[ xsa.neg@pspectra[[m$matches[i,ii]]][iii]]]$iso>0){m.neg<-append(m.neg,NA);next}
+             if(xsa.neg@isotopes[[ xsa.neg@pspectra[[m[[i]][j]]][k]]]$iso>0){m.neg<-append(m.neg,NA);next}
          }
-         m.neg<-append(m.neg,grp.neg[iii,1])
-     }
-    m.neg<-m.neg[-1];
- 
+         m.neg<-append(m.neg,grp.neg[k,1])
+         }
+        m.neg<-m.neg[-1];
     hypothese.pos<-grp.pos[,"adduct"]
     if(length(index<-which(hypothese.pos != ""))>0)
     {
@@ -1151,8 +1168,7 @@ for(i in 1:nrow(m$matches))
             cat("NYI\n");
         }else next;
     }
-  }
- }
+    }
 }
 return(results);
 }
