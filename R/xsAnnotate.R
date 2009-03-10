@@ -358,7 +358,7 @@ npeaks<-0;
 #für alle Gruppen
 for(i in 1:npspectra)
 {
-#         cat(i);
+#        cat(i);
         #Indizes der Peaks in einer Gruppe
         ipeak <- object@pspectra[[i]];
         #Zähler hochzählen und % ausgeben
@@ -599,8 +599,9 @@ while(length(b2)>0)
     }else{
     b2<-b2[-1];add<-add+1;}
 }
+if(length(ini_new>0)){
 ini_new<-b_ini[ini_new];
-b<-b[-ini_new];
+b<-b[-ini_new];}
 
 nrow_b<-length(b);
 ncol_b<-sapply(b,length)
