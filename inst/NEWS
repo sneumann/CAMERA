@@ -1,3 +1,5 @@
+2009-03-10 ckuhl	<ckuhl@ipb-halle.de>
+	* speed-up of findAdducts
 2009-02-24 ckuhl        <ckuhl@ipb-halle.de>
         * refactoring findAdducts
         * add methods for pos/neg polarity comparison
