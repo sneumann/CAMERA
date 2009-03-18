@@ -64,7 +64,7 @@ SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
     if (pidxS == NULL)
         error("fastMatch/calloc: memory could not be allocated ! (%d bytes)\n", nx  * sizeof(struct idxStruct) );
     for (xi=0;xi < nx;xi++) 
-         pidxS[xi].from = nx+1;
+         pidxS[xi].from = ny+1;
     
     for (yi=0;yi < ny;yi++) {
        lb = lowerBound(py[yi] - dtol, px, lastlb, nx-lastlb); 
@@ -80,12 +80,16 @@ SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
        if (ub > nx-1)
             ub = nx -1;
             
+   //    Rprintf("yi %d lb %d  ub %d \n",yi, lb,ub);   
+       
        for (xi=lb;xi <= ub;xi++) {
             if (fabs(py[yi] - px[xi]) <= dtol) {
+   //             Rprintf("  -> Match xi %d \n",xi); 
                 if (yi < pidxS[xi].from)
                     pidxS[xi].from = yi;
                 if (yi > pidxS[xi].to)    
                     pidxS[xi].to = yi;
+   //             Rprintf("xi %d from %d  to %d \n",xi, pidxS[xi].from, pidxS[xi].to);   
             }
        }
     }
@@ -93,6 +97,7 @@ SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
     PROTECT(ans = allocVector(VECSXP, xoLength));
         
     for (xi=0;xi < nx;xi++) {
+   //     Rprintf("xi %d from %d  to %d \n",xi, pidxS[xi].from, pidxS[xi].to);  
         
         // no match 
         if (pidxS[xi].from == nx +1 && pidxS[xi].to == 0)
