@@ -97,10 +97,10 @@ SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
     PROTECT(ans = allocVector(VECSXP, xoLength));
         
     for (xi=0;xi < nx;xi++) {
-   //     Rprintf("xi %d from %d  to %d \n",xi, pidxS[xi].from, pidxS[xi].to);  
+    //   Rprintf("xi %d from %d  to %d \n",xi, pidxS[xi].from, pidxS[xi].to);  
         
         // no match 
-        if (pidxS[xi].from == nx +1 && pidxS[xi].to == 0)
+        if (pidxS[xi].from == ny +1 && pidxS[xi].to == 0)
             continue; 
            
         txi = pxidx[xi] -1;   
@@ -108,7 +108,7 @@ SEXP fastMatch(SEXP x, SEXP y, SEXP xidx, SEXP yidx, SEXP xolength, SEXP tol) {
         to = pidxS[xi].to;
            
         // single match
-        if (pidxS[xi].from == nx +1)
+        if (pidxS[xi].from == ny +1)
             from=pidxS[xi].to;
         if (pidxS[xi].to == 0)
             to=pidxS[xi].from;    
