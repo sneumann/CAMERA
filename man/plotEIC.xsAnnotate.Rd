@@ -1,8 +1,8 @@
-\name{plotEICs.xsAnnotate}
+\name{plotEICs-methods}
 \docType{methods}
 \alias{plotEICs.xsAnnotate}
 \alias{plotEICs}
-\alias{plotEICs, plotEICs-methods}
+\alias{plotEICs,xsAnnotate-method}
 \title{Plot extracted ion chromatograms from (multiple) Pseudospectra}
 \description{
   Batch plot a list of extracted ion chromatograms to the current
