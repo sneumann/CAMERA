@@ -324,6 +324,14 @@ an   <- groupFWHM(an)
 plotEICs(an, xr, pspecIdx=c(1))
 @
 
+\begin{figure}
+\begin{center}
+\includegraphics{CAMERA-EICPspec1}
+\end{center}
+\caption{\label{EICpspec1} EICs.}
+\end{figure}
+
+
 \section{Examples using CAMERA test dataset}
 \label{section:example}
 %{{{
