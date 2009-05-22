@@ -105,7 +105,7 @@ setGeneric("groupFWHM", function(object,sigma=6,perfwhm=0.6) standardGeneric("gr
 setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
 #Gruppierung nach fwhm
 # sigma - number of standard deviation arround the mean (6 = 2 x 3 left and right)
-# perfwhm - 0.3; 
+# perfwhm - 0.3;
 if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
 names<-colnames(object@peaks)
 object@pspectra <- list()
@@ -155,7 +155,7 @@ if(object@peaks[1,"rt"] == -1) {
     ##Workarround: peaks without groups
     peaks<-vector("logical",nrow(object@peaks))
     npspectra<-length(object@pspectra)
-    for(i in 1:npspectra){   
+    for(i in 1:npspectra){
         peaks[object@pspectra[[i]]]<-TRUE;
     }
     index<-which(peaks==FALSE);
@@ -176,7 +176,7 @@ IM <- calcIsotopes(maxiso=maxiso,maxcharge=maxcharge);
 devppm <- ppm / 1000000;
 #get mz,rt,into from peaktable
 imz <- object@peaks[,"mz"];irt <- object@peaks[,"rt"];mint <- object@peaks[,"into"];
-isotope <- vector("list",length(imz)); 
+isotope <- vector("list",length(imz));
 npspectra <- length(object@pspectra);
 isomatrix<-matrix(NA,ncol=5);
 
@@ -255,7 +255,7 @@ for(i in 1:npspectra){
 }
 #clean isotopes
 isomatrix<-isomatrix[-1,];
-if(is.null(nrow(isomatrix))) isomatrix = matrix(isomatrix,byrow=F,ncol=length(isomatrix)) 
+if(is.null(nrow(isomatrix))) isomatrix = matrix(isomatrix,byrow=F,ncol=length(isomatrix))
 object@isoID<-rbind(object@isoID,isomatrix[,1:4]);
 # Zähler für Isotopengruppen
 globalcnt <- 0;oldnum<-0;
@@ -1043,7 +1043,7 @@ for(i in 1:length(m)){
                                   }else{ grp2del<-append(grp2del,del_grp);}
                               }
                           }
-                      }else{ 
+                      }else{
                         grp_hyp.pos <- annoID.pos[which(annoID.pos[,1]==id.pos),2];
                         index_pfad3_2<-annoID.pos[which(annoID.pos[,2] %in% grp_hyp.pos & annoID.pos[,3] == id_h_pos),1]
                         if(any(index_pfad3_2 %in% anno_ids.pos)) { #Pfad: 3.2
@@ -1093,7 +1093,7 @@ for(i in 1:length(m)){
                                   }else{ grp2del<-append(grp2del,del_grp);}
                               }
                           }
-                      }else{ 
+                      }else{
                         grp_hyp.neg <- annoID.neg[which(annoID.neg[,1]==id.neg),2];
                         index_pfad3_2<-annoID.neg[which(annoID.neg[,2] %in% grp_hyp.neg & annoID.neg[,3] == id_h_neg),1]
                         if(any(index_pfad3_2 %in% anno_ids.neg)) { #Pfad: 3.2
@@ -1253,23 +1253,23 @@ if(is.matrix(peaki)) peaki<-peaki[,index]
 #   nfiles <- length(xs@filepaths)
 scantimes <- list()
 maxscans <- 0
-#   if (nfiles > 1) { 
-#       cat('Searching maxima .. \n') 
+#   if (nfiles > 1) {
+#       cat('Searching maxima .. \n')
 #       for (f in 1:nfiles){
 #         cat('\Reading raw data file:',xs@filepaths[f])
 #         xraw <- xcmsRaw(xs@filepaths[f],profstep=0)
-#         cat(',', length(xraw@scantime),'scans. \n') 
+#         cat(',', length(xraw@scantime),'scans. \n')
 #         maxscans <- max(maxscans,length(xraw@scantime))
 #         scantimes[[f]] <- xraw@scantime
 #       }
-#   
+#
 #       for (f in 1:nfiles){
-#         if (file.exists(xs@filepaths[f])) { 
-#           cat('Reading raw data file:',xs@filepaths[f],'\n') 
+#         if (file.exists(xs@filepaths[f])) {
+#           cat('Reading raw data file:',xs@filepaths[f],'\n')
 #           xraw <- xcmsRaw(xs@filepaths[f],profstep=0)
-#           cat('Generating EIC\'s .. \n') 
+#           cat('Generating EIC\'s .. \n')
 #           pdata <- as.data.frame(xs@peaks[peaki[,f],]) # data for peaks from file f
-#           if (f==1) EIC <- array(integer(0),c(nrow(pdata),maxscans,length(xs@filepaths)))   
+#           if (f==1) EIC <- array(integer(0),c(nrow(pdata),maxscans,length(xs@filepaths)))
 #           EIC[,,f] <- getEICs(xraw,pdata,maxscans)
 #         }
 #         else stop('Raw data file:',xs@filepaths[f],' not found ! \n')
@@ -1285,12 +1285,12 @@ maxscans <- 0
         pdata <- as.data.frame(xs@peaks[peaki,])
         EIC <- array(integer(0),c(nrow(pdata),maxscans,1))
         EIC[,,1] <- getEICs(xraw,pdata,maxscans)
-        }  else stop('Raw data file:',xs@filepaths[index],' not found ! \n') 
-#   } 
+        }  else stop('Raw data file:',xs@filepaths[index],' not found ! \n')
+#   }
 
 #   if (!is.null(file)) save(EIC,scantimes,file=file,compress=TRUE)
 #     else
-    invisible(list(scantimes=scantimes,EIC=EIC)); 
+    invisible(list(scantimes=scantimes,EIC=EIC));
 }
 
 getPeaksIdxCol <- function(xs, col=NULL) {
@@ -1299,7 +1299,7 @@ if (nrow(xs@groups) > 0 && length(sampnames(xs)) > 1 )
         else m <- groupval(xs, "medret", value='index')[,col]
 else if (length(sampnames(xs)) == 1)
         m <- 1:length(xs@peaks[,'into'])
-    else stop ('First argument must be a xcmsSet with group information or contain only one sample.')    
+    else stop ('First argument must be a xcmsSet with group information or contain only one sample.')
 m
 }
 
@@ -1329,7 +1329,7 @@ as.integer(length(xraw@scantime)), PACKAGE ='xcms' )
 
 }
 
-# create peak table 
+# create peak table
 getPeaks <- function(xs,index=1){
 if (nrow(xs@groups) > 0) {
         if(index== -1)
@@ -1378,7 +1378,7 @@ nadd <- length(adducts[,"massdiff"])
 DM <- matrix(NA,length(m),nadd)
 
 for (i in 1:length(m))
-    for (j in 1:nadd) 
+    for (j in 1:nadd)
     DM[i,j] <- (abs(adducts[j,"charge"] * m[i]) - adducts[j,"massdiff"]) / adducts[j,"nmol"]    # ((z*m) - add) /n
 
 return(DM)

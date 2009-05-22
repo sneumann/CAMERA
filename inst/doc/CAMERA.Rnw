@@ -102,7 +102,7 @@ The annotation workflow contains following steps:
  \item annotation of adducts and calculating hypothetical masses for the group
 \end{enumerate}
 
-The result of an annotaton an is a data-frame similiar to a peak table and can be easily stored in a 
+The result of an annotaton an is a data-frame similiar to a peak table and can be easily stored in a
 comma separated table (Excel-readable).
 
 \begin{verbatim}
@@ -131,7 +131,7 @@ Therefore the parameter sample and category exist. For an example see section \r
 
 So with more parameters a call of annotate looks like:
 \begin{verbatim}
- an <- annotate(xs,sigma=6, perfwhm=0.3, cor_eic_th=0.75, 
+ an <- annotate(xs,sigma=6, perfwhm=0.3, cor_eic_th=0.75,
  maxcharge=3, maxiso=3, ppm=5, mzabs=0.01,polarity="positive")
 \end{verbatim}
 
@@ -187,7 +187,7 @@ annotation (independent of the annotations \textit{iso} and
 the same spectrum. The column \textit{adduct} shows the annotation hypotheses for the ions. The value after the brackets
 is the estimated molecular mass.
 
-The column \textit{isotopes} contains the annotated isotopes for a monoisotopic peak. The values in the first square brackets denote the 
+The column \textit{isotopes} contains the annotated isotopes for a monoisotopic peak. The values in the first square brackets denote the
 isotope-group-id(column \textit{id}), the second is the isotope annotation and the number after the brackets is the charge of the isotope.
 
 % TODO: NYI
@@ -312,6 +312,18 @@ isotope-group-id(column \textit{id}), the second is the isotope annotation and t
 %
 %}}}
 
+\subsection{Visualisation of the Results}
+
+<<EICPspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 5, height = 4>>=
+library(CAMERA)
+file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+xr   <- xcmsRaw(file)
+xs   <- xcmsSet(c(file), method="centWave", ppm=30, peakwidth=c(5,10))
+an   <- xsAnnotate(xs)
+an   <- groupFWHM(an)
+plotEICs(an, xr, pspecIdx=c(1))
+@
+
 \section{Examples using CAMERA test dataset}
 \label{section:example}
 %{{{
@@ -342,13 +354,13 @@ Annotation with exact use of an xsAnnotate object.
  xsg <- group(xset)
  xsg <- retcor(xsg)
  xsg <- group(xsg,bw=10)
- 
+
  #create xsAnnotate object
  xanno<-xsAnnotate(xsg,sample=1,category="WT")
- 
+
  #group according to retention time
  xanno<-groupFWHM(xanno)
- 
+
  #check grouping with EIC correlation, when indicated regroup
  xanno<-groupCorr(xanno)
 
