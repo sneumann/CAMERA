@@ -85,3 +85,29 @@ setMethod("plotEICs", "xsAnnotate", function(object,
                   Sys.sleep(sleep)
           }
    })
+
+
+setGeneric("plotPeaks", function(object, pspec=NULL, log=FALSE,
+                       value="into", maxlabel=0) standardGeneric("plotPeaks"))
+setMethod("plotPeaks", "xsAnnotate", function(object, pspec=NULL, log=FALSE,
+                       value="into", maxlabel=0)
+          {
+            intensity <- object@peaks[object@pspectra[[pspec]], value]
+            o <- order(intensity, decreasing=TRUE)
+            mz <- object@peaks[object@pspectra[[pspec]],"mz"][o]
+            
+            if (log) {
+              intensity <- log(intensity[o])
+            } else {
+              intensity <- intensity[o]
+            }
+            
+            plot(mz, intensity, type="h")
+
+            if (maxlabel>0) {
+              text(mz[1:min(maxlabel,length(mz))],
+                   intensity[1:min(maxlabel,length(mz))],
+                   labels=format(mz[1:min(maxlabel,length(mz))], digits=5))
+            }
+          })
+
