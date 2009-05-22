@@ -49,7 +49,11 @@
       \code{signature(object = "xsAnnotate")}: search for possible isotopes in the spectra
     }
     \item{\link{findAdducts}}{
-      \code{signature(object = "xsAnnotate")}: search for possible adducts in the spectra
+      \code{signature(object = "xsAnnotate")}: search for possible
+      adducts in the spectra
+    }
+    \item{\link{plotEICs}}{
+      \code{signature(object = "xsAnnotate")}: plot EICs of pseudospectra 
     }
   }
 }

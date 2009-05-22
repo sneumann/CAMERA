@@ -1,3 +1,5 @@
+2009-05-22 Steffen Neumann <sneumann@@ipb-halle.de>
+        * Add first visualisation function plotEICs()
 2009-05-06 ckuhl    <ckuhl@ipb-halle.de>
         * bump for devel 2.5
 2009-03-30 ckuhl    <ckuhl@ipb-halle.de>
