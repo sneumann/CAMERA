@@ -13,7 +13,8 @@
 \item{object = "xsAnnotate"}{
   \code{
     plotPeaks(object, pspec=NULL, log=FALSE,
-                       value="into", maxlabel=0)
+    value="maxo", maxlabel=0,
+        title=NULL, sleep=0)
 }
 }}}
 \value{
@@ -25,6 +26,9 @@
   \item{log}{Boolean, whether the log(intensity) should be shown}
   \item{value}{Which of a peak's intensities should be used}
   \item{maxlabel}{How many m/z labels to print}
+  \item{title}{Main title of the Plot}
+  \item{sleep}{Time (in seconds) to wait between successive Spectra, if
+    multiple \code{pspec} are requested.}    
 }
 \author{Steffen Neumann, \email{sneumann@ipb-halle.de}}
 \seealso{
