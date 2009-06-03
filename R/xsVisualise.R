@@ -87,27 +87,52 @@ setMethod("plotEICs", "xsAnnotate", function(object,
    })
 
 
-setGeneric("plotPeaks", function(object, pspec=NULL, log=FALSE,
-                       value="into", maxlabel=0) standardGeneric("plotPeaks"))
-setMethod("plotPeaks", "xsAnnotate", function(object, pspec=NULL, log=FALSE,
-                       value="into", maxlabel=0)
-          {
-            intensity <- object@peaks[object@pspectra[[pspec]], value]
-            o <- order(intensity, decreasing=TRUE)
-            mz <- object@peaks[object@pspectra[[pspec]],"mz"][o]
-            
-            if (log) {
-              intensity <- log(intensity[o])
-            } else {
-              intensity <- intensity[o]
-            }
-            
-            plot(mz, intensity, type="h")
+setGeneric("plotPeaks", function(object, pspec=1:length(object@pspectra), log=FALSE,
+                       value="into", maxlabel=0, title=NULL,
+                                              sleep=0) standardGeneric("plotPeaks"))
+setMethod("plotPeaks", "xsAnnotate", function(object, pspec=1:length(object@pspectra), log=FALSE,
+                       value="into", maxlabel=0, title=NULL,
+                                              sleep=0)
+      {
 
-            if (maxlabel>0) {
-              text(mz[1:min(maxlabel,length(mz))],
-                   intensity[1:min(maxlabel,length(mz))],
-                   labels=format(mz[1:min(maxlabel,length(mz))], digits=5))
-            }
-          })
+          ##
+          ## Loop through all requested pspectra
+          ##
 
+          for (psp in pspec) {
+            pspectrum <- getpspectra(an, grp=psp)
+              intensity <- pspectrum[, value]
+              o <- order(intensity, decreasing=TRUE)
+              mz <- pspectrum[o, "mz"]
+
+              if (log) {
+                  intensity <- log(intensity[o])
+              } else {
+                  intensity <- intensity[o]
+              }
+
+              mzrange <- range(mz)
+              mzborder <- (mzrange[2]-mzrange[1])*0.05
+              plot(mz, intensity, type="h",
+                   xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
+                   main=title, col="darkgrey")
+
+              if (maxlabel>0) {
+                  text(mz[1:min(maxlabel,length(mz))],
+                       intensity[1:min(maxlabel,length(mz))],
+                       labels=format(mz[1:min(maxlabel,length(mz))], digits=5),
+                       cex=0.66)
+
+                  if ("adduct" %in% colnames(pspectrum)) {
+                      adduct <- sapply(strsplit(pspectrum[o, "adduct"], " "), function(x) {x[1]})
+                      text(mz[1:min(maxlabel,length(mz))],
+                           intensity[1:min(maxlabel,length(mz))] + strheight("0123456789"),
+                           labels=adduct[1:min(maxlabel,length(mz))],
+                           cex=0.66)
+                  }
+              }
+
+              if (sleep > 0)
+                  Sys.sleep(sleep)
+          }
+      })

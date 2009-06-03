@@ -321,6 +321,7 @@ xr   <- xcmsRaw(file)
 xs   <- xcmsSet(c(file), method="centWave", ppm=30, peakwidth=c(5,10))
 an   <- xsAnnotate(xs)
 an   <- groupFWHM(an)
+an   <- findAdducts(an, polarity="positive")
 plotEICs(an, xr, pspecIdx=c(1))
 @
 
