@@ -100,7 +100,7 @@ setMethod("plotPeaks", "xsAnnotate", function(object, pspec=1:length(object@pspe
           ##
 
           for (psp in pspec) {
-            pspectrum <- getpspectra(an, grp=psp)
+            pspectrum <- getpspectra(object, grp=psp)
               intensity <- pspectrum[, value]
               o <- order(intensity, decreasing=TRUE)
               mz <- pspectrum[o, "mz"]
