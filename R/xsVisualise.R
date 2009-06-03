@@ -1,12 +1,12 @@
 setGeneric("plotEICs", function(object,
                                 xraw,
                                 pspecIdx=1:length(object@pspectra),
-                                sleep=0,
+                                maxlabel=0, sleep=0,
                                 ...) standardGeneric("plotEICs"))
 setMethod("plotEICs", "xsAnnotate", function(object,
                                              xraw,
                                              pspecIdx=1:length(object@pspectra),
-                                             sleep=0)
+                                             maxlabel=0, sleep=0)
       {
 
           ## Expand RT plot width by
@@ -45,8 +45,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
           ## Now: all black
           ## Later: by Annotation ?
           ##
-          col <- 1
-          lcol <- col
+          lcol <- 1
           for (i in seq(along = lcol)) {
               rgbvec <- pmin(col2rgb(lcol[i])+153,255)
               lcol[i] <- rgb(rgbvec[1], rgbvec[2], rgbvec[3], max = 255)
@@ -58,8 +57,10 @@ setMethod("plotEICs", "xsAnnotate", function(object,
           peaks <- object@peaks
           for (pspec in 1:length(xeic@eic)) {
               ## Calculate EICs and plot ranges
-              eicidx <- 1:length(xeic@eic[[pspec]])
-
+              neics <- length(xeic@eic[[pspec]])
+              lmaxlabel <- min(maxlabel, neics)
+              col <- c((lmaxlabel+1):2, rep(1, neics-lmaxlabel))
+              eicidx <- 1:neics
 
               maxint <- numeric(length(eicidx))
               for (j in eicidx) {
@@ -73,14 +74,26 @@ setMethod("plotEICs", "xsAnnotate", function(object,
                    main = paste("Extracted Ion Chromatograms for ", names(xeic@eic)[pspec]))
 
               ## Plot Peak and surrounding
-              for (j in eicidx[order(maxint, decreasing = TRUE)]) {
+              o <- order(maxint, decreasing = TRUE)
+              col[o] <- col
+              for (j in eicidx[o]) {
                   pts <- xeic@eic[[pspec]][[j]]
-                  points(pts, type = "l", col = lcol[1])
+                  points(pts, type = "l", col = lcol[j])
                   peakrange <- peaks[object@pspectra[[pspecIdx[pspec]]], c("rtmin","rtmax")]
                   ptsidx <- pts[,"rt"] >= peakrange[j,1] & pts[,"rt"] <= peakrange[j,2]
-                  points(pts[ptsidx,], type = "l", col = col[1])
+                  points(pts[ptsidx,], type = "l", col = col[j])
               }
 
+              ## Plot Annotation Legend
+              pspectrum <- getpspectra(object, grp=pspecIdx[pspec]) 
+              if (lmaxlabel>0 & "adduct" %in% colnames(pspectrum)) {
+                adduct <- sapply(strsplit(pspectrum[o[1:lmaxlabel], "adduct"], " "),
+                                 function(x) {if (length(x)>0) x[1] else ""})
+                mz <- format(pspectrum[o[1:lmaxlabel], "mz"], digits=5)                
+                legend("topright", legend=paste(mz, adduct),
+                       col=col[o], lty=1)
+              }
+              
               if (sleep > 0)
                   Sys.sleep(sleep)
           }
@@ -118,16 +131,17 @@ setMethod("plotPeaks", "xsAnnotate", function(object, pspec=1:length(object@pspe
                    main=title, col="darkgrey")
 
               if (maxlabel>0) {
-                  text(mz[1:min(maxlabel,length(mz))],
-                       intensity[1:min(maxlabel,length(mz))],
-                       labels=format(mz[1:min(maxlabel,length(mz))], digits=5),
+                lmaxlabel <- min(maxlabel,length(mz)) 
+                  text(mz[1:lmaxlabel],
+                       intensity[1:lmaxlabel],
+                       labels=format(mz[1:lmaxlabel], digits=5),
                        cex=0.66)
 
                   if ("adduct" %in% colnames(pspectrum)) {
                       adduct <- sapply(strsplit(pspectrum[o, "adduct"], " "), function(x) {x[1]})
-                      text(mz[1:min(maxlabel,length(mz))],
-                           intensity[1:min(maxlabel,length(mz))] + strheight("0123456789"),
-                           labels=adduct[1:min(maxlabel,length(mz))],
+                      text(mz[1:lmaxlabel],
+                           intensity[1:lmaxlabel] + strheight("0123456789"),
+                           labels=adduct[1:lmaxlabel],
                            cex=0.66)
                   }
               }

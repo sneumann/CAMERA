@@ -1,5 +1,6 @@
 2009-06-03 Steffen Neumann <sneumann@@ipb-halle.de>
         * Add adduct labels to plotPeaks()
+        * Add adduct labels to plotEICs()
 2009-05-22 Steffen Neumann <sneumann@@ipb-halle.de>
         * Add first visualisation function plotEICs() and plotPeaks()
 2009-05-06 ckuhl    <ckuhl@ipb-halle.de>
