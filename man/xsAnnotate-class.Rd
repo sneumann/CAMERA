@@ -23,14 +23,18 @@
 
 \section{Slots}{
   \describe{
-    \item{\code{annoGrp}:}{annoGrp}
-    \item{\code{annoID}:}{annoID}
-    \item{\code{category}:}{category}
+    \item{\code{annoGrp}:}{Assignment of mass hypotheses to correlation groups}
+    \item{\code{annoID}:}{The assignemnt of peaks to the mass difference
+  rule used.}
+    \item{\code{category}:}{A single string category}
     \item{\code{grp_info}:}{grp_info}
     \item{\code{isoID}:}{isoID}
-    \item{\code{polarity}:}{polarity}
-    \item{\code{ruleset}:}{ruleset}
-    \item{\code{xcmsSet}:}{xcmsSet}
+    \item{\code{polarity}:}{A single string with the polarity mode of
+  the peaks}
+    \item{\code{ruleset}:}{A dataframe describing the
+  mass difference rules used for the annotion}
+    \item{\code{xcmsSet}:}{The embedded xcmsSet, from which the
+  annotation was created}
     \item{\code{peaks}:}{
       matrix containing peak data
     }
