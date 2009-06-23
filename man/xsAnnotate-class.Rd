@@ -23,14 +23,14 @@
 
 \section{Slots}{
   \describe{
-    \item{\code{annoGrp}:}{}
-    \item{\code{annoID}:}{}
-    \item{\code{category}:}{}
-    \item{\code{grp_info}:}{}
-    \item{\code{isoID}:}{}
-    \item{\code{polarity}:}{}
-    \item{\code{ruleset}:}{}
-    \item{\code{xcmsSet}:}{}
+    \item{\code{annoGrp}:}{annoGrp}
+    \item{\code{annoID}:}{annoID}
+    \item{\code{category}:}{category}
+    \item{\code{grp_info}:}{grp_info}
+    \item{\code{isoID}:}{isoID}
+    \item{\code{polarity}:}{polarity}
+    \item{\code{ruleset}:}{ruleset}
+    \item{\code{xcmsSet}:}{xcmsSet}
     \item{\code{peaks}:}{
       matrix containing peak data
     }
