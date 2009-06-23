@@ -15,8 +15,22 @@
   which gathers peaks from a set NetCDF files. Objects can also be
   created by calls of the form \code{new("xsAnnotate", ...)}.
 }
+
+%Slots for class 'xsAnnotate'
+%  Code: annoGrp annoID category derivativeIons formula grp_info isoID
+%        isotopes peaks polarity pspectra ruleset sample xcmsSet
+
+
 \section{Slots}{
   \describe{
+    \item{\code{annoGrp}:}{}
+    \item{\code{annoID}:}{}
+    \item{\code{category}:}{}
+    \item{\code{grp_info}:}{}
+    \item{\code{isoID}:}{}
+    \item{\code{polarity}:}{}
+    \item{\code{ruleset}:}{}
+    \item{\code{xcmsSet}:}{}
     \item{\code{peaks}:}{
       matrix containing peak data
     }
