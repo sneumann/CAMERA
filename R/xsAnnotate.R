@@ -416,7 +416,8 @@ for(i in 1:length(lions)){
     }
 }
 if(is.null(nrow(peaktable))) peaktable = matrix(peaktable,byrow=F,ncol=length(peaktable))
-colnames(peaktable)<-c("mz","mzmin","mzmax","rt","rtmin","rtmax","into","intb","maxo","sn","sample");
+colnames(peaktable)<-colnames(object@peaks)
+
 return(invisible(data.frame(peaktable,isotopes,adduct,grp,stringsAsFactors=FALSE)));
 }
 
