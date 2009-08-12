@@ -31,7 +31,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
               eic <- xcms:::getEIC(xraw,
                             rtrange=matrix(bbox[c("rtmin","rtmax")],
                             nrow=length(pidx), ncol=2, byrow=TRUE),
-                            mzrange=object@peaks[pidx,c("mzmin", "mzmax")])
+                            mzrange=object@peaks[pidx,c("mzmin", "mzmax"), drop=FALSE])
 
               xeic@rtrange[pcpos, ] <<- bbox[c("rtmin","rtmax")]
               xeic@mzrange[pcpos, ] <<- bbox[c("mzmin","mzmax")]
