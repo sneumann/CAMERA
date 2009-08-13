@@ -79,21 +79,21 @@ setMethod("plotEICs", "xsAnnotate", function(object,
               for (j in eicidx[o]) {
                   pts <- xeic@eic[[pspec]][[j]]
                   points(pts, type = "l", col = lcol[j])
-                  peakrange <- peaks[object@pspectra[[pspecIdx[pspec]]], c("rtmin","rtmax")]
+                  peakrange <- peaks[object@pspectra[[pspecIdx[pspec]]], c("rtmin","rtmax"), drop=FALSE]
                   ptsidx <- pts[,"rt"] >= peakrange[j,1] & pts[,"rt"] <= peakrange[j,2]
                   points(pts[ptsidx,], type = "l", col = col[j])
               }
 
               ## Plot Annotation Legend
-              pspectrum <- getpspectra(object, grp=pspecIdx[pspec]) 
+              pspectrum <- getpspectra(object, grp=pspecIdx[pspec])
               if (lmaxlabel>0 & "adduct" %in% colnames(pspectrum)) {
                 adduct <- sapply(strsplit(pspectrum[o[1:lmaxlabel], "adduct"], " "),
                                  function(x) {if (length(x)>0) x[1] else ""})
-                mz <- format(pspectrum[o[1:lmaxlabel], "mz"], digits=5)                
+                mz <- format(pspectrum[o[1:lmaxlabel], "mz"], digits=5)
                 legend("topright", legend=paste(mz, adduct),
                        col=col[o], lty=1)
               }
-              
+
               if (sleep > 0)
                   Sys.sleep(sleep)
           }
@@ -131,7 +131,11 @@ setMethod("plotPeaks", "xsAnnotate", function(object, pspec=1:length(object@pspe
                    main=title, col="darkgrey")
 
               if (maxlabel>0) {
-                lmaxlabel <- min(maxlabel,length(mz)) 
+                  ## Also check for labels:  https://stat.ethz.ch/pipermail/r-help/2008-November/178666.html
+                  ## There is also the spread.labs function in the TeachingDemos package that
+                  ## uses a different method from the plotrix function and should not move any
+                  ## labels that are not overlapping.
+                lmaxlabel <- min(maxlabel,length(mz))
                   text(mz[1:lmaxlabel],
                        intensity[1:lmaxlabel],
                        labels=format(mz[1:lmaxlabel], digits=5),
