@@ -27,7 +27,7 @@ setClass("xsAnnotate",
                     xcmsSet=NULL,
                     ruleset=NULL,
                     annoID=matrix(ncol=3,nrow=0),
-                    annoGrp=matrix(ncol=2,nrow=0),
+                    annoGrp=matrix(ncol=3,nrow=0),
                     isoID=matrix(ncol=4,nrow=0),
                     polarity="")
             );
@@ -80,7 +80,7 @@ if(length(index<-which(is.na(tmp[,1])))>0){
 #save xcmsSet in the xsAnnotate object
 object@xcmsSet  <-  xs;
 colnames(object@annoID) <-  c("id","grp_id","rule_id");
-colnames(object@annoGrp)<-  c("id","mass");
+colnames(object@annoGrp)<-  c("id","mass","ips");
 colnames(object@isoID)  <-  c("mpeak","isopeak","iso","charge")
 return(object);
 }
@@ -271,8 +271,8 @@ object@isotopes <- isotope;
 return(object);
 })
 
-setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL) standardGeneric("findAdducts"));
-setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL){
+setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL) standardGeneric("findAdducts"));
+setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL){
 #Normierung
 devppm = ppm / 1000000;
 #hole die wichtigen Spalten aus der Peaktable
@@ -284,28 +284,37 @@ isotopes <- object@isotopes;
 #Adduktliste
 derivativeIons<-vector("list",length(imz));
 #Sonstige Variablen
-oidscore<-c();index<-c();massgrp<-0;
+oidscore<-c();index<-c();
 annoID=matrix(ncol=3,nrow=0)
-annoGrp=matrix(ncol=2,nrow=0)
+annoGrp=matrix(ncol=3,nrow=0)
 colnames(object@annoID) <-  c("id","grp_id","rule_id");
-colnames(object@annoGrp)<-  c("id","mass");
+colnames(object@annoGrp)<-  c("id","mass","ips");
 
-#Erkenne polarität
-if(!is.null(polarity)){
-    if(polarity %in% c("positive","negative")){
-        rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=polarity);
-        object@polarity=polarity;
-    }else stop("polarity mode unknown, please choose between positive and negative.")
-}else if(length(object@xcmsSet@polarity)>0){
-    index<-which(sampclass(object@xcmsSet)==object@category)[1]+object@sample-1
-    if(object@xcmsSet@polarity[index] %in% c("positive","negative")){
-        rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=object@xcmsSet@polarity[index]);
-        object@polarity=polarity;
-    }else stop("polarity mode in xcmsSet unknown, please define variable polarity.")
-}else stop("polarity mode could not be estimated from the xcmsSet, please define variable polarity!")
+if(!(object@polarity=="")){
+  cat(paste("polarity is set in xsAnnotate:",object@polarity,"\n"));
+  if(!is.null(object@ruleset)){
+    rules<-object@ruleset;
+  }else stop("ruleset could not read from object!\nFor recalculation set polarity = NULL!\n")
+}else {
 
-#save ruleset
-object@ruleset<-rules;
+  #Erkenne polarität
+  if(!is.null(polarity)){
+      if(polarity %in% c("positive","negative")){
+          rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=polarity);
+          object@polarity=polarity;
+      }else stop("polarity mode unknown, please choose between positive and negative.")
+  }else if(length(object@xcmsSet@polarity)>0){
+      index<-which(sampclass(object@xcmsSet)==object@category)[1]+object@sample-1
+      if(object@xcmsSet@polarity[index] %in% c("positive","negative")){
+          rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=object@xcmsSet@polarity[index]);
+          object@polarity=polarity;
+      }else stop("polarity mode in xcmsSet unknown, please define variable polarity.")
+  }else stop("polarity mode could not be estimated from the xcmsSet, please define variable polarity!")
+  #save ruleset
+  object@ruleset<-rules;
+}
+
+
 quasimolion<-which(rules[,"quasi"]==1)
 #Entferne Isotope aus dem Intensitätsvector, sollen nicht mit annotiert werden
 if(length(isotopes)>0){
@@ -321,7 +330,7 @@ npspectra <- length(object@pspectra);
 if(npspectra < 1){ npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@peaks)); }
 cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: '); lp <- -1;
 #zähler für % Anzeige
-npeaks<-0;
+npeaks<-0;massgrp<-0;
 #für alle Gruppen
 for(i in 1:npspectra){
     #       cat(i);
@@ -370,7 +379,8 @@ for(i in 1:npspectra){
         for(hyp in 1:nrow(hypothese)){
             peakid<-ipeak[hypothese[hyp,"massID"]];
             if(old_massgrp != hypothese[hyp,"massgrp"]) {
-            massgrp<-massgrp+1;old_massgrp<-hypothese[hyp,"massgrp"];annoGrp<-rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"])) }
+            massgrp<-massgrp+1;old_massgrp<-hypothese[hyp,"massgrp"];
+            annoGrp<-rbind( annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"])) ) }
             annoID<-rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
         }
     }
@@ -382,9 +392,49 @@ object@annoID<-annoID;
 object@annoGrp<-annoGrp;
 return(object)
 })
+
+
 ###End xsAnnotate generic Methods###
 
 ###xsAnnotate exported Methods###
+
+findFragment <- function (object,ppm=20){
+  if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
+  #number pseudospectra
+  devppm = ppm / 1000000;
+  npspectra <- length(object@pspectra);
+  if (object@polarity != "positive" & object@polarity != "negative") stop ("xsAnnotate object have wrong polarities.\nOnly pos/neg is allowed!")
+  neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
+  if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
+  neutralloss <- read.table(neutralloss,header=TRUE,dec=".",sep=",",as.is=TRUE);
+  colnames(neutralloss)<-c("name","massdiff")
+  fragment<-rep("",nrow(object@peaks))
+  for(i in 1:npspectra){
+   print (i);
+    index<-object@pspectra[[i]];
+    peaktable<-object@peaks[index,];
+    if(!is.matrix(peaktable)) peaktable<-matrix(peaktable,ncol=11);
+    mz <- peaktable[,1];
+
+    ML <- massDiffMatrixNL(mz,neutralloss)
+    m <- apply(ML,2,function (x) {fastMatch(mz,x,tol = max(2*devppm*mean(mz,na.rm=TRUE)))})
+    indi<-which(sapply(m,function (x) {length(unlist(x))})>0)
+    if(length(indi)==0) next;
+    for( ii in 1:length(indi)){
+      for(iii in 1:length(mz)){
+          if(!is.null(m[[indi[ii]]][[iii]])){
+            if(length(fragment[index[iii]])>1) {
+              fragment[index[iii]]<-paste(mz[m[[indi[ii]]][[iii]]],"-",neutralloss[indi[ii],"name"])
+            }else{
+              fragment[index[iii]]<-paste(fragment[index[iii]], mz[m[[indi[ii]]][[iii]]],"-",neutralloss[indi[ii],"name"])
+            }
+        }
+      }
+    }
+  }
+  invisible(cbind(getPeaklist(object),fragment))
+}
+
 getpspectra <- function(object,grp){
 index<-object@pspectra[[grp]];
 peaktable<-object@peaks[index,]
@@ -476,7 +526,8 @@ getPeaklist<-function(object){
         adduct<-adduct_tmp;
         pcgroup<-pcgroup_tmp;
     }
-return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE)));
+    rownames(peaklist)<-NULL;#Bugfix for: In data.row.names(row.names, rowsi, i) :  some row.names duplicated:
+    return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
 
 annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,sample=1,category=NA,polarity="positive"){
@@ -680,7 +731,8 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
     if (!file.exists(ionlist)) stop('ionlist.csv not found.')
     ionlist<-read.table(ionlist,header=TRUE,dec=".",sep=",",as.is=TRUE);
 
-    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
+#     neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
+    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA",lib.loc="/home/ckuhl/lib64")[1] ##DEBUG
     if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
     neutralloss <- read.table(neutralloss,header=TRUE,dec=".",sep=",",as.is=TRUE);
 
@@ -807,6 +859,22 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
             oidscore<-append(oidscore,oid+1);oid<-oid+1;
             ips<-append(ips,0.5);
         }
+        oid<-max(oidscore);
+        ##Erzeuge Neutral loss
+        index<-which(quasi==1)
+        for(i in 1:nrow(neutralloss)){
+            for(ii in 1:maxcharge){
+              if(ii > 1){
+                name<-append(name,paste("[M+",ii,"H-",neutralloss[i,1],"]",ii,"+",sep=""));
+              }else {name<-append(name,paste("[M+H-",neutralloss[i,1],"]+",sep=""));}
+              charge<-append(charge,ii);
+              massdiff<-  append(massdiff,-neutralloss[i,2]+1.0076*ii);
+              nmol<-append(nmol,1);
+              quasi<-append(quasi,0)
+              oidscore<-append(oidscore,oid+1);oid<-oid+1;
+              ips<-append(ips,0.5);
+            }
+        }
         ruleset <- data.frame(name,nmol,charge,massdiff,oidscore,quasi,ips)
         if(length(index<-which(ruleset[,"charge"]>maxcharge))>0){
             ruleset<- ruleset[-index,];
@@ -919,6 +987,18 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
             oidscore<-append(oidscore,oid+1);oid<-oid+1;
             ips<-append(ips,0.5);
         }
+         oid<-max(oidscore);
+        ##Erzeuge Neutral loss
+        index<-which(quasi==1)
+        for(i in 1:nrow(neutralloss)){
+            name<-append(name,paste("[M-H-",neutralloss[i,1],"]+",sep=""));
+            charge<-append(charge,+1);
+            massdiff<-  append(massdiff,-neutralloss[i,2]-1.0076);
+            nmol<-append(nmol,1);
+            quasi<-append(quasi,0)
+            oidscore<-append(oidscore,oid+1);oid<-oid+1;
+            ips<-append(ips,0.5);
+        }
         ruleset <- data.frame(name,nmol,charge,massdiff,oidscore,quasi,ips)
         if(length(index<-which(ruleset[,"charge"]< -maxcharge))>0){
             ruleset<- ruleset[-index,];
@@ -966,9 +1046,11 @@ annoID.pos<-xsa.pos@annoID;annoID.neg<-xsa.neg@annoID;
 annoGrp.pos<-xsa.pos@annoGrp;annoGrp.neg<-xsa.neg@annoGrp;
 grp2del<-c();
 for(i in 1:length(m)){
+#     print(i);
     if(is.null(m[[i]])) next;
     for(j in 1:length(m[[i]]))
     {
+#         print(j);
         grp.pos<-getpspectra(xsa.pos,i);
         grp.neg<-getpspectra(xsa.neg,m[[i]][j]);
 
@@ -1053,6 +1135,9 @@ for(i in 1:length(m)){
                         }else{
                             #Pfad: 3.2.2
                             ##Test auf Grp.
+                            if(is.null(masslist.neg)){
+                            
+                            next;}
                             if(length(unlist(fastMatch(test_mass<-annoGrp.pos[annoID.pos[which(annoID.pos[,1]==id.pos),2],"mass"],masslist.neg,tol=0.05)))>0){
                               endresult<-rbind(endresult,c(i,results[[ii]][1],m[[i]][j],results[[ii]][2],mass,4));
                             }else{
@@ -1129,20 +1214,23 @@ annoID.pos<-annoID.pos[-index,];
 }
 add_adducts<-vector("character",length(xsa.pos@isotopes));
 old_grpid<-max(annoGrp.pos[,1]);
-for(i in 1:nrow(endresult))
+if(nrow(endresult)>0)
 {
-    if(!endresult[i,"check"] %in% c(2,4)){
-    old_grpid<-old_grpid+1;
-    peakid<-xsa.pos@pspectra[[endresult[i,"grp_pos"]]][endresult[i,"peak_pos"]];
-    annoID.pos<-rbind(annoID.pos,c(peakid,old_grpid,id_h_pos))
-    annoGrp.pos<-rbind(annoGrp.pos,c(old_grpid,endresult[i,"mass"]))
-    if(endresult[i,"check"]==1){
-    add_adducts[peakid]<-paste("Found [M-H]");
-    }else{
-    add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
-    }else{
-        peakid<-xsa.pos@pspectra[[endresult[i,"grp_pos"]]][endresult[i,"peak_pos"]];
-        add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+  for(i in 1:nrow(endresult))
+  {
+      if(!endresult[i,"check"] %in% c(2,4)){
+      old_grpid<-old_grpid+1;
+      peakid<-xsa.pos@pspectra[[endresult[i,"grp_pos"]]][endresult[i,"peak_pos"]];
+      annoID.pos<-rbind(annoID.pos,c(peakid,old_grpid,id_h_pos))
+      annoGrp.pos<-rbind(annoGrp.pos,c(old_grpid,endresult[i,"mass"],2))
+      if(endresult[i,"check"]==1){
+      add_adducts[peakid]<-paste("Found [M-H]");
+      }else{
+      add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+      }else{
+          peakid<-xsa.pos@pspectra[[endresult[i,"grp_pos"]]][endresult[i,"peak_pos"]];
+          add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+  }
 }
 xsa.pos@derivativeIons<-getderivativeIons(annoID.pos,annoGrp.pos,rules.pos,length(xsa.pos@isotopes))
 peaklist<-getPeaklist(xsa.pos);
@@ -1156,20 +1244,23 @@ annoID.neg<-annoID.neg[-index,];
 }
 add_adducts<-vector("character",length(xsa.neg@isotopes));
 old_grpid<-max(annoGrp.neg[,1]);
-for(i in 1:nrow(endresult))
+if(nrow(endresult)>0)
 {
-    if(!endresult[i,"check"] %in% c(2,4)){
-    old_grpid<-old_grpid+1;
-    peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
-    annoID.neg<-rbind(annoID.neg,c(peakid,old_grpid,id_h_neg))
-    annoGrp.neg<-rbind(annoGrp.neg,c(old_grpid,endresult[i,"mass"]))
-    if(endresult[i,"check"]==1){
-    add_adducts[peakid]<-paste("Found [M+H]");
-    }else{
-    add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
-    }else{
-        peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
-        add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+  for(i in 1:nrow(endresult))
+  {
+      if(!endresult[i,"check"] %in% c(2,4)){
+      old_grpid<-old_grpid+1;
+      peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
+      annoID.neg<-rbind(annoID.neg,c(peakid,old_grpid,id_h_neg))
+      annoGrp.neg<-rbind(annoGrp.neg,c(old_grpid,endresult[i,"mass"],2))
+      if(endresult[i,"check"]==1){
+      add_adducts[peakid]<-paste("Found [M+H]");
+      }else{
+      add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+      }else{
+          peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
+          add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+  }
 }
 xsa.neg@derivativeIons<-getderivativeIons(annoID.neg,annoGrp.neg,rules.neg,length(xsa.neg@isotopes))
 peaklist<-getPeaklist(xsa.neg);
@@ -1180,11 +1271,12 @@ colnames(peaklist)[index+1]<-"pos. Mode"
 return(peaklist);
 }
 
-combine_hypothese <- function(m.pos,m.neg,rule_hh,ini1,ini2){
+combine_hypothese <- function(m.pos,m.neg,rule_hh,ini1,ini2,tol=0.02){
     ##generiere neue Peaklist
     ML <- massDiffMatrix(m.pos,rule_hh)
-    m <- fastMatch(ML,m.neg,tol=0.02)
+    m <- fastMatch(ML,m.neg,tol=tol)
     results<-list();
+    if(length(m)==0) {return(results);}
     for(i in 1:length(m))
     {
         if(is.null(m[[i]]))next;
@@ -1381,6 +1473,17 @@ DM <- matrix(NA,length(m),nadd)
 for (i in 1:length(m))
     for (j in 1:nadd)
     DM[i,j] <- (abs(adducts[j,"charge"] * m[i]) - adducts[j,"massdiff"]) / adducts[j,"nmol"]    # ((z*m) - add) /n
+
+return(DM)
+}
+
+massDiffMatrixNL <- function(m,neutralloss){
+nadd <- nrow(neutralloss)
+DM <- matrix(NA,length(m),nadd)
+
+for (i in 1:length(m))
+    for (j in 1:nadd)
+    DM[i,j] <- m[i] - neutralloss[j,"massdiff"]
 
 return(DM)
 }

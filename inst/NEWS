@@ -1,5 +1,10 @@
+2009-08-24 ckuhl	<ckuhl@ipb-halle.de>
+	* small bugfixes in getPeaklist
+	* add neutral losses to rule set
 2009-08-12 Steffen Neumann <sneumann@@ipb-halle.de>
 	* Fixed plotEICs for 1 peak groups
+2009-08-04 ckuhl	<ckuhl@ipb-halle.de>
+	* Add ips Score to annoGrp
 2009-06-03 Steffen Neumann <sneumann@@ipb-halle.de>
         * Add adduct labels to plotPeaks()
         * Add adduct labels to plotEICs()
