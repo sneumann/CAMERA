@@ -731,8 +731,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
     if (!file.exists(ionlist)) stop('ionlist.csv not found.')
     ionlist<-read.table(ionlist,header=TRUE,dec=".",sep=",",as.is=TRUE);
 
-#     neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
-    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA",lib.loc="/home/ckuhl/lib64")[1] ##DEBUG
+    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
     if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
     neutralloss <- read.table(neutralloss,header=TRUE,dec=".",sep=",",as.is=TRUE);
 
