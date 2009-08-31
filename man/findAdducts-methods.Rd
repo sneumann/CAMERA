@@ -7,7 +7,7 @@
  Annotate adducts (and fragments) for a xsAnnotate object. Returns a xsAnnotate object with annotated pseudospectra.
 }
 \usage{
- findAdducts(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL)
+ findAdducts(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL)
 }
 
 \arguments{
@@ -16,6 +16,7 @@
   \item{mzabs}{allowed variance for the search}
   \item{multiplier}{highest number(n) of allowed clusterion [nM+ion] }
   \item{polarity}{Which polarity mode was used for measuring of the ms sample}
+  \item{rules}{personal ruleset or with NULL standard ruleset will be calculated}
 }
 \details{
   Adducts (and fragments) are annotated for a xsAnnotate object. For every pseudospectra group, generated bei groupFWHM and groupCorr, all possible Adducts are calculated and mapped to the peaks. If at least two adducts match, a possible molecule-mass for the group can be calculated. After the annotation every masshypothese is checked against the charge of the calculated isotopes. It is recommend to call findIsotopes() before the annotation step.
