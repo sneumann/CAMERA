@@ -406,7 +406,8 @@ findFragment <- function (object,ppm=20){
   if (object@polarity != "positive" & object@polarity != "negative") stop ("xsAnnotate object have wrong polarities.\nOnly pos/neg is allowed!")
   neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
   if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
-  neutralloss <- read.table(neutralloss,header=TRUE,dec=".",sep=",",as.is=TRUE);
+  neutralloss <- read.table(neutralloss, header=TRUE, dec=".", sep=",",
+                            as.is=TRUE, stringsAsFactors = FALSE);
   colnames(neutralloss)<-c("name","massdiff")
   fragment<-rep("",nrow(object@peaks))
   for(i in 1:npspectra){
@@ -547,7 +548,8 @@ return(xs_anno5);
 resolve_Adducts <- function(peakgrp){
     neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
     if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
-    neutralloss <- read.table(neutralloss,header=TRUE,dec=".",sep=",",as.is=TRUE);
+    neutralloss <- read.table(neutralloss, header=TRUE, dec=".",sep=",",
+                              as.is=TRUE, stringsAsFactors = FALSE);
 }
 
 getderivativeIons <- function(annoID,annoGrp,rules,npeaks){
@@ -729,15 +731,19 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
     ##Read Tabellen
     ionlist <- system.file('lists/ions.csv', package = "CAMERA")[1]
     if (!file.exists(ionlist)) stop('ionlist.csv not found.')
-    ionlist<-read.table(ionlist,header=TRUE,dec=".",sep=",",as.is=TRUE);
+    ionlist<-read.table(ionlist, header=TRUE, dec=".", sep=",",
+                        as.is=TRUE, stringsAsFactors = TRUE);
 
     neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
     if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
-    neutralloss <- read.table(neutralloss,header=TRUE,dec=".",sep=",",as.is=TRUE);
+    neutralloss <- read.table(neutralloss, header=TRUE, dec=".", sep=",",
+                              as.is=TRUE, stringsAsFactors = TRUE);
 
     neutraladdition <- system.file('lists/neutraladdition.csv', package = "CAMERA")[1]
     if (!file.exists(neutraladdition)) stop('neutraladdition.csv not found.')
-    neutraladdition <- read.table(neutraladdition,header=TRUE,dec=".",sep=",",as.is=TRUE);
+    neutraladdition <- read.table(neutraladdition,
+                                  header=TRUE, dec=".", sep=",",
+                                  as.is=TRUE, stringsAsFactors = FALSE);
     ##End Read Tabellen
 
     ##Erzeuge Regeln
