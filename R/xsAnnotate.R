@@ -103,14 +103,14 @@ cat("Memory usage:", signif(memsize/2^20, 3), "MB\n")
 ###xsAnnotate generic Methods###
 setGeneric("groupFWHM", function(object,sigma=6,perfwhm=0.6) standardGeneric("groupFWHM"))
 setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
-#Gruppierung nach fwhm
+# Gruppierung nach fwhm
 # sigma - number of standard deviation arround the mean (6 = 2 x 3 left and right)
 # perfwhm - 0.3;
 if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
 names<-colnames(object@peaks)
 object@pspectra <- list()
 if(!"mz" %in% names) stop ("Corrupt peaktable!\n")
-if(object@peaks[1,"rt"] == -1) { cat("Warning: no retention times avaiable. Do nothing"); }
+if(object@peaks[1,"rt"] == -1) { warning("Warning: no retention times avaiable. Do nothing"); }
 else{
     maxo <- object@peaks[,'maxo']; #max intensities of all peaks
     while(!all(is.na(maxo)==TRUE)){
@@ -133,10 +133,10 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75) {
 if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
 #restore xcmsSet from xsAnnotate object
 xs<-object@xcmsSet
-if (!class(xs)=="xcmsSet")     stop ("xs is not an xcmsSet object")
+if (!class(xs)=="xcmsSet")  stop ("xs is not an xcmsSet object")
 #check if LC data is available
 if(object@peaks[1,"rt"] == -1) {
-    cat("Warning: no retention times avaiable. Do nothing\n")
+    warning("Warning: no retention times avaiable. Do nothing\n")
 }else {
     if(object@sample== -1){
         tmp <- getAllEICs(xs,1);
@@ -163,18 +163,17 @@ if(object@peaks[1,"rt"] == -1) {
         object@pspectra[npspectra+i]<-index[i];
     }
 }
-
 return(invisible(object));
 })
 
 setGeneric("findIsotopes", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01) standardGeneric("findIsotopes"));
 setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01){
 if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
-#berechne IsotopenMatrix
+# calculate Isotope_Matrix
 IM <- calcIsotopes(maxiso=maxiso,maxcharge=maxcharge);
-#Normierung
+# Normierung
 devppm <- ppm / 1000000;
-#get mz,rt,into from peaktable
+# get mz,rt,into from peaktable
 imz <- object@peaks[,"mz"];irt <- object@peaks[,"rt"];mint <- object@peaks[,"into"];
 isotope <- vector("list",length(imz));
 npspectra <- length(object@pspectra);
@@ -271,19 +270,19 @@ object@isotopes <- isotope;
 return(object);
 })
 
-setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL) standardGeneric("findAdducts"));
-setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL){
-#Normierung
+setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,nSlaves=1) standardGeneric("findAdducts"));
+setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,nSlaves=1){
+# Normierung
 devppm = ppm / 1000000;
-#hole die wichtigen Spalten aus der Peaktable
+# hole die wichtigen Spalten aus der Peaktable
 imz <- object@peaks[,"mz"];irt <- object@peaks[,"rt"];mint <- object@peaks[,"into"];
-#anzahl peaks in gruppen für % Anzeige
+# anzahl peaks in gruppen für % Anzeige
 sum_peaks<-sum(sapply(object@pspectra,length));
-#Isotopen
+# Isotopen
 isotopes <- object@isotopes;
-#Adduktliste
+# Adduktliste
 derivativeIons<-vector("list",length(imz));
-#Sonstige Variablen
+# Sonstige Variablen
 oidscore<-c();index<-c();
 annoID=matrix(ncol=3,nrow=0)
 annoGrp=matrix(ncol=3,nrow=0)
@@ -313,68 +312,97 @@ if(!(object@polarity=="")){
   #save ruleset
   object@ruleset<-rules;
 }
+runParallel <- 0
 
+    if (nSlaves > 1) {
+        ## If MPI is available ...
+        rmpi = "Rmpi"
+        if (require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
+            if (is.loaded('mpi_initialize')) {
 
-quasimolion<-which(rules[,"quasi"]==1)
-#Entferne Isotope aus dem Intensitätsvector, sollen nicht mit annotiert werden
-if(length(isotopes)>0){
-    for(x in 1:length(isotopes)){
-        if(!is.null(isotopes[[x]])){
-            if(isotopes[[x]]$iso!=0)imz[x]=NA;
+                mpi.spawn.Rslaves(nslaves=nSlaves, needlog=FALSE)
+
+                ## If there are multiple slaves AND this process is the master,
+                ## run in parallel.
+                if ((mpi.comm.size() > 2)  && (mpi.comm.rank() == 0))
+                    runParallel <- 1
+            }
         }
+    }else if(nSlaves < 0) {
+      ##Bugfix for multiple annotation Process
+      runParallel <-1;
     }
-}
-#Anzahl Gruppen
-npspectra <- length(object@pspectra);
-#Wenn vorher nicht gruppiert wurde, alle Peaks in eine Gruppe stecken
-if(npspectra < 1){ npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@peaks)); }
-cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: '); lp <- -1;
-#zähler für % Anzeige
-npeaks<-0;massgrp<-0;
-#für alle Gruppen
-for(i in 1:npspectra){
-    #       cat(i);
-    #Indizes der Peaks in einer Gruppe
-    ipeak <- object@pspectra[[i]];
-    #Zähler hochzählen und % ausgeben
-    npeaks<-npeaks+length(ipeak);
-    perc <- round((npeaks) / sum_peaks * 100)
-    if ((perc %% 10 == 0) && (perc != lp)) { cat(perc,' '); lp <- perc }
-    if (.Platform$OS.type == "windows") flush.console()
 
-    #wenn mehr als ein Peaks in einer Gruppe ist
-    if(length(ipeak)>1){
-        mz <- imz[ipeak];
-        na_ini<-which(!is.na(mz))
-        ML <- massDiffMatrix(mz[na_ini],rules)
-        m <- fastMatch(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs)
-        c<-sapply(m,length)
-        index<-which(c>=2)
-        if(length(index)==0) next;
-
-        #Erstelle Hypothesen
-        hypothese<-create_hypothese(m,index,ML,rules,na_ini)
-        if(is.null(nrow(hypothese)))next;
-
-        #Entferne Hypothesen, welche gegen Isotopenladungen verstossen!
-        if(length(isotopes)>0){
-            hypothese <-check_isotopes(hypothese,isotopes,ipeak)
+  quasimolion<-which(rules[,"quasi"]==1)
+  #Entferne Isotope aus dem Intensitätsvector, sollen nicht mit annotiert werden
+  if(length(isotopes)>0){
+      for(x in 1:length(isotopes)){
+          if(!is.null(isotopes[[x]])){
+              if(isotopes[[x]]$iso!=0)imz[x]=NA;
+          }
+      }
+  }
+  #Anzahl Gruppen
+  npspectra <- length(object@pspectra);
+  #Wenn vorher nicht gruppiert wurde, alle Peaks in eine Gruppe stecken
+  if(npspectra < 1){ npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@peaks)); }
+  
+  #zähler für % Anzeige
+  npeaks<-0;massgrp<-0;
+  #für alle Gruppen
+  if (runParallel==1) { ## ... we use MPI
+        cat('\nCalculating possible adducts in',npspectra,'Groups... \n');
+        argList <- list();
+        for(i in 1:npspectra){
+          params <- list();
+          params$pspectra <-object@pspectra;
+          params$i <- i;
+          params$imz <- imz;
+          params$rules <- rules;
+          params$mzabs <- mzabs;
+          params$devppm <- devppm;
+          params$isotopes <- isotopes;
+          params$quasimolion <- quasimolion;
+          argList[[i]]<-params
         }
-        if(nrow(hypothese)<2){next};
-
-        #Test auf Quasi-Molekülionen
-        hypothese <-check_quasimolion(hypothese,quasimolion)
-        if(nrow(hypothese)<2){next};
-
-        #Entferne Hypothesen, welche gegen OID-Score&Kausalität verstossen!
-        hypothese <- check_oid_causality(hypothese,rules)
-        if(nrow(hypothese)<2){next};
-
-        #Prüfe IPS-Score
-        hypothese <- check_ips(hypothese)
-        if(nrow(hypothese)<2){next};
-
+        result <- xcmsPapply(argList, annotateGrpMPI)
+        if(nSlaves>1){
+        mpi.close.Rslaves()
+        }
+    for(ii in 1:length(result)){
+      hypothese<-result[[ii]];
+      if(is.null(hypothese)){next;}
+      charge=0;old_massgrp=0;
+      ipeak <- object@pspectra[[ii]];
+      for(hyp in 1:nrow(hypothese)){
+        peakid<-ipeak[hypothese[hyp,"massID"]];
+        if(old_massgrp != hypothese[hyp,"massgrp"]) {
+        massgrp<-massgrp+1;old_massgrp<-hypothese[hyp,"massgrp"];
+        annoGrp<-rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"])) ) }
+        annoID<-rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
+      }
+    }
+    derivativeIons<-getderivativeIons(annoID,annoGrp,rules,length(imz));
+    cat("\n");
+    object@derivativeIons <- derivativeIons;
+    object@annoID<-annoID;
+    object@annoGrp<-annoGrp;
+    return(object)
+  } else {
+     cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: '); lp <- -1;
+    for(i in 1:npspectra){
+      #Indizes der Peaks in einer Gruppe
+      ipeak <- object@pspectra[[i]];
+      #Zähler hochzählen und % ausgeben
+      npeaks<-npeaks+length(ipeak);
+      perc <- round((npeaks) / sum_peaks * 100)
+      if ((perc %% 10 == 0) && (perc != lp)) { cat(perc,' '); lp <- perc }
+      if (.Platform$OS.type == "windows") flush.console()
+      #wenn mehr als ein Peaks in einer Gruppe ist
+      if(length(ipeak)>1){
+        hypothese<-annotateGrp(object@pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion)
         #Speichern
+        if(is.null(hypothese)){next;}
         charge=0;old_massgrp=0;
         for(hyp in 1:nrow(hypothese)){
             peakid<-ipeak[hypothese[hyp,"massID"]];
@@ -383,15 +411,56 @@ for(i in 1:npspectra){
             annoGrp<-rbind( annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"])) ) }
             annoID<-rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
         }
+      }
     }
-}
-derivativeIons<-getderivativeIons(annoID,annoGrp,rules,length(imz));
-cat("\n");
-object@derivativeIons <- derivativeIons;
-object@annoID<-annoID;
-object@annoGrp<-annoGrp;
-return(object)
+    derivativeIons<-getderivativeIons(annoID,annoGrp,rules,length(imz));
+    cat("\n");
+    object@derivativeIons <- derivativeIons;
+    object@annoID<-annoID;
+    object@annoGrp<-annoGrp;
+    return(object)
+  }
 })
+
+annotateGrpMPI <- function(params) {
+library(CAMERA);
+return(CAMERA:::annotateGrp(params$pspectra,params$i,params$imz,params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion));
+}
+
+annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) {
+  ipeak <- pspectra[[i]];
+  mz <- imz[ipeak];
+  na_ini<-which(!is.na(mz))
+  ML <- massDiffMatrix(mz[na_ini],rules)
+  m <- fastMatch(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs)
+  c<-sapply(m,length)
+  index<-which(c>=2)
+  if(length(index)==0){ return(NULL);}
+  
+  #Erstelle Hypothesen
+  hypothese<-create_hypothese(m,index,ML,rules,na_ini)
+  if(is.null(nrow(hypothese))){return(NULL);}
+  
+  #Entferne Hypothesen, welche gegen Isotopenladungen verstossen!
+  if(length(isotopes)>0){
+      hypothese <-check_isotopes(hypothese,isotopes,ipeak)
+  }
+  if(nrow(hypothese)<2){return(NULL);};
+  
+  #Test auf Quasi-Molekülionen
+  hypothese <-check_quasimolion(hypothese,quasimolion)
+  if(nrow(hypothese)<2){return(NULL);};
+  
+  #Entferne Hypothesen, welche gegen OID-Score&Kausalität verstossen!
+  hypothese <- check_oid_causality(hypothese,rules)
+  if(nrow(hypothese)<2){return(NULL);};
+  
+  #Prüfe IPS-Score
+  hypothese <- check_ips(hypothese)
+  if(nrow(hypothese)<2){return(NULL);};
+  
+  return(hypothese);
+}
 
 
 ###End xsAnnotate generic Methods###
@@ -531,14 +600,22 @@ getPeaklist<-function(object){
     return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
 
-annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,sample=1,category=NA,polarity="positive"){
+annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,sample=1,category=NA,polarity="positive",nSlaves=1){
     if (!class(xs)=="xcmsSet")     stop ("xs is not an xcmsSet object")
     xs_anno  <- xsAnnotate(xs,sample=sample,category=category);
     xs_anno2 <- groupFWHM(xs_anno,sigma=sigma,perfwhm=perfwhm);
     xs_anno3 <- groupCorr(xs_anno2,cor_eic_th=cor_eic_th);
     xs_anno4 <- findIsotopes(xs_anno3,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs);
-    xs_anno5 <- findAdducts(xs_anno4,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity);
+    xs_anno5 <- findAdducts(xs_anno4,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,nSlaves=nSlaves);
 return(xs_anno5);
+}
+
+diffreport<-function(object,...){
+# creates diffreport with xsAnnotate object
+  if(!class(object)=="xsAnnotate")      stop("object is not a xsAnnotate object")
+  diff_rep<-xcms::diffreport(object@xcmsSet,...)
+  pl<-getPeaklist(object)
+  cbind(diff_rep,pl[,c("","","")])
 }
 
 ###End xsAnnotate exported Methods###
@@ -734,7 +811,8 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
     ionlist<-read.table(ionlist, header=TRUE, dec=".", sep=",",
                         as.is=TRUE, stringsAsFactors = FALSE);
 
-    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
+#     neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
+    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA",lib.loc="/home/ckuhl/lib64")[1] ##DEBUG
     if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
     neutralloss <- read.table(neutralloss, header=TRUE, dec=".", sep=",",
                               as.is=TRUE, stringsAsFactors = FALSE);
@@ -1037,7 +1115,7 @@ if (xsa.pos@polarity!= "positive" & xsa.neg@polarity!= "negative") stop ("xsAnno
 ##1.Step
 rt1 <- sapply(xsa.pos@pspectra, function(x) {mean(xsa.pos@peaks[x,"rt"])})
 rt2 <- sapply(xsa.neg@pspectra, function(x) {mean(xsa.neg@peaks[x,"rt"])})
-m<-fastMatch(rt1,rt2,tol=tol)
+m<-CAMERA:::fastMatch(rt1,rt2,tol=tol)
 rule_hh<-data.frame("[M-H+H]",1,1,2.0152,1,1,1)
 colnames(rule_hh)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips")
 endresult<-matrix(ncol=6,nrow=0);
@@ -1053,12 +1131,10 @@ grp2del<-c();
 for(i in 1:length(m)){
 #     print(i);
     if(is.null(m[[i]])) next;
-    for(j in 1:length(m[[i]]))
-    {
+    for(j in 1:length(m[[i]])){
 #         print(j);
         grp.pos<-getpspectra(xsa.pos,i);
         grp.neg<-getpspectra(xsa.neg,m[[i]][j]);
-
         #Entferne Isotope aus dem Intensitätsvector, sollen nicht mitannotiert werden
         m.pos<-NA
         for(k in 1:nrow(grp.pos))
