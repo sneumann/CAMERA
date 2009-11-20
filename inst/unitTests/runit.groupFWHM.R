@@ -4,6 +4,6 @@ test.groupFWHM <- function() {
  an   <- xsAnnotate(xs)
  an   <- groupFWHM(an)
  checkEqualsNumeric(nrow(xs@peaks),126)
- checkEqualsNumeric(length(an@spectra),14)
- checkEqualsNumeric(an@spectra[[5]][5],86)
+ checkEqualsNumeric(length(an@pspectra),14)
+ checkEqualsNumeric(an@pspectra[[5]][5],86)
 }

@@ -291,7 +291,7 @@ colnames(object@annoGrp)<-  c("id","mass","ips");
 
 if(!(object@polarity=="")){
   cat(paste("polarity is set in xsAnnotate:",object@polarity,"\n"));
-  if(!is.null(rules)){
+  if(is.null(rules)){
     if(!is.null(object@ruleset)){
       rules<-object@ruleset;
     }else{ stop("ruleset could not read from object!\nFor recalculation set polarity = NULL!\n");}
@@ -1570,6 +1570,7 @@ for (i in 1:length(m))
 
 return(DM)
 }
+
 
 calcCL <-function(object,xs, EIC, scantimes, cor_eic_th){
 
