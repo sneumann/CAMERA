@@ -1,3 +1,5 @@
+2009-11-20 ckuhl <ckuhl@ipb-halle.de>
+        * Fix bug in setting ruletable
 2009-08-26 ckuhl <ckuhl@ipb-halle.de>
         * add nSlaves as argument to findAdducts (for parallel annotation with MPI)
 2009-08-24 ckuhl	<ckuhl@ipb-halle.de>
