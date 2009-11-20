@@ -291,9 +291,11 @@ colnames(object@annoGrp)<-  c("id","mass","ips");
 
 if(!(object@polarity=="")){
   cat(paste("polarity is set in xsAnnotate:",object@polarity,"\n"));
-  if(!is.null(object@ruleset)){
-    rules<-object@ruleset;
-  }else stop("ruleset could not read from object!\nFor recalculation set polarity = NULL!\n")
+  if(!is.null(rules)){
+    if(!is.null(object@ruleset)){
+      rules<-object@ruleset;
+    }else{ stop("ruleset could not read from object!\nFor recalculation set polarity = NULL!\n");}
+  }else{ cat("Found and use user-defined ruleset!");}
 }else {
 
   #Erkenne polarität
