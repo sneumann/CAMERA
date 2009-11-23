@@ -813,8 +813,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
     ionlist<-read.table(ionlist, header=TRUE, dec=".", sep=",",
                         as.is=TRUE, stringsAsFactors = FALSE);
 
-#     neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
-    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA",lib.loc="/home/ckuhl/lib64")[1] ##DEBUG
+    neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
     if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
     neutralloss <- read.table(neutralloss, header=TRUE, dec=".", sep=",",
                               as.is=TRUE, stringsAsFactors = FALSE);
@@ -1569,6 +1568,47 @@ for (i in 1:length(m))
     DM[i,j] <- m[i] - neutralloss[j,"massdiff"]
 
 return(DM)
+}
+
+
+calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th){
+  ptm <- proc.time()
+  CL <- vector("list",nrow(object@peaks));
+  CIL <- list();
+  ncl<-length(CL);npeaks=0;
+  npspectra <- length(object@pspectra);
+  cat('Calculating peak correlations... \n% finished: '); lp <- -1;
+  #Wenn groupFWHM nicht vorher aufgerufen wurde!
+  if(npspectra<1){
+    npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@peaks));
+  }
+  cormat<-matrix(,ncol=2)
+  for(i in 1:npspectra){
+          pi <- object@pspectra[[i]];
+          cormat<-rbind(cormat,as.matrix(expand.grid(pi,pi)));
+  }
+  index<-which(cormat[,1]>=cormat[,2]);
+  cormat<-cormat[-index,]
+  options(show.error.messages = FALSE);
+  res <- apply(cormat,1,function(x) {
+    eicx <-  EIC[x[1],,1];eicy <-  EIC[x[2],,1];
+    px <- object@peaks[x[1],];py <- object@peaks[x[2],];
+    crt <- range(px["rtmin"],px["rtmax"],py["rtmin"],py["rtmax"]);
+    rti <- which(scantimes[[1]] >= crt[1] & scantimes[[1]] <= crt[2])
+    cors <- 0;
+    if (length(rti)>1){
+      dx <- eicx[rti]; dy <- eicy[rti]
+      dx[dx==0] <- NA; dy[dy==0] <- NA;
+      if (length(which(!is.na(dx) & !is.na(dy))) >= 4){
+      ct <- NULL;
+      try(ct <- cor.test(dx,dy,method='pearson',use='complete'));
+      if(!is.null(ct) && !is.na(ct)){if(ct$p.value <= 0.05){cors <- ct$estimate}else{ cors <- 0;}}else cors <- 0;                                                            
+      }
+    }
+  return(cors);
+  })
+  options(show.error.messages = TRUE);
+ptm <- proc.time() - ptm
 }
 
 
