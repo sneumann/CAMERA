@@ -1289,66 +1289,80 @@ for(i in 1:length(m)){
         }
     }
 }
-if(pos){
-index<-which(annoID.pos[,2] %in% grp2del);
-if(length(index)>0){
-annoID.pos<-annoID.pos[-index,];
-}
-add_adducts<-vector("character",length(xsa.pos@isotopes));
-old_grpid<-max(annoGrp.pos[,1]);
-if(nrow(endresult)>0)
-{
-  for(i in 1:nrow(endresult))
-  {
-      if(!endresult[i,"check"] %in% c(2,4)){
-      old_grpid<-old_grpid+1;
-      peakid<-xsa.pos@pspectra[[endresult[i,"grp_pos"]]][endresult[i,"peak_pos"]];
-      annoID.pos<-rbind(annoID.pos,c(peakid,old_grpid,id_h_pos))
-      annoGrp.pos<-rbind(annoGrp.pos,c(old_grpid,endresult[i,"mass"],2))
-      if(endresult[i,"check"]==1){
-      add_adducts[peakid]<-paste("Found [M-H]");
-      }else{
-      add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
-      }else{
+  if(pos){
+    index<-which(annoID.pos[,2] %in% grp2del);
+    if(length(index)>0){
+      annoID.pos<-annoID.pos[-index,];
+    }
+    add_adducts<-vector("character",length(xsa.pos@isotopes));
+    old_grpid<-max(annoGrp.pos[,1]);
+    if(nrow(endresult)>0){
+      for(i in 1:nrow(endresult)){
+        if(!endresult[i,"check"] %in% c(2,4)){
+          old_grpid<-old_grpid+1;
           peakid<-xsa.pos@pspectra[[endresult[i,"grp_pos"]]][endresult[i,"peak_pos"]];
-          add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+          annoID.pos<-rbind(annoID.pos,c(peakid,old_grpid,id_h_pos))
+          annoGrp.pos<-rbind(annoGrp.pos,c(old_grpid,endresult[i,"mass"],2))
+          if(endresult[i,"check"]==1){
+            add_adducts[peakid]<-paste("Found [M-H]");
+          }else{
+            add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");
+          }
+        }else{
+          peakid<-xsa.pos@pspectra[[endresult[i,"grp_pos"]]][endresult[i,"peak_pos"]];
+          add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");
+        }
+      }
+    }
+    xsa.pos@derivativeIons<-getderivativeIons(annoID.pos,annoGrp.pos,rules.pos,length(xsa.pos@isotopes))
+    peaklist<-getPeaklist(xsa.pos);
+    index<-ncol(peaklist)
+    if(xsa.pos@sample>0){
+      #grouped xsa
+      new_adducts<-vector("character",length(nrow(peaklist)));
+      new_adducts[xsa.pos@grp_info]<-add_adducts;
+      peaklist<-cbind(peaklist,new_adducts);
+    }else{
+      peaklist<-cbind(peaklist,add_adducts);
+    }
+    colnames(peaklist)[index+1]<-"neg. Mode"
+  }else if(!pos){
+  index<-which(annoID.neg[,2] %in% grp2del);
+  if(length(index)>0){
+    annoID.neg<-annoID.neg[-index,];
   }
-}
-xsa.pos@derivativeIons<-getderivativeIons(annoID.pos,annoGrp.pos,rules.pos,length(xsa.pos@isotopes))
-peaklist<-getPeaklist(xsa.pos);
-index<-ncol(peaklist)
-peaklist<-cbind(peaklist,add_adducts);
-colnames(peaklist)[index+1]<-"neg. Mode"
-}else if(!pos){
-index<-which(annoID.neg[,2] %in% grp2del);
-if(length(index)>0){
-annoID.neg<-annoID.neg[-index,];
-}
-add_adducts<-vector("character",length(xsa.neg@isotopes));
-old_grpid<-max(annoGrp.neg[,1]);
-if(nrow(endresult)>0)
-{
-  for(i in 1:nrow(endresult))
-  {
+  add_adducts<-vector("character",length(xsa.neg@isotopes));
+  old_grpid<-max(annoGrp.neg[,1]);
+  if(nrow(endresult)>0){
+    for(i in 1:nrow(endresult)){
       if(!endresult[i,"check"] %in% c(2,4)){
-      old_grpid<-old_grpid+1;
-      peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
-      annoID.neg<-rbind(annoID.neg,c(peakid,old_grpid,id_h_neg))
-      annoGrp.neg<-rbind(annoGrp.neg,c(old_grpid,endresult[i,"mass"],2))
-      if(endresult[i,"check"]==1){
-      add_adducts[peakid]<-paste("Found [M+H]");
+        old_grpid<-old_grpid+1;
+        peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
+        annoID.neg<-rbind(annoID.neg,c(peakid,old_grpid,id_h_neg))
+        annoGrp.neg<-rbind(annoGrp.neg,c(old_grpid,endresult[i,"mass"],2))
+        if(endresult[i,"check"]==1){
+          add_adducts[peakid]<-paste("Found [M+H]");
+        }else{
+          add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");
+        }
       }else{
-      add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
-      }else{
-          peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
-          add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");}
+        peakid<-xsa.neg@pspectra[[endresult[i,"grp_neg"]]][endresult[i,"peak_neg"]];
+        add_adducts[peakid]<-paste("Verified (",endresult[i,"check"],")",sep="");
+      }
+    }
   }
-}
-xsa.neg@derivativeIons<-getderivativeIons(annoID.neg,annoGrp.neg,rules.neg,length(xsa.neg@isotopes))
-peaklist<-getPeaklist(xsa.neg);
-index<-ncol(peaklist)
-peaklist<-cbind(peaklist,add_adducts);
-colnames(peaklist)[index+1]<-"pos. Mode"
+  xsa.neg@derivativeIons<-getderivativeIons(annoID.neg,annoGrp.neg,rules.neg,length(xsa.neg@isotopes))
+  peaklist<-getPeaklist(xsa.neg);
+  index<-ncol(peaklist)
+  if(xsa.neg@sample>0){
+      #grouped xsa
+      new_adducts<-vector("character",length(nrow(peaklist)));
+      new_adducts[xsa.neg@grp_info]<-add_adducts;
+      peaklist<-cbind(peaklist,new_adducts);
+    }else{
+      peaklist<-cbind(peaklist,add_adducts);
+    }
+  colnames(peaklist)[index+1]<-"pos. Mode"
 }else return(NULL);
 return(peaklist);
 }
