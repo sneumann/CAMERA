@@ -1,3 +1,5 @@
+2009-11-24 ckuhl <ckuhl@ipb-halle.de>
+        * Add experimental parallel mode with MPI
 2009-11-20 ckuhl <ckuhl@ipb-halle.de>
         * Fix bug in setting ruletable
 2009-08-26 ckuhl <ckuhl@ipb-halle.de>
