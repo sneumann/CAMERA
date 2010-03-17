@@ -38,6 +38,9 @@
     \item{\code{peaks}:}{
       matrix containing peak data
     }
+    \item{\code{runParallel}:}{
+      flag if CAMERA runs in serial or parallel mode
+    }
 \item{\code{pspectra}:}{
       list containing peak data
     }

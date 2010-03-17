@@ -6,7 +6,7 @@
   is generate from a xcmsSet object adapt its peaktable.
 }
 \usage{
-  xsAnnotate(xs = NULL,sample=NA,category=NA)
+  xsAnnotate(xs = NULL,sample=NA,category=NA,nSlaves = 1)
 }
 \arguments{
   \item{xs}{a \code{xcmsSet} object}
@@ -15,6 +15,9 @@
   }
   \item{category}{
     Class label, for the class label of a grouped xcmsSet with different classes.
+  }
+  \item{nSlaves}{
+    For parallel mode set nSlaves higher than 1, but not higher than the number of cpu cores.
   }
 }
 \examples{

@@ -14,7 +14,8 @@ setClass("xsAnnotate",
                     annoID="matrix",
                     annoGrp="matrix",
                     isoID="matrix",
-                    polarity="character"),
+                    polarity="character",
+                    runParallel="numeric"),
     prototype(
                     peaks= matrix(ncol=0,nrow=0),
                     pspectra = list(),
@@ -29,10 +30,11 @@ setClass("xsAnnotate",
                     annoID=matrix(ncol=3,nrow=0),
                     annoGrp=matrix(ncol=3,nrow=0),
                     isoID=matrix(ncol=4,nrow=0),
-                    polarity="")
+                    polarity="",
+                    runParallel=NULL)
             );
 
-xsAnnotate <- function(xs=NULL,sample=NA,category=NA){
+xsAnnotate <- function(xs=NULL,sample=NA,category=NA,nSlaves=0){
 
 if(is.null(xs)) { stop("no argument was given"); }
 else if(!class(xs)=="xcmsSet") stop("xs is no xcmsSet object ");
@@ -76,7 +78,29 @@ if(length(index<-which(is.na(tmp[,1])))>0){
     object@grp_info <-  which(!is.na(tmp[,1]))
     object@peaks    <-  tmp[-index,];
 }else{object@peaks  <-  tmp}
-
+  runParallel<-0;
+  if (nSlaves >= 1) {
+    ## If MPI is available ...
+    rmpi = "Rmpi"
+    if (require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
+      if (is.loaded('mpi_initialize')) {
+        #test if not already slaves are running!
+        if(mpi.comm.size() >0){ 
+          warning("There are already intialized mpi slaves on your machine.\nCamera will try to uses them!\n");
+          runParallel<-1;
+        }else{
+          mpi.spawn.Rslaves(nslaves=nSlaves, needlog=FALSE)
+          if(mpi.comm.size() > 1){
+            #Slaves have successfull spawned
+            runParallel<-1;
+          }else{ warning("Spawning of mpi slaves have failed. CAMERA will run without parallelization.\n");}
+        }
+      }else {
+        #And now??
+      }
+    }
+  }
+  object@runParallel<-runParallel;
 #save xcmsSet in the xsAnnotate object
 object@xcmsSet  <-  xs;
 colnames(object@annoID) <-  c("id","grp_id","rule_id");
@@ -97,6 +121,9 @@ if(object@sample>-1){
 }
 memsize <- object.size(object)
 cat("Memory usage:", signif(memsize/2^20, 3), "MB\n")
+if(object@runParallel==1){
+  cat("CAMERA runs in parallel mode!\n");
+}
 })
 ###End Constructor###
 
@@ -149,7 +176,16 @@ if(object@peaks[1,"rt"] == -1) {
     }
     EIC <- tmp$EIC
     scantimes <- tmp$scantimes
-    tmp <- calcCL(object,xs, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
+    if(object@runParallel==1){
+      if(mpi.comm.size() >0){
+        tmp<- calcCL2(object,xs, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
+      }else{
+        warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
+        tmp <- calcCL(object,xs, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th);
+        }
+    }else{
+      tmp <- calcCL(object,xs, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
+    }
     object@pspectra <- calc_pc(object@peaks,tmp$CL,tmp$CI)
 
     ##Workarround: peaks without groups
@@ -270,8 +306,8 @@ object@isotopes <- isotope;
 return(object);
 })
 
-setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,nSlaves=1) standardGeneric("findAdducts"));
-setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,nSlaves=1){
+setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=NULL) standardGeneric("findAdducts"));
+setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=NULL){
 # Normierung
 devppm = ppm / 1000000;
 # hole die wichtigen Spalten aus der Peaktable
@@ -314,25 +350,16 @@ if(!(object@polarity=="")){
   #save ruleset
   object@ruleset<-rules;
 }
-runParallel <- 0
-
-    if (nSlaves > 1) {
-        ## If MPI is available ...
-        rmpi = "Rmpi"
-        if (require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
-            if (is.loaded('mpi_initialize')) {
-
-                mpi.spawn.Rslaves(nslaves=nSlaves, needlog=FALSE)
-
-                ## If there are multiple slaves AND this process is the master,
-                ## run in parallel.
-                if ((mpi.comm.size() > 2)  && (mpi.comm.rank() == 0))
-                    runParallel <- 1
-            }
+  runParallel <- 0
+  if(object@runParallel==1){
+      if(mpi.comm.size() >0){
+        runParallel <- 1;
+      }else{
+        warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
+        runParallel <- 0;
         }
-    }else if(nSlaves < 0) {
-      ##Bugfix for multiple annotation Process
-      runParallel <-1;
+    }else{
+      runParallel <- 0;
     }
 
   quasimolion<-which(rules[,"quasi"]==1)
@@ -355,34 +382,44 @@ runParallel <- 0
   if (runParallel==1) { ## ... we use MPI
         cat('\nCalculating possible adducts in',npspectra,'Groups... \n');
         argList <- list();
+        cnt_peak<-0;if(is.null(max_peaks)) {max_peaks==100;};
+        params <- list();
         for(i in 1:npspectra){
-          params <- list();
-          params$pspectra <-object@pspectra;
-          params$i <- i;
-          params$imz <- imz;
-          params$rules <- rules;
-          params$mzabs <- mzabs;
-          params$devppm <- devppm;
-          params$isotopes <- isotopes;
-          params$quasimolion <- quasimolion;
-          argList[[i]]<-params
+          params$i[[length(params$i)+1]] <- i;
+          cnt_peak<-cnt_peak+length(object@pspectra[[i]]);
+          if(cnt_peak>max_peaks || i == npspectra){
+            params$pspectra <-object@pspectra;
+            params$imz <- imz;
+            params$rules <- rules;
+            params$mzabs <- mzabs;
+            params$devppm <- devppm;
+            params$isotopes <- isotopes;
+            params$quasimolion <- quasimolion;
+            argList[[length(argList)+1]]<-params
+            cnt_peak<-0;params<-list();
+          }
         }
         result <- xcmsPapply(argList, annotateGrpMPI)
-        if(nSlaves>1){
-        mpi.close.Rslaves()
-        }
+#         if(nSlaves>1){
+#         mpi.close.Rslaves()
+#         }
     for(ii in 1:length(result)){
-      hypothese<-result[[ii]];
-      if(is.null(hypothese)){next;}
-      charge=0;old_massgrp=0;
-      ipeak <- object@pspectra[[ii]];
-      for(hyp in 1:nrow(hypothese)){
-        peakid<-ipeak[hypothese[hyp,"massID"]];
-        if(old_massgrp != hypothese[hyp,"massgrp"]) {
-        massgrp<-massgrp+1;old_massgrp<-hypothese[hyp,"massgrp"];
-        annoGrp<-rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"])) ) }
-        annoID<-rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
-      }
+        if(length(result[[ii]])==0)next;
+        for(iii in 1:length(result[[ii]])){
+          hypothese<-result[[ii]][[iii]];
+          if(is.null(hypothese)){next;}
+          charge=0;old_massgrp=0;
+          index <- argList[[ii]]$i[[iii]];
+          ipeak <- object@pspectra[[index]];
+          for(hyp in 1:nrow(hypothese)){
+            peakid<-ipeak[hypothese[hyp,"massID"]];
+            if(old_massgrp != hypothese[hyp,"massgrp"]) {
+              massgrp<-massgrp+1;old_massgrp<-hypothese[hyp,"massgrp"];
+              annoGrp<-rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"])) ) 
+            }
+            annoID<-rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
+          }
+        }
     }
     derivativeIons<-getderivativeIons(annoID,annoGrp,rules,length(imz));
     cat("\n");
@@ -424,9 +461,13 @@ runParallel <- 0
   }
 })
 
-annotateGrpMPI <- function(params) {
+annotateGrpMPI <- function(params){
 library(CAMERA);
-return(CAMERA:::annotateGrp(params$pspectra,params$i,params$imz,params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion));
+result<-list();
+  for(ii in 1:length(params$i)){
+    result[[ii]]<-CAMERA:::annotateGrp(params$pspectra,params$i[[ii]],params$imz,params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
+  }
+return(result);
 }
 
 annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) {
@@ -602,13 +643,13 @@ getPeaklist<-function(object){
     return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
 
-annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,sample=1,category=NA,polarity="positive",nSlaves=1){
+annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,sample=1,category=NA,polarity="positive",nSlaves=1,grid=100){
     if (!class(xs)=="xcmsSet")     stop ("xs is not an xcmsSet object")
-    xs_anno  <- xsAnnotate(xs,sample=sample,category=category);
+    xs_anno  <- xsAnnotate(xs,sample=sample,category=category,nSlaves=nSlaves);
     xs_anno2 <- groupFWHM(xs_anno,sigma=sigma,perfwhm=perfwhm);
     xs_anno3 <- groupCorr(xs_anno2,cor_eic_th=cor_eic_th);
     xs_anno4 <- findIsotopes(xs_anno3,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs);
-    xs_anno5 <- findAdducts(xs_anno4,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,nSlaves=nSlaves);
+    xs_anno5 <- findAdducts(xs_anno4,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,max_peaks=grid);
 return(xs_anno5);
 }
 
@@ -1585,12 +1626,12 @@ return(DM)
 }
 
 
-calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th){
-  ptm <- proc.time()
+calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th,nSlaves=2){
   CL <- vector("list",nrow(object@peaks));
   CIL <- list();
   ncl<-length(CL);npeaks=0;
   npspectra <- length(object@pspectra);
+  peaks<-object@peaks;
   cat('Calculating peak correlations... \n% finished: '); lp <- -1;
   #Wenn groupFWHM nicht vorher aufgerufen wurde!
   if(npspectra<1){
@@ -1603,10 +1644,14 @@ calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th){
   }
   index<-which(cormat[,1]>=cormat[,2]);
   cormat<-cormat[-index,]
+  cormat<-cormat[-1,]
   options(show.error.messages = FALSE);
-  res <- apply(cormat,1,function(x) {
+ 
+   index<-seq(1:nrow(cormat));
+   liste<-lapply(index,function (x) {as.numeric(c(cormat[x,1],cormat[x,2]))})
+   res <- mpi.parSapply(liste,function(x,EIC=EIC,peaks=peaks,scantimes=scantimes) {
     eicx <-  EIC[x[1],,1];eicy <-  EIC[x[2],,1];
-    px <- object@peaks[x[1],];py <- object@peaks[x[2],];
+    px <- peaks[x[1],];py <- peaks[x[2],];
     crt <- range(px["rtmin"],px["rtmax"],py["rtmin"],py["rtmax"]);
     rti <- which(scantimes[[1]] >= crt[1] & scantimes[[1]] <= crt[2])
     cors <- 0;
@@ -1620,10 +1665,20 @@ calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th){
       }
     }
   return(cors);
-  })
+  },EIC,peaks,scantimes)
   options(show.error.messages = TRUE);
-ptm <- proc.time() - ptm
+  index<-as.numeric(which(res>cor_eic_th))
+  sapply(index,function(x) {
+      CL[[cormat[x,1]]]<<-c(CL[[cormat[x,1]]],as.numeric(cormat[x,2]));
+      CL[[cormat[x,2]]]<<-c(CL[[cormat[x,2]]],as.numeric(cormat[x,1]));
+      invisible(CIL[[length(CIL)+1]]<<-list(p=c(cormat[x,1],cormat[x,2]),cor=as.numeric(res[x])));
+  })
+  if (length(CIL) >0){ CI <- data.frame(t(sapply(CIL,function(x) x$p)),sapply(CIL,function(x) x$cor) )
+  }else{ return(NULL)}
+  colnames(CI) <- c('xi','yi','cors');
+  return(invisible(list(CL=CL,CI=CI)));
 }
+
 
 
 calcCL <-function(object,xs, EIC, scantimes, cor_eic_th){
