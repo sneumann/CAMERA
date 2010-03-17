@@ -189,8 +189,8 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
 return(invisible(object)); #return object
 })
 
-setGeneric("groupCorr",function(object,cor_eic_th=0.75,psg_list=NULL) standardGeneric("groupCorr"));
-setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NULL) {
+setGeneric("groupCorr",function(object,cor_eic_th=0.75,psg_list=NULL,polarity=NA) standardGeneric("groupCorr"));
+setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NULL,polarity=NA) {
   if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
   #check if LC data is available
   if(object@xcmsSet@peaks[1,"rt"] == -1) {
@@ -221,6 +221,11 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
       cor_matrix[CI[i,1],CI[i,2]]<-CI[i,3]
     }
     rm(tmp);
+    if(!is.na(polarity)){
+        if(polarity %in% c("positive","negative")){
+          object@polarity<-polarity
+        }else{cat("Unknown polarity parameter.\n"); }
+    }
     object <- calc_pc(object,CL,cor_matrix,psg_list=psg_list)
     cat("xsAnnotate has now",length(object@pspectra),"groups, instead of",cnt,"\n"); 
   }
@@ -396,11 +401,14 @@ colnames(object@annoID) <-  c("id","grp_id","rule_id");
 colnames(object@annoGrp)<-  c("id","mass","ips");
 
 if(!(object@polarity=="")){
-  cat(paste("polarity is set in xsAnnotate:",object@polarity,"\n"));
+  cat(paste("Polarity is set in xsAnnotate:",object@polarity,"\n"));
   if(is.null(rules)){
     if(!is.null(object@ruleset)){
       rules<-object@ruleset;
-    }else{ stop("ruleset could not read from object!\nFor recalculation set polarity = NULL!\n");}
+    }else{ cat("Ruleset could not read from object! Recalculate\n");
+      rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=object@polarity);
+      object@ruleset<-rules;
+    }
   }else{ cat("Found and use user-defined ruleset!");}
 }else {
 
@@ -1572,8 +1580,7 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
     pspectra_list<-psg_list;
     ncl<-sum(sapply(object@pspectra[psg_list],length));
   }
-  rules<-data.frame(c("[M+H-M+Na]","[M+H-M+K]","[M+Na-M+Na]"),1,1,c(21.9812,37.9552,15.974),1,1,1)
-  colnames(rules)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips");
+
   npeaks = 0;
   if(nrow(object@isoID)){
     #Isotope wurden vorher erkannt
@@ -1616,31 +1623,42 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
         NG<-rbind(NG,cbind(z,as.numeric(hcs$clusters[[z]])))
       }
       NG<-NG[-1,];#Remove NA
-      ##Hold M+H,M+Na
-      mz<-imz[pi];ix<-order(mz);mz<-mz[ix]
-      mm<-matrix(NA,ncol=2)
-      for(x in 1:length(mz)){
-        for(y in x:length(mz)){
+      if(object@polarity %in% c("positive","negative")){
+        if(object@polarity == "positive"){
+          ##Hold M+H,M+Na
+          rules<-data.frame(c("[M+H-M+Na]","[M+H-M+K]","[M+Na-M+Na]"),1,1,c(21.9812,37.9552,15.974),1,1,1)
+          colnames(rules)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips");         
+        }else {
+          #negative Way
+          ##Hold M-H,M-Na
+          rules<-data.frame(c("[M-H-M-2H+Na]","[M-H-M+Cl]"),1,1,c(21.9812,35.9758),1,1,1)
+          colnames(rules)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips");         
+        }
+        mz<-imz[pi];ix<-order(mz);mz<-mz[ix]
+        mm<-matrix(NA,ncol=2)
+        for(x in 1:length(mz)){
+          for(y in x:length(mz)){
             diff<-mz[y]-mz[x];
             if(diff>39){break} ##Diff zu gross
             if(length(unlist(fastMatch(rules[,"massdiff"],diff,0.02)))>0){
               #One rule fit, not of interest which one
               mm<-rbind(mm,c(pi[ix[x]],pi[ix[y]]));
             }
-        }
-      }
-      if(nrow(mm)>1){
-        mm<-mm[-1,]#remove NA        
-        mm<-matrix(mm,ncol=2);
-        for(x in 1:nrow(mm)){
-          if(!mm[x,1] %in% NG[,2]){
-                NG<-rbind(NG,c(max(NG[,1])+1,mm[x,1]));
           }
-          grp<-NG[which(NG[,2]==mm[x,1]),1];
-          if(!mm[x,2] %in% NG[,2]){
-                NG<-rbind(NG,c(grp,mm[x,2]));
-          }else{
-            NG[which(NG[,2]==mm[x,2]),1]<-grp;
+        }
+        if(nrow(mm)>1){
+          mm<-mm[-1,]#remove NA        
+          mm<-matrix(mm,ncol=2);
+          for(x in 1:nrow(mm)){
+            if(!mm[x,1] %in% NG[,2]){
+                  NG<-rbind(NG,c(max(NG[,1])+1,mm[x,1]));
+            }
+            grp<-NG[which(NG[,2]==mm[x,1]),1];
+            if(!mm[x,2] %in% NG[,2]){
+                  NG<-rbind(NG,c(grp,mm[x,2]));
+            }else{
+              NG[which(NG[,2]==mm[x,2]),1]<-grp;
+            }
           }
         }
       }
