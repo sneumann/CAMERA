@@ -20,7 +20,7 @@ setClass("xsAnnotate",
                     isotopes=list(),
                     derivativeIons=list(),
                     formula=list(),
-                    sample=NA,
+                    sample=NULL,
                     xcmsSet=NULL,
                     ruleset=NULL,
                     annoID=matrix(ncol=3,nrow=0),
@@ -30,7 +30,7 @@ setClass("xsAnnotate",
                     runParallel=NULL)
             );
 
-xsAnnotate <- function(xs=NULL,sample=NA,nSlaves=1){
+xsAnnotate <- function(xs=NULL,sample=NULL,nSlaves=1){
 
  ## sample is -1 for maxInt-way
  ## 1-nSamp for manual way
@@ -44,7 +44,7 @@ xsAnnotate <- function(xs=NULL,sample=NA,nSlaves=1){
     if (!nrow(xs@groups) > 0) {
       stop ('First argument must be a xcmsSet with group information or contain only one sample.') #checking alignment
     }
-    if(is.null(sample)) {
+    if(is.null(sample) || is.na(sample)) {
       object@sample<-as.numeric(NA);
     }else{
       if(sample == -1){
@@ -102,21 +102,23 @@ setMethod("show", "xsAnnotate", function(object){
   #show main information
   cat("An \"xsAnnotate\" object!\n");
   cat("With",length(object@pspectra),"groups (pseudospectra)\n");
-  cat("With",length(sampnames(object@xcmsSet)),"samples\n")
-  cat("With",nrow(object@groupVal),"peaks\n");
-
-if(is.na(object@sample)){
-  cat(paste("Using automatic sample selection:\n"));
-} else if(object@sample>-1){
-  cat(paste("Using sample:",object@sample,"\n"));
-} else { cat(paste("Using complete measurement\n"));}
-
-memsize <- object.size(object)
-cat("Memory usage:", signif(memsize/2^20, 3), "MB\n")
-
-if(object@runParallel==1){
-  cat("CAMERA runs in parallel mode!\n");
-}
+  cat("With",length(sampnames(object@xcmsSet)),"samples and",nrow(object@groupVal),"peaks\n");
+ 
+  if(is.na(object@sample)){
+    cat(paste("Using automatic sample selection\n"));
+  } else if(object@sample>-1){
+    cat(paste("Using sample:",object@sample,"\n"));
+  } else { cat(paste("Using complete measurement\n"));}
+  if(length(object@isotopes)>0){
+  #Isotopes Vorhanden
+    cnt<-length(which(sapply(object@isotopes,function(x) {length(x)>0})));
+    cat("Annotated isotopes:",cnt,"\n");
+  }
+  memsize <- object.size(object)
+  cat("Memory usage:", signif(memsize/2^20, 3), "MB\n");
+  if(object@runParallel==1){
+    cat("CAMERA runs in parallel mode!\n");
+  }
 })
 ###End Constructor###
 
@@ -181,7 +183,7 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
       }
     }
 #   }
-
+  cat("Created",length(object@pspectra),"groups.\n")
   if(length(ls(pattern="flag"))){
     #flag da
     ##TODO @joe: Bitte mal austesten!
@@ -235,23 +237,37 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   
   # Normierung
   devppm <- ppm / 1000000;
-  
+   
   # get mz,rt,into from peaktable
-  imz <- object@peaks[,"mz"];irt <- object@peaks[,"rt"];
-  names<-colnames(object@peaks);
-  if("npeaks" %in% names) {
-    #Gruppierte Peaktable with automatic selection 
-    cnt<-length(sampnames(object@xcmsSet));end<-ncol(object@peaks);start<-end-cnt; #errechne Spaltenanzahl
-    mint <- apply(object@peaks[,start:end],1,max) #errechne höchsten Peaks
-  }else{
-    mint <- object@peaks[,"into"];
+  if(object@sample == 1 && length(sampnames(xs)) == 1){
+    ##Ein Sample Fall
+    imz <- object@xcmsSet@peaks[,"mz"];
+    irt <- object@xcmsSet@peaks[,"rt"];
+    mint <- object@xcmsSet@peaks[,"into"];
+  }else {
+    ##Mehrsample Fall
+    #Gibt es Unterschiede
+    gvals <- object@groupVal;
+    peakmat <- object@xcmsSet@peaks;
+    groupmat <- groups(object@xcmsSet)
+    imz<-groupmat[,"mzmed"];
+    irt<-groupmat[,"rtmed"];
+    if(is.na(object@sample)){
+      mint <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"into"])},peakmat)); #errechne höchsten Peaks
+    }else if(sample== -1){
+      ##TODO @ Joe: Was machen wir hier?
+    }else{
+      #Group mit vorgegebenen Sample
+      mint <- peaktmat[gvals[,sample],"into"]; #errechne höchsten Peaks
+    }
   }
+
   isotope <- vector("list",length(imz));
   npspectra <- length(object@pspectra);
   isomatrix<-matrix(NA,ncol=5);
   
   #wenn vorher nicht groupFWHM aufgerufen wurde, gruppiere alle Peaks in eine Gruppe
-  if(npspectra < 1) { npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@peaks));}
+  if(npspectra < 1) { npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@groupVal));}
   
   #Suche Isotope in jeder Gruppe
   for(i in 1:npspectra){
@@ -345,15 +361,29 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
 # Normierung
 devppm = ppm / 1000000;
 # hole die wichtigen Spalten aus der Peaktable
-imz <- object@peaks[,"mz"];irt <- object@peaks[,"rt"];
-names<-colnames(object@peaks)
-if("npeaks" %in% names) {
-    #Gruppierte Peaktable
-    cnt<-length(sampnames(object@xcmsSet));end<-ncol(object@peaks);start<-end-cnt; #errechne Spaltenanzahl
-    mint <- apply(object@peaks[,start:end],1,max) #errechne höchsten Peaks
-  }else{
-    mint <- object@peaks[,"into"];
+ if(object@sample == 1 && length(sampnames(xs)) == 1){
+    ##Ein Sample Fall
+    imz <- object@xcmsSet@peaks[,"mz"];
+    irt <- object@xcmsSet@peaks[,"rt"];
+    mint <- object@xcmsSet@peaks[,"into"];
+  }else {
+    ##Mehrsample Fall
+    #Gibt es Unterschiede
+    gvals <- object@groupVal;
+    peakmat <- object@xcmsSet@peaks;
+    groupmat <- groups(object@xcmsSet)
+    imz<-groupmat[,"mzmed"];
+    irt<-groupmat[,"rtmed"];
+    if(is.na(object@sample)){
+      mint <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"into"])},peakmat)); #errechne höchsten Peaks
+    }else if(sample== -1){
+      ##TODO @ Joe: Was machen wir hier?
+    }else{
+      #Group mit vorgegebenen Sample
+      mint <- peaktmat[gvals[,sample],"into"]; #errechne höchsten Peaks
+    }
   }
+
 # anzahl peaks in gruppen für % Anzeige
 sum_peaks<-sum(sapply(object@pspectra,length));
 # Isotopen
