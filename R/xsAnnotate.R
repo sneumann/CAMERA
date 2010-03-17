@@ -20,7 +20,7 @@ setClass("xsAnnotate",
                     isotopes=list(),
                     derivativeIons=list(),
                     formula=list(),
-                    sample=NULL,
+                    sample=NA,
                     xcmsSet=NULL,
                     ruleset=NULL,
                     annoID=matrix(ncol=3,nrow=0),
@@ -44,10 +44,8 @@ xsAnnotate <- function(xs=NULL,sample=NA,nSlaves=1){
     if (!nrow(xs@groups) > 0) {
       stop ('First argument must be a xcmsSet with group information or contain only one sample.') #checking alignment
     }
-    if(is.na(sample)) {
-      object@sample<-NA;
-    }else if(is.null(sample)){
-      stop ('For a grouped xcmsSet parameter samples must be set.')
+    if(is.null(sample)) {
+      object@sample<-as.numeric(NA);
     }else{
       if(sample == -1){
         #Joes Way
@@ -104,7 +102,7 @@ setMethod("show", "xsAnnotate", function(object){
   #show main information
   cat("An \"xsAnnotate\" object!\n");
   cat("With",length(object@pspectra),"groups (pseudospectra)\n");
-  cat("With",length(sampnames(object@xcmsSet)),"samples:\n")
+  cat("With",length(sampnames(object@xcmsSet)),"samples\n")
   cat("With",nrow(object@groupVal),"peaks\n");
 
 if(is.na(object@sample)){
@@ -123,42 +121,43 @@ if(object@runParallel==1){
 ###End Constructor###
 
 ###xsAnnotate generic Methods###
-setGeneric("groupFWHM", function(object,sigma=6,perfwhm=0.6) standardGeneric("groupFWHM"))
-setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
+setGeneric("groupFWHM", function(object,sigma=6,perfwhm=0.6,...) standardGeneric("groupFWHM"))
+setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
   # Gruppierung nach fwhm
   # sigma - number of standard deviation arround the mean (6 = 2 x 3 left and right)
   # perfwhm - 0.3;
   if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
-  names<-colnames(object@groupVal);sample<-object@sample;
-  if(!"mz" %in% names) stop ("Corrupt peaktable!\n")
-  if(object@peaks[1,"rt"] == -1) { warning("Warning: no retention times avaiable. Do nothing"); }
-  else{
-    #all parameters looks good
-    object@pspectra <- list()
-    if("npeaks" %in% names && is.na(sample)) {
-      #Gruppierte Peaktable with automatic selection 
-      cnt<-length(sampnames(object@xcmsSet));end<-ncol(object@peaks);start<-end-cnt+1; #errechne Spaltenanzahl
-      maxo <- apply(object@peaks[,start:end],1,max) #errechne höchsten Peaks
-      gvals <- groupval(object@xcmsSet);
-      peakmat <- object@xcmsSet@peaks;
-      
-      peakrange <- matrix(nrow = nrow(gvals), ncol = 2)
-      colnames(peakrange) <- c("rtmin","rtmax")
+  sample<-object@sample;
+  object@pspectra <- list()
 
-      retmin <- peakmat[gvals,"rtmin"]
-      dim(retmin) <- c(nrow(gvals), ncol(gvals))
-      peakrange[,"rtmin"] <- apply(retmin, 1, median, na.rm = TRUE)
-      
-      retmax <- peakmat[gvals,"rtmax"]
-      dim(retmax) <- c(nrow(gvals), ncol(gvals))
-      peakrange[,"rtmax"] <- apply(retmax, 1, median, na.rm = TRUE)
-  
+  if(is.na(sample)) {
+    #Gruppierte Peaktable with automatic selection 
+    gvals <- object@groupVal;
+    peakmat <- object@xcmsSet@peaks;
+    groupmat <- groups(object@xcmsSet)
+#     peakrange <- matrix(nrow = nrow(gvals), ncol = 2)
+
+
+#     retmin <- peakmat[gvals,"rtmin"]
+#     dim(retmin) <- c(nrow(gvals), ncol(gvals))
+#     peakrange[,"rtmin"] <- apply(retmin, 1, median, na.rm = TRUE)
+#       
+#     retmax <- peakmat[gvals,"rtmax"]
+#     dim(retmax) <- c(nrow(gvals), ncol(gvals))
+#     peakrange[,"rtmax"] <- apply(retmax, 1, median, na.rm = TRUE)
+#   
+    maxo <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"maxo"])},peakmat)); #errechne höchsten Peaks
+    peakrange   <- matrix(apply(gvals,1,function(x,peakmat) { peakmat[ x [which.max(peakmat[x,"maxo"])],c("rtmin","rtmax")]},peakmat),ncol=2,byrow=TRUE); #errechne höchsten Pea
+    colnames(peakrange) <- c("rtmin","rtmax")
+
       while(!all(is.na(maxo)==TRUE)){
-          iint<-which.max(maxo);rtmed<-object@peaks[iint,"rt"]; #highest peak in whole spectra
+          iint<-which.max(maxo);rtmed<-groupmat[iint,"rtmed"]; #highest peak in whole spectra
 #           which(object@peaks[iint,start:end]==maxo[iint]);
           rt_min <- peakrange[iint,"rtmin"];rt_max <- peakrange[iint,"rtmax"] #begin and end of the highest peak
+#            rt_min <- groupmat[iint,"rtmin"];rt_max <- groupmat[iint,"rtmax"];perfwhm<-1 #begin and end of the highest peak
           hwhm <- ((rt_max-rt_min)/sigma*2.35*perfwhm)/2; #fwhm of the highest peak
-          irt<-which(object@peaks[,'rt']>(rtmed-hwhm)&object@peaks[,'rt']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
+          irt<-which(groupmat[,'rtmed']>(rtmed-hwhm)&groupmat[,'rtmed']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
+
           if(length(irt)>0){
               #if peaks are found
               object@pspectra[[length(object@pspectra)+1]]<-irt; #create groups
@@ -167,12 +166,13 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
       }
     }else{
     #Group with specific sample, using all sample or only a one sample experiment
-      maxo <- object@groupVal[,'maxo']; #max intensities of all peaks
+      peakmat <- object@xcmsSet@peaks[object@groupVal[,sample],];
+      maxo <- peakmat[,'maxo']; #max intensities of all peaks
       while(!all(is.na(maxo)==TRUE)){
-          iint<-which.max(maxo);rtmed<-object@peaks[iint,"rt"]; #highest peak in whole spectra
-          rt_min <- object@peaks[iint,"rtmin"];rt_max <- object@peaks[iint,"rtmax"] #begin and end of the highest peak
+          iint<-which.max(maxo);rtmed<-peakmat[iint,"rt"]; #highest peak in whole spectra
+          rt_min <- peakmat[iint,"rtmin"];rt_max <- peakmat[iint,"rtmax"] #begin and end of the highest peak
           hwhm <- ((rt_max-rt_min)/sigma*2.35*perfwhm)/2; #fwhm of the highest peak
-          irt<-which(object@peaks[,'rt']>(rtmed-hwhm)&object@peaks[,'rt']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
+          irt<-which(peakmat[,'rt']>(rtmed-hwhm)&peakmat[,'rt']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
           if(length(irt)>0){
               #if peaks are found
               object@pspectra[[length(object@pspectra)+1]]<-irt; #create groups
@@ -180,7 +180,13 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
           }
       }
     }
-  }
+#   }
+
+  if(length(ls(pattern="flag"))){
+    #flag da
+    ##TODO @joe: Bitte mal austesten!
+    if(flag==TRUE){return(invisible(object@pspectra));}
+  };
 return(invisible(object)); #return object
 })
 
@@ -686,11 +692,11 @@ getPeaklist<-function(object){
         if (cnames[4] == 'rtmed') cnames[4] <- 'rt' else stop ('Peak information ?!?')
         colnames(peaklist) <- cnames
     }else{
-        peaklist<-object@peaks;
+        peaklist<-xs@peaks;
     }
-    adduct<-vector("character",nrow(object@peaks));
-    isotopes<-vector("character",nrow(object@peaks));
-    pcgroup<-vector("character",nrow(object@peaks));
+    adduct<-vector("character",nrow(object@groupVal));
+    isotopes<-vector("character",nrow(object@groupVal));
+    pcgroup<-vector("character",nrow(object@groupVal));
     for(i in 1:length(isotopes)){
         if(length(object@derivativeIons)>0 && !(is.null(object@derivativeIons[[i]]))){
             if(length(object@derivativeIons[[i]])>1){
@@ -720,17 +726,17 @@ getPeaklist<-function(object){
         index<-object@pspectra[[i]];
         pcgroup[index]<-i;
     }
-    if(!is.null(object@grp_info)){
-        isotopes_tmp<-vector("character",nrow(peaklist));adduct_tmp<-vector("character",nrow(peaklist));pcgroup_tmp<-vector("character",nrow(peaklist));
-        for(i in 1:length(isotopes)){
-            isotopes_tmp[object@grp_info[i]]<-isotopes[i];
-            adduct_tmp[object@grp_info[i]]<-adduct[i];
-            pcgroup_tmp[object@grp_info[i]]<-pcgroup[i];
-        }
-        isotopes<-isotopes_tmp;
-        adduct<-adduct_tmp;
-        pcgroup<-pcgroup_tmp;
-    }
+#     if(!is.null(object@grp_info)){
+#         isotopes_tmp<-vector("character",nrow(peaklist));adduct_tmp<-vector("character",nrow(peaklist));pcgroup_tmp<-vector("character",nrow(peaklist));
+#         for(i in 1:length(isotopes)){
+#             isotopes_tmp[object@grp_info[i]]<-isotopes[i];
+#             adduct_tmp[object@grp_info[i]]<-adduct[i];
+#             pcgroup_tmp[object@grp_info[i]]<-pcgroup[i];
+#         }
+#         isotopes<-isotopes_tmp;
+#         adduct<-adduct_tmp;
+#         pcgroup<-pcgroup_tmp;
+#     }
     rownames(peaklist)<-NULL;#Bugfix for: In data.row.names(row.names, rowsi, i) :  some row.names duplicated:
     return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
