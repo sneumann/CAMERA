@@ -202,7 +202,7 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
   if(object@xcmsSet@peaks[1,"rt"] == -1) {
      warning("Warning: no retention times avaiable. Do nothing\n")
   }else {
-    tmp <- getAllEICs(xs)
+    tmp <- getAllEICs(object@xcmsSet)
     EIC <- tmp$EIC
     scantimes <- tmp$scantimes
     cnt<-length(object@pspectra);
@@ -454,7 +454,7 @@ if(!(object@polarity=="")){
   #Anzahl Gruppen
   npspectra <- length(object@pspectra);
   #Wenn vorher nicht gruppiert wurde, alle Peaks in eine Gruppe stecken
-  if(npspectra < 1){ npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@peaks)); }
+  if(npspectra < 1){ npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@groupVal)); }
   
   #zähler für % Anzeige
   npeaks<-0;massgrp<-0;
@@ -681,8 +681,9 @@ findFragment <- function (object,ppm=20){
 }
 
 getpspectra <- function(object,grp){
+peaks<-getPeaks_selection(object@xcmsSet);
 index<-object@pspectra[[grp]];
-peaktable<-object@peaks[index,]
+peaktable<-peaks[index,]
 adduct<-vector("character",length(index));
 isotopes<-vector("character",length(index));
 ions<-object@derivativeIons;
@@ -711,7 +712,7 @@ for(i in 1:length(lions)){
     }
 }
 if(is.null(nrow(peaktable))) peaktable = matrix(peaktable,byrow=F,ncol=length(peaktable))
-colnames(peaktable)<-colnames(object@peaks)
+colnames(peaktable)<-colnames(peaks)
 
 return(invisible(data.frame(peaktable,isotopes,adduct,grp,stringsAsFactors=FALSE)));
 }
@@ -1632,6 +1633,7 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
       for(z in 1:length(hcs$clusters)){
         NG<-rbind(NG,cbind(z,as.numeric(hcs$clusters[[z]])))
       }
+      NG<-NG[-1,];#Remove NA
       ##Hold M+H,M+Na
       mz<-imz[pi];ix<-order(mz);mz<-mz[ix]
       mm<-matrix(NA,ncol=2)
@@ -1645,13 +1647,19 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
             }
         }
       }
-
       if(nrow(mm)>1){
         mm<-mm[-1,]#remove NA        
         mm<-matrix(mm,ncol=2);
         for(x in 1:nrow(mm)){
+          if(!mm[x,1] %in% NG[,2]){
+                NG<-rbind(NG,c(max(NG[,1])+1,mm[x,1]));
+          }
           grp<-NG[which(NG[,2]==mm[x,1]),1];
-          NG[which(NG[,2]==mm[x,2]),1]<-grp;
+          if(!mm[x,2] %in% NG[,2]){
+                NG<-rbind(NG,c(grp,mm[x,2]));
+          }else{
+            NG[which(NG[,2]==mm[x,2]),1]<-grp;
+          }
         }
       }
       ##Hold Isotope together
@@ -1661,13 +1669,20 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
           #Monoiso. in grp gefunden
           for(h in 1:length(iidx)){
             mindex<-pi[iidx[h]];
+            if(!mindex %in% NG[,2]){
+                NG<-rbind(NG,c(max(NG[,1])+1,mindex));
+            }
             isoindex<-object@isoID[which(object@isoID[,1]==mindex),2];
+            for(t in 1:length(isoindex)){
+              #if hcs sorted isopeak out
+              if(!isoindex[t] %in% NG[,2]) {NG<-rbind(NG,c(0,isoindex[t]))}
+            }
             grp<-NG[which(mindex==NG[,2]),1]
             NG[sapply(isoindex,function(x,NG) {which(x==NG[,2])},NG),1]<-grp;#Setze isotope auf gleichen index wie monoiso.
           }
         }
       }
-      NG<-NG[-1,];#Remove NA
+
       ## calculate all new pspectra
       grps<-unique(NG[,1]);
       cnts<-unlist(lapply(grps,function(x,NG) { length( which( NG[,1] == x) ) },NG))
@@ -1699,6 +1714,7 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
   cat("\n");
   return(object)
 }
+
 
 getAllEICs <- function(xs,file=NULL) {
   ##old CAMERA
