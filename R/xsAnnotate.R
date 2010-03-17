@@ -1,7 +1,7 @@
 ###Constructor###
 setClass("xsAnnotate",
     representation(
-                    groupVal = "matrix" ,
+                    groupInfo = "matrix" ,
                     pspectra = "list",
                     isotopes="list",
                     derivativeIons="list",
@@ -15,7 +15,7 @@ setClass("xsAnnotate",
                     polarity="character",
                     runParallel="numeric"),
     prototype(
-                    groupVal= matrix(ncol=0,nrow=0),
+                    groupInfo= matrix(ncol=0,nrow=0),
                     pspectra = list(),
                     isotopes=list(),
                     derivativeIons=list(),
@@ -56,11 +56,12 @@ xsAnnotate <- function(xs=NULL,sample=NULL,nSlaves=1){
         object@sample<-sample;
       }
     }
-    object@groupVal <- groupval(xs);
+    object@groupInfo <- getPeaks_selection(xs);
   } else if(length(sampnames(xs)) == 1){ ##only one sample was machen wir denn hiermit? wo ist denn das sample=-1 wichtig?
       object@sample= 1;
-      object@groupVal <- matrix(ncol=1,nrow=nrow(peaks(xs)),data=seq(1:nrow(peaks(xs))));
-      rownames(object@groupVal) = sapply(1:nrow(peaks(xs)),function(x){paste(round(peaks(xs)[x,"mz"],2),"/",round(peaks(xs)[x,"rt"]),sep="")});
+      object@groupInfo <- getPeaks_selection(xs)
+#       object@groupVal <- matrix(ncol=1,nrow=nrow(peaks(xs)),data=seq(1:nrow(peaks(xs))));
+#       rownames(object@groupVal) = sapply(1:nrow(peaks(xs)),function(x){paste(round(peaks(xs)[x,"mz"],2),"/",round(peaks(xs)[x,"rt"]),sep="")});
   }else { stop("Unknown error with a grouped xcmsSet"); }
 
   runParallel<-0;
@@ -102,7 +103,7 @@ setMethod("show", "xsAnnotate", function(object){
   #show main information
   cat("An \"xsAnnotate\" object!\n");
   cat("With",length(object@pspectra),"groups (pseudospectra)\n");
-  cat("With",length(sampnames(object@xcmsSet)),"samples and",nrow(object@groupVal),"peaks\n");
+  cat("With",length(sampnames(object@xcmsSet)),"samples and",nrow(object@groupInfo),"peaks\n");
  
   if(is.na(object@sample)){
     cat(paste("Using automatic sample selection\n"));
@@ -113,6 +114,11 @@ setMethod("show", "xsAnnotate", function(object){
   #Isotopes Vorhanden
     cnt<-nrow(object@isoID)
     cat("Annotated isotopes:",cnt,"\n");
+  }
+  if(length(object@derivativeIons)>0){
+    #Annotations availible
+    cnt<-length(unique(xsa_adduct@annoID[,1]));
+    cat("Annotated adducts & fragments:",cnt,"\n");
   }
   memsize <- object.size(object)
   cat("Memory usage:", signif(memsize/2^20, 3), "MB\n");
@@ -130,47 +136,35 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
   # perfwhm - 0.3;
   if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
   sample<-object@sample;
-  object@pspectra <- list()
-  if(object@xcmsSet@peaks[1,"rt"] == -1) {
+  pspectra <- list()
+  if(object@groupInfo[1,"rt"] == -1) {
      warning("Warning: no retention times avaiable. Do nothing\n")
   }else{
-  if(is.na(sample)) {
-    #Gruppierte Peaktable with automatic selection 
-    gvals <- object@groupVal;
-    peakmat <- object@xcmsSet@peaks;
-    groupmat <- groups(object@xcmsSet)
-#     peakrange <- matrix(nrow = nrow(gvals), ncol = 2)
-
-
-#     retmin <- peakmat[gvals,"rtmin"]
-#     dim(retmin) <- c(nrow(gvals), ncol(gvals))
-#     peakrange[,"rtmin"] <- apply(retmin, 1, median, na.rm = TRUE)
-#       
-#     retmax <- peakmat[gvals,"rtmax"]
-#     dim(retmax) <- c(nrow(gvals), ncol(gvals))
-#     peakrange[,"rtmax"] <- apply(retmax, 1, median, na.rm = TRUE)
-#   
-    maxo <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"maxo"])},peakmat)); #errechne höchsten Peaks
-    peakrange   <- matrix(apply(gvals,1,function(x,peakmat) { peakmat[ x [which.max(peakmat[x,"maxo"])],c("rtmin","rtmax")]},peakmat),ncol=2,byrow=TRUE); #errechne höchsten Pea
-    colnames(peakrange) <- c("rtmin","rtmax")
-
+    if(is.na(sample)) {
+      #Gruppierte Peaktable with automatic selection 
+      gvals <- groupval(object@xcmsSet);
+      peakmat <- object@xcmsSet@peaks;
+      groupmat <- groups(object@xcmsSet)
+  
+      maxo <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"maxo"])},peakmat)); #errechne höchsten Peaks
+      peakrange   <- matrix(apply(gvals,1,function(x,peakmat) { peakmat[ x [which.max(peakmat[x,"maxo"])],c("rtmin","rtmax")]},peakmat),ncol=2,byrow=TRUE); #errechne höchsten Pea
+      colnames(peakrange) <- c("rtmin","rtmax")
+  
       while(!all(is.na(maxo)==TRUE)){
           iint<-which.max(maxo);rtmed<-groupmat[iint,"rtmed"]; #highest peak in whole spectra
-#           which(object@peaks[iint,start:end]==maxo[iint]);
           rt_min <- peakrange[iint,"rtmin"];rt_max <- peakrange[iint,"rtmax"] #begin and end of the highest peak
-#            rt_min <- groupmat[iint,"rtmin"];rt_max <- groupmat[iint,"rtmax"];perfwhm<-1 #begin and end of the highest peak
           hwhm <- ((rt_max-rt_min)/sigma*2.35*perfwhm)/2; #fwhm of the highest peak
           irt<-which(groupmat[,'rtmed']>(rtmed-hwhm)&groupmat[,'rtmed']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
-
+  
           if(length(irt)>0){
               #if peaks are found
-              object@pspectra[[length(object@pspectra)+1]]<-irt; #create groups
+              pspectra[[length(pspectra)+1]]<-irt; #create groups
               maxo[irt]<-NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
     }else{
-    #Group with specific sample, using all sample or only a one sample experiment
-      peakmat <- object@xcmsSet@peaks[object@groupVal[,sample],];
+      #Group with specific sample, using all sample or only a one sample experiment
+      peakmat <- getPeaks(object@xcmsSet,index=sample);
       maxo <- peakmat[,'maxo']; #max intensities of all peaks
       while(!all(is.na(maxo)==TRUE)){
           iint<-which.max(maxo);rtmed<-peakmat[iint,"rt"]; #highest peak in whole spectra
@@ -179,19 +173,19 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
           irt<-which(peakmat[,'rt']>(rtmed-hwhm)&peakmat[,'rt']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
           if(length(irt)>0){
               #if peaks are found
-              object@pspectra[[length(object@pspectra)+1]]<-irt; #create groups
+              pspectra[[length(pspectra)+1]]<-irt; #create groups
               maxo[irt]<-NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
     }
-#   }
-  cat("Created",length(object@pspectra),"groups.\n")
-  if(length(ls(pattern="flag"))){
-    #flag da
-    ##TODO @joe: Bitte mal austesten!
-    if(flag==TRUE){return(invisible(object@pspectra));}
-  };
-}
+    object@pspectra<-pspectra;
+    cat("Created",length(object@pspectra),"groups.\n")
+    if(length(ls(pattern="flag"))){
+      #flag da
+      ##TODO @joe: Bitte mal austesten!
+      if(flag==TRUE){return(invisible(object@pspectra));}
+    };
+  }
 return(invisible(object)); #return object
 })
 
@@ -222,7 +216,7 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
     }
     CL<-tmp$CL;
     CI<-as.matrix(tmp$CI)
-    cor_matrix<-matrix(NA,ncol=nrow(object@groupVal),nrow=nrow(object@groupVal))
+    cor_matrix<-matrix(NA,ncol=nrow(object@groupInfo),nrow=nrow(object@groupInfo))
     for(i in 1:nrow(CI)){
       cor_matrix[CI[i,1],CI[i,2]]<-CI[i,3]
     }
@@ -249,7 +243,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   }else {
     ##Mehrsample Fall
     #Gibt es Unterschiede
-    gvals <- object@groupVal;
+    gvals <- groupval(object@xcmsSet);
     peakmat <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet)
     imz<-groupmat[,"mzmed"];
@@ -269,7 +263,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   isomatrix<-matrix(NA,ncol=5);
   
   #wenn vorher nicht groupFWHM aufgerufen wurde, gruppiere alle Peaks in eine Gruppe
-  if(npspectra < 1) { npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@groupVal));}
+  if(npspectra < 1) { npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));}
   
   #Suche Isotope in jeder Gruppe
   for(i in 1:npspectra){
@@ -373,7 +367,7 @@ devppm = ppm / 1000000;
   }else {
     ##Mehrsample Fall
     #Gibt es Unterschiede
-    gvals <- object@groupVal;
+    gvals <- groupval(object@xcmsSet);
     peakmat <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet)
     imz<-groupmat[,"mzmed"];
@@ -454,7 +448,7 @@ if(!(object@polarity=="")){
   #Anzahl Gruppen
   npspectra <- length(object@pspectra);
   #Wenn vorher nicht gruppiert wurde, alle Peaks in eine Gruppe stecken
-  if(npspectra < 1){ npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@groupVal)); }
+  if(npspectra < 1){ npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo)); }
   
   #zähler für % Anzeige
   npeaks<-0;massgrp<-0;
@@ -600,14 +594,32 @@ annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) 
   return(hypothese);
 }
 
-quickdiff <- function(object,sigma=6, perfwhm=0.6,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,nslaves=1,class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into","maxo","intb"), metlin = FALSE, h=480,w=640, ...) {
+diffreport <- function(object,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,polarity="positive",nslaves=1,psg_list=NULL,pval_th=NULL,fc_th=NULL,quick=FALSE,class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into","maxo","intb"), metlin = FALSE, h=480,w=640, ...) {
 
   if (!class(object)=="xcmsSet") stop ("no xsAnnotate object");
   diffrep <- diffreport(object, class1 = class1, class2 = class2, filebase = filebase, eicmax = eicmax, eicwidth = eicwidth, sortpval = FALSE, classeic = classeic, value=value, metlin = metlin, h=h,w=w, ...);
-  xa <- xsAnnotate(object,diff=TRUE);
-  xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
-  xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
-  xa_result<-getPeaklist(xa);
+  if(quick){
+    xa <- xsAnnotate(object);
+    xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
+    xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
+    xa_result<-getPeaklist(xa);
+  }else{
+    xa <- xsAnnotate(object);
+    xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
+    xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
+    if(is.null(psg_list)){
+      #keine Liste vorgegeben! 
+      if(!is.null(pval_th)){
+        
+      }else{
+        #Auch kein threshold vorgegeben 
+        #psg_list bleibt NULL
+      }
+    }
+    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list)
+    xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,psg_list=psg_list);
+    xa_result<-getPeaklist(xa);
+  }
   #Kombiniere Resultate
 
   result <- cbind(diffrep,xa_result[,c("isotopes","adduct","pcgroup")])
@@ -616,27 +628,6 @@ quickdiff <- function(object,sigma=6, perfwhm=0.6,maxcharge=3,maxiso=4,ppm=5,mza
   }
   return(result);
 } 
-
-fulldiff <- function(object,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,sample=1,category=NA,polarity="positive",nslaves=1,psg_list=NULL,pval_th=NULL,class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into","maxo","intb"), metlin = FALSE, h=480,w=640, ...) {
- if (!class(object)=="xcmsSet") stop ("no xsAnnotate object");
-  diffrep <- diffreport(object, class1 = class1, class2 = class2, filebase = filebase, eicmax = eicmax, eicwidth = eicwidth, sortpval = FALSE, classeic = classeic, value=value, metlin = metlin, h=h,w=w, ...);
-  xa <- xsAnnotate(object,diff=TRUE);
-  xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
-#   if(is.null(psg_list) & !is.null(pval_th)){
-#     
-#   }
-#   xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list)
-  xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
-  xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,psg_list=psg_list);
-  xa_result<-getPeaklist(xa);
-  #Kombiniere Resultate
-
-  result <- cbind(diffrep,xa_result[,c("isotopes","adduct","pcgroup")])
-  if(sortpval){
-    result <- result[order(result[,"pvalue"]),];
-  }
-  return(result);
-}
 
 ###End xsAnnotate generic Methods###
 
@@ -653,11 +644,11 @@ findFragment <- function (object,ppm=20){
   neutralloss <- read.table(neutralloss, header=TRUE, dec=".", sep=",",
                             as.is=TRUE, stringsAsFactors = FALSE);
   colnames(neutralloss)<-c("name","massdiff")
-  fragment<-rep("",nrow(object@peaks))
+  fragment<-rep("",nrow(object@groupInfo))
   for(i in 1:npspectra){
    print (i);
     index<-object@pspectra[[i]];
-    peaktable<-object@peaks[index,];
+    peaktable<-object@groupInfo[index,];
     if(!is.matrix(peaktable)) peaktable<-matrix(peaktable,ncol=11);
     mz <- peaktable[,1];
 
@@ -681,7 +672,7 @@ findFragment <- function (object,ppm=20){
 }
 
 getpspectra <- function(object,grp){
-peaks<-getPeaks_selection(object@xcmsSet);
+peaks<-object@groupInfo
 index<-object@pspectra[[grp]];
 peaktable<-peaks[index,]
 adduct<-vector("character",length(index));
@@ -719,19 +710,10 @@ return(invisible(data.frame(peaktable,isotopes,adduct,grp,stringsAsFactors=FALSE
 
 getPeaklist<-function(object){
     xs<-object@xcmsSet
-    if (nrow(xs@groups) > 0 && length(sampnames(xs))> 1){
-        groupmat <- groups(xs)
-        peaklist<- cbind(groupmat,groupval(xs, "medret", "into"))
-        cnames <- colnames(peaklist)
-        if (cnames[1] == 'mzmed') cnames[1] <- 'mz' else stop ('Peak information ?!?')
-        if (cnames[4] == 'rtmed') cnames[4] <- 'rt' else stop ('Peak information ?!?')
-        colnames(peaklist) <- cnames
-    }else{
-        peaklist<-xs@peaks;
-    }
-    adduct<-vector("character",nrow(object@groupVal));
-    isotopes<-vector("character",nrow(object@groupVal));
-    pcgroup<-vector("character",nrow(object@groupVal));
+    peaklist<-object@groupInfo;
+    adduct<-vector("character",nrow(object@groupInfo));
+    isotopes<-vector("character",nrow(object@groupInfo));
+    pcgroup<-vector("character",nrow(object@groupInfo));
     for(i in 1:length(isotopes)){
         if(length(object@derivativeIons)>0 && !(is.null(object@derivativeIons[[i]]))){
             if(length(object@derivativeIons[[i]])>1){
@@ -1701,7 +1683,7 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
     }
   }
   ##Workarround: peaks without groups
-    peaks<-vector("logical",nrow(object@groupVal))
+    peaks<-vector("logical",nrow(object@groupInfo))
     npspectra<-length(pspectra)
     for(i in 1:npspectra){
         peaks[pspectra[[i]]]<-TRUE;
@@ -1815,10 +1797,10 @@ as.integer(length(xraw@scantime)), PACKAGE ='xcms' )
 }
 
 ##create peak table diff
-getPeaks_selection <- function(xs){
+getPeaks_selection <- function(xs,method="medret",value="into"){
 if (nrow(xs@groups) > 0) {
      groupmat <- groups(xs)
-     ts <- data.frame(cbind(groupmat,groupval(xs, "medret", "into")),row.names = NULL)
+     ts <- data.frame(cbind(groupmat,groupval(xs, method=method, value=value)),row.names = NULL)
      cnames <- colnames(ts)
      if (cnames[1] == 'mzmed') cnames[1] <- 'mz' else stop ('Peak information ?!?')
      if (cnames[4] == 'rtmed') cnames[4] <- 'rt' else stop ('Peak information ?!?')
@@ -1826,7 +1808,7 @@ if (nrow(xs@groups) > 0) {
 } else if (length(sampnames(xs)) == 1)
         ts <- xs@peaks
     else stop ('First argument must be a xcmsSet with group information or contain only one sample.')
-return(ts)
+return(as.matrix(ts))
 }
 
 # create peak table
@@ -1858,7 +1840,7 @@ if (nrow(xs@groups) > 0) {
 } else if (length(sampnames(xs)) == 1)
         ts <- xs@peaks
     else stop ('First argument must be a xcmsSet with group information or contain only one sample.')
-return(ts)
+return(as.matrix(ts))
 }
 
 calcIsotopes <- function(maxiso,maxcharge){
@@ -1896,15 +1878,15 @@ return(DM)
 }
 
 calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th,nSlaves=2){
-  CL <- vector("list",nrow(object@peaks));
+  CL <- vector("list",nrow(object@groupInfo));
   CIL <- list();
   ncl<-length(CL);npeaks=0;
   npspectra <- length(object@pspectra);
-  peaks<-object@peaks;
+  peaks<-object@groupInfo;
   cat('Calculating peak correlations... \n');
   #Wenn groupFWHM nicht vorher aufgerufen wurde!
   if(npspectra<1){
-    npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@peaks));
+    npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
   }
   cormat<-matrix(,ncol=2)
   for(i in 1:npspectra){
@@ -1970,7 +1952,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   
   #Wenn groupFWHM nicht vorher aufgerufen wurde!
   if(npspectra<1){
-    npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@peaks));
+    npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
     cat('Calculating peak correlations for 1 big group.\nTry groupFWHM bevor, to reduce runtime. \n% finished: '); lp <- -1;
   }else{
     if(is.null(psg_list)){
