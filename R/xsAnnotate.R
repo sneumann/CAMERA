@@ -3,6 +3,7 @@ setClass("xsAnnotate",
     representation(
                     groupInfo = "matrix" ,
                     pspectra = "list",
+                    psSamples="numeric",
                     isotopes="list",
                     derivativeIons="list",
                     formula="list",
@@ -17,6 +18,7 @@ setClass("xsAnnotate",
     prototype(
                     groupInfo= matrix(ncol=0,nrow=0),
                     pspectra = list(),
+                    psSamples=NULL,
                     isotopes=list(),
                     derivativeIons=list(),
                     formula=list(),
@@ -32,9 +34,10 @@ setClass("xsAnnotate",
 
 xsAnnotate <- function(xs=NULL,sample=NULL,nSlaves=1){
 
- ## sample is -1 for maxInt-way
- ## 1-nSamp for manual way
- ## ?? for specDist way (to be implemented)
+ ## sample is:
+ ### NA for maxInt-way
+ ##  1-nSamp for manual way
+ ##  -1 for specDist way (to be implemented)
   if(is.null(xs)) { stop("no argument was given"); }
   else if(!class(xs)=="xcmsSet") stop("xs is no xcmsSet object ");
   
@@ -137,6 +140,7 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
   if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
   sample<-object@sample;
   pspectra <- list()
+  psSamples=NA
   if(object@groupInfo[1,"rt"] == -1) {
      warning("Warning: no retention times avaiable. Do nothing\n")
   }else{
@@ -146,7 +150,8 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
       peakmat <- object@xcmsSet@peaks;
       groupmat <- groups(object@xcmsSet)
   
-      maxo <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"maxo"])},peakmat)); #errechne höchsten Peaks
+      maxo <- as.numeric(apply(gvals,1,function(x,peakmat){ max(peakmat[x,"maxo"])},peakmat)); #errechne höchsten Peaks
+      max_int <- as.numeric(apply(gvals,1,function(x,peakmat){ which.max(peakmat[x,"maxo"])},peakmat)); #index des höchsten peaks
       peakrange   <- matrix(apply(gvals,1,function(x,peakmat) { peakmat[ x [which.max(peakmat[x,"maxo"])],c("rtmin","rtmax")]},peakmat),ncol=2,byrow=TRUE); #errechne höchsten Pea
       colnames(peakrange) <- c("rtmin","rtmax")
   
@@ -155,10 +160,10 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
           rt_min <- peakrange[iint,"rtmin"];rt_max <- peakrange[iint,"rtmax"] #begin and end of the highest peak
           hwhm <- ((rt_max-rt_min)/sigma*2.35*perfwhm)/2; #fwhm of the highest peak
           irt<-which(groupmat[,'rtmed']>(rtmed-hwhm)&groupmat[,'rtmed']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
-  
           if(length(irt)>0){
               #if peaks are found
               pspectra[[length(pspectra)+1]]<-irt; #create groups
+              psSamples[length(pspectra)+1]<-max_int[iint] # saves the sample of the peak which is in charge for this pspectrum
               maxo[irt]<-NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
@@ -177,8 +182,10 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
               maxo[irt]<-NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
+    psSamples=rep(sample, length(pspectra))
     }
     object@pspectra<-pspectra;
+    object@psSamples<-psSamples;
     cat("Created",length(object@pspectra),"groups.\n")
     if(length(ls(pattern="flag"))){
       #flag da
