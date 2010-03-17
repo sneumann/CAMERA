@@ -34,7 +34,7 @@ setClass("xsAnnotate",
                     runParallel=NULL)
             );
 
-xsAnnotate <- function(xs=NULL,sample=NA,category=NA,nSlaves=0){
+xsAnnotate <- function(xs=NULL,sample=NA,category=NA,nSlaves=1){
 
 if(is.null(xs)) { stop("no argument was given"); }
 else if(!class(xs)=="xcmsSet") stop("xs is no xcmsSet object ");
@@ -43,11 +43,15 @@ object  <- new("xsAnnotate");
 
 if(length(levels(sampclass(xs))) > 1){
     #more than one sample
-    if (!nrow(xs@groups) > 0) stop ('First argument must be a xcmsSet with group information or contain only one sample.') #checking alignment
-    else if( any(is.na(c(sample,category))) | any(is.null(c(sample,category)))) stop ('For a grouped xcmsSet parameter sample and category must be set and not NULL.')
-    else if(! category %in% sampclass(xs)) stop (paste('Paramter category:',category,'is not in',paste(levels(sampclass(xs)),collapse=" ")))
-    else if(length(which(sampclass(xs) == category))< sample | sample < 1) stop("Parameter sample must be lower equal than number of samples for the specific category and greater than 0.")
-    else {object@sample=sample; object@category=category;}
+    if (!nrow(xs@groups) > 0){
+      stop ('First argument must be a xcmsSet with group information or contain only one sample.') #checking alignment
+    } else if( any(is.na(c(sample,category))) | any(is.null(c(sample,category)))){
+      stop ('For a grouped xcmsSet parameter sample and category must be set and not NULL.')
+    } else if(! category %in% sampclass(xs)){
+      stop (paste('Paramter category:',category,'is not in',paste(levels(sampclass(xs)),collapse=" ")))
+    } else if(length(which(sampclass(xs) == category))< sample | sample < 1){
+      stop("Parameter sample must be lower equal than number of samples for the specific category and greater than 0.")
+    } else {object@sample=sample; object@category=category;}
 }else if(length(sampnames(xs)) > 1){
     #one sample category, more than one sample
     if (!nrow(xs@groups) > 0) stop ('First argument must be a xcmsSet with group information or contain only one sample.') #checking alignment
@@ -61,7 +65,7 @@ if(length(levels(sampclass(xs))) > 1){
     index= -1;
 }else stop("Unknown error with a grouped xcmsSet");
 
-if(object@sample>0){
+if(object@sample>=1){
     #give Information about sample number
     if(object@category==""){
         cat(paste("xcmsSet contains more than one sample, using sample:",sample,"\n"));
@@ -79,7 +83,7 @@ if(length(index<-which(is.na(tmp[,1])))>0){
     object@peaks    <-  tmp[-index,];
 }else{object@peaks  <-  tmp}
   runParallel<-0;
-  if (nSlaves >= 1) {
+  if (nSlaves > 1) {
     ## If MPI is available ...
     rmpi = "Rmpi"
     if (require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
@@ -337,14 +341,18 @@ if(!(object@polarity=="")){
   #Erkenne polarität
   if(!is.null(polarity)){
       if(polarity %in% c("positive","negative")){
-          rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=polarity);
+          if(is.null(rules)){
+            rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=polarity);
+          }else{ cat("Found and use user-defined ruleset!");}
           object@polarity=polarity;
       }else stop("polarity mode unknown, please choose between positive and negative.")
   }else if(length(object@xcmsSet@polarity)>0){
       index<-which(sampclass(object@xcmsSet)==object@category)[1]+object@sample-1
       if(object@xcmsSet@polarity[index] %in% c("positive","negative")){
+        if(is.null(rules)){
           rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=object@xcmsSet@polarity[index]);
-          object@polarity=polarity;
+        }else{ cat("Found and use user-defined ruleset!");}
+        object@polarity=polarity;
       }else stop("polarity mode in xcmsSet unknown, please define variable polarity.")
   }else stop("polarity mode could not be estimated from the xcmsSet, please define variable polarity!")
   #save ruleset
