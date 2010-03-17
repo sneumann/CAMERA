@@ -325,23 +325,23 @@ isotope-group-id(column \textit{id}), the second is the isotope annotation and t
 %plotEICs(an, xr, pspecIdx=c(1), maxlabel=5)
 @
 
-\begin{figure}
-\begin{center}
-\includegraphics{CAMERA-EICPspec1}
-\end{center}
-\caption{\label{EICpspec1} EICs.}
-\end{figure}
+%\begin{figure}
+%\begin{center}
+%\includegraphics{CAMERA-EICPspec1}
+%\end{center}
+%\caption{\label{EICpspec1} EICs.}
+%\end{figure}
 
 %<<Pspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 5, height = 4>>=
 %plotPeaks(an, pspec=1, maxlabel=5)
 @
 
-\begin{figure}
-\begin{center}
-\includegraphics{CAMERA-Pspec1}
-\end{center}
-\caption{\label{EICpspec1} Spectra.}
-\end{figure}
+%\begin{figure}
+%\begin{center}
+%\includegraphics{CAMERA-Pspec1}
+%\end{center}
+%\caption{\label{EICpspec1} Spectra.}
+%\end{figure}
 
 
 \section{Examples using CAMERA test dataset}
