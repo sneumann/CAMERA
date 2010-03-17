@@ -314,15 +314,15 @@ isotope-group-id(column \textit{id}), the second is the isotope annotation and t
 
 \subsection{Visualisation of the Results}
 
-<<EICPspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 5, height = 4>>=
-library(CAMERA)
-file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
-xr   <- xcmsRaw(file)
-xs   <- xcmsSet(c(file), method="centWave", ppm=30, peakwidth=c(5,10))
-an   <- xsAnnotate(xs)
-an   <- groupFWHM(an)
-an   <- findAdducts(an, polarity="positive")
-plotEICs(an, xr, pspecIdx=c(1), maxlabel=5)
+%<<EICPspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 5, height = 4>>=
+%library(CAMERA)
+%file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+%xr   <- xcmsRaw(file)
+%xs   <- xcmsSet(c(file), method="centWave", ppm=30, peakwidth=c(5,10))
+%an   <- xsAnnotate(xs)
+%an   <- groupFWHM(an)
+%an   <- findAdducts(an, polarity="positive")
+%plotEICs(an, xr, pspecIdx=c(1), maxlabel=5)
 @
 
 \begin{figure}
@@ -332,8 +332,8 @@ plotEICs(an, xr, pspecIdx=c(1), maxlabel=5)
 \caption{\label{EICpspec1} EICs.}
 \end{figure}
 
-<<Pspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 5, height = 4>>=
-plotPeaks(an, pspec=1, maxlabel=5)
+%<<Pspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 5, height = 4>>=
+%plotPeaks(an, pspec=1, maxlabel=5)
 @
 
 \begin{figure}

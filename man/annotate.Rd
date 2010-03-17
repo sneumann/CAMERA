@@ -6,7 +6,7 @@
  Annotate isotope peaks, adducts and fragments for a (grouped) xcmsSet \code{xs}. Returns a xsAnnotate object.
 }
 \usage{
-annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01, multiplier = 3, sample=1, category = NA, polarity="positive", nSlaves = 1)
+annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01, multiplier = 3, sample=1, polarity="positive", nSlaves = 1, max_peaks=100)
 }
 \arguments{
   \item{xs}{ xcmsSet with peak group assignments}
@@ -19,9 +19,9 @@ annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso 
   \item{mzabs}{absolut error}
   \item{multiplier}{max. number n of [nM+x] clusterions}
   \item{sample}{Index of which sample is used for the correlation}
-  \item{category}{Which class label should be used}
   \item{polarity}{Which polarity mode was used for measuring of the ms sample}
   \item{nSlaves}{Number of slaves for parallel calculation (Warning: Beta)}
+  \item{max_peaks}{If run in parralel mode, this number defines how much peaks will be calculated in every thread }
 }
 \details{
   Batch script for a annotation for a a (grouped) xcmsSet \code{xs}. Generate intern a xsAnnotate object and calls the member function for the annotation step. Returns a peaklist with additonal columns for isotopes, adducts and an index for the pseudo spectra group. xsAnnotate groups Peaks into spectra groups, after there Retentiontime and EIC correlations.
