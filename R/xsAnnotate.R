@@ -111,7 +111,7 @@ setMethod("show", "xsAnnotate", function(object){
   } else { cat(paste("Using complete measurement\n"));}
   if(length(object@isotopes)>0){
   #Isotopes Vorhanden
-    cnt<-length(which(sapply(object@isotopes,function(x) {length(x)>0})));
+    cnt<-nrow(object@isoID)
     cat("Annotated isotopes:",cnt,"\n");
   }
   memsize <- object.size(object)
@@ -131,7 +131,9 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
   if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
   sample<-object@sample;
   object@pspectra <- list()
-
+  if(object@xcmsSet@peaks[1,"rt"] == -1) {
+     warning("Warning: no retention times avaiable. Do nothing\n")
+  }else{
   if(is.na(sample)) {
     #Gruppierte Peaktable with automatic selection 
     gvals <- object@groupVal;
@@ -189,41 +191,41 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6,...) {
     ##TODO @joe: Bitte mal austesten!
     if(flag==TRUE){return(invisible(object@pspectra));}
   };
+}
 return(invisible(object)); #return object
 })
 
 setGeneric("groupCorr",function(object,cor_eic_th=0.75,psg_list=NULL) standardGeneric("groupCorr"));
 setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NULL) {
   if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
-  #restore xcmsSet from xsAnnotate object
-  xs<-object@xcmsSet
-  if (!class(xs)=="xcmsSet")  stop ("xs is not an xcmsSet object")
   #check if LC data is available
-  if(object@peaks[1,"rt"] == -1) {
+  if(object@xcmsSet@peaks[1,"rt"] == -1) {
      warning("Warning: no retention times avaiable. Do nothing\n")
   }else {
     tmp <- getAllEICs(xs)
     EIC <- tmp$EIC
     scantimes <- tmp$scantimes
+    cnt<-length(object@pspectra);
     rm(tmp);
     if(object@runParallel==1){
       if(mpi.comm.size() >0){
-        tmp<- calcCL2(object,xs, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
+        tmp<- calcCL2(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
       }else{
         warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
-        tmp <- calcCL(object,xs, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th);
+        tmp <- calcCL(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th);
         }
     }else{
       tmp <- calcCL(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th,psg_list=psg_list)
     }
     CL<-tmp$CL;
-    CI<-tmp$CI;
-    cor_matrix<-matrix(NA,ncol=nrow(object@peaks),nrow=nrow(object@peaks))
+    CI<-as.matrix(tmp$CI)
+    cor_matrix<-matrix(NA,ncol=nrow(object@groupVal),nrow=nrow(object@groupVal))
     for(i in 1:nrow(CI)){
       cor_matrix[CI[i,1],CI[i,2]]<-CI[i,3]
     }
     rm(tmp);
     object <- calc_pc(object,CL,cor_matrix,psg_list=psg_list)
+    cat("xsAnnotate has now",length(object@pspectra),"groups, instead of",cnt,"\n"); 
   }
 return(invisible(object));
 })
@@ -231,13 +233,10 @@ return(invisible(object));
 setGeneric("findIsotopes", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01) standardGeneric("findIsotopes"));
 setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01){
   if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object");
-  
-  # calculate Isotope_Matrix
+ # calculate Isotope_Matrix
   IM <- calcIsotopes(maxiso=maxiso,maxcharge=maxcharge);
-  
   # Normierung
   devppm <- ppm / 1000000;
-   
   # get mz,rt,into from peaktable
   if(object@sample == 1 && length(sampnames(xs)) == 1){
     ##Ein Sample Fall
@@ -352,6 +351,8 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
       isotope[[isomatrix[i,2]]]<-list(y=globalcnt,iso=isomatrix[i,3],charge=isomatrix[i,4],val=isomatrix[i,5]);
     }
   }
+  cnt<-nrow(object@isoID);
+  cat("Found isotopes:",cnt,"\n");
   object@isotopes <- isotope;
   return(object);
 })
@@ -1647,7 +1648,7 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
     }
   }
   ##Workarround: peaks without groups
-    peaks<-vector("logical",nrow(object@peaks))
+    peaks<-vector("logical",nrow(object@groupVal))
     npspectra<-length(pspectra)
     for(i in 1:npspectra){
         peaks[pspectra[[i]]]<-TRUE;
@@ -1657,6 +1658,7 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
         pspectra[npspectra+i]<-index[i];
     }
   object@pspectra<-pspectra;
+  cat("\n");
   return(object)
 }
 
@@ -1894,9 +1896,16 @@ calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th,nSlaves=2){
 
 calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   xs <- object@xcmsSet;
-  peaki <- getPeaksIdxCol(xs,col=NULL)
+  if(is.na(object@sample)){
+    peaki <- getPeaksIdxCol(xs,col=NULL)
+    peaks <- groupval(xs,value="maxo")
+  }else if(object@sample == -1){
+    ##TODO @Joe: Sollte das hier auftreten?
+  }else{
+    peaki <- getPeaksIdxCol(xs,col=object@sample)
+  }
   Nf <- length(filepaths(xs))
-  if(is.vector(peaki)){ peaki <- as.matrix }
+  if(is.vector(peaki)){ peaki <- as.matrix(peaki) }
   Nrow <- nrow(peaki)
   CL <- vector("list",Nrow)
   CIL <- list()
@@ -1919,7 +1928,6 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
       ncl<-sum(sapply(object@pspectra[psg_list],length));
     }
   }
-
   for(j in 1:length(pspectra_list)){
     i <- pspectra_list[j];
     pi <- object@pspectra[[i]];
@@ -1931,10 +1939,15 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     #end percent output
 
     #select sample f
-    cnt<-length(sampnames(object@xcmsSet));end<-ncol(object@peaks);start<-end-cnt+1; #errechne Spaltenanzahl
-    if(length(pi)>1){
-      f <- which.max(apply(object@peaks[pi,start:end],2,mean)) #errechne höchsten Peaks, oder als mean,median
-    }else{ f <- which.max(object@peaks[pi,start:end]);}
+    if(is.na(object@sample)){
+      if(length(pi)>1){
+        f <- as.numeric(which.max(apply(peaks[pi,],2,mean))) #errechne höchsten Peaks, oder als mean,median
+      }else{ f <- which.max(peaks[pi,]);}
+    }else if(object@sample){
+      ##TODO @Joe: Sollte nicht auftreten oder?
+    }else {
+        f<-object@sample;
+    }
     #end selection
 
     if(length(pi)>1){
