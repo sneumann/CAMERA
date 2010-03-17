@@ -207,6 +207,9 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
     scantimes <- tmp$scantimes
     cnt<-length(object@pspectra);
     rm(tmp);
+    if(nrow(object@isoID)>0){
+      cat("Isotope annotation found, used as grouping information.\n")
+    }
     if(object@runParallel==1){
       if(mpi.comm.size() >0){
         tmp<- calcCL2(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
@@ -1570,7 +1573,13 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
   li <- sapply(CL,function(x) length(x) > 0); #l <- which(li)
   if (!any(li)) { return(object@pspectra) }
   npspectra <- length(object@pspectra);
-  
+  if(object@sample == 1 && length(sampnames(xs)) == 1){
+    ##Ein Sample Fall
+    imz <- object@xcmsSet@peaks[,"mz"];
+  }else {
+    ##Mehrsample Fall
+    imz <- groups(object@xcmsSet)[,"mzmed"]
+  }
   if(is.null(psg_list)){
     cat('\nCalculating graph cross linking in',npspectra,'Groups... \n % finished: '); lp <- -1;
     pspectra_list<-1:npspectra;
@@ -1580,10 +1589,15 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
     pspectra_list<-psg_list;
     ncl<-sum(sapply(object@pspectra[psg_list],length));
   }
-
+  rules<-data.frame(c("[M+H-M+Na]","[M+H-M+K]","[M+Na-M+Na]"),1,1,c(21.9812,37.9552,15.974),1,1,1)
+  colnames(rules)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips");
   npeaks = 0;
+  if(nrow(object@isoID)){
+    #Isotope wurden vorher erkannt
+    
+    idx<-unique(object@isoID[,1]); #ID aller monoisotopischen Peaks
+  }else {idx<-NULL};
   for(j in 1:length(pspectra_list)){
-#     cat(j)
     i <- pspectra_list[j];
     pi <- object@pspectra[[i]];
     npeaks <- npeaks + length(pi);
@@ -1605,46 +1619,70 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
       }
     }
     options(ow);
-
-    cc <- connComp(OG)
-#     pci <- matrix(-1,1,2); colnames(pci) <- c('peakID','pcGroupID')
-    if (length(cc) > 0) {
-      NG <- list();
-      for (cci in 1:length(cc)) {
-        ## verify all correlation graphs
-        G <- subGraph(cc[[cci]],OG)
-        if (length(nodes(G)) > 2) {
-          ## decomposition might be necessary
-          # G <- removeSelfLoops(G)
-          hcs <-  highlyConnSG(G)
-          lsg <- sapply(hcs$clusters,function(x) length(x))
-          lsg.i <- which(lsg > 1)
-          if (length(lsg.i)<1) next;
-          for (n in 1:length(lsg.i)) {
-            NG[[length(NG)+1]] <- subGraph(hcs$clusters[[lsg.i[n]]],G)
-          }
-        } else {  NG[[length(NG)+1]] <- G; }
+    NG <- matrix(NA,ncol=2);
+    ## verify all correlation graphs
+    G <- OG;
+    if (length(nodes(G)) > 2) {
+      ## decomposition might be necessary
+      # G <- removeSelfLoops(G)
+      hcs <-  highlyConnSG(G)
+      lsg <- sapply(hcs$clusters,function(x) length(x))
+      lsg.i <- which(lsg > 1)
+      if (length(lsg.i)<1) next;
+      for(z in 1:length(hcs$clusters)){
+        NG<-rbind(NG,cbind(z,as.numeric(hcs$clusters[[z]])))
       }
-      ## calculate all new pspectra
-      for (ii in 1:length(NG)){
-#         pi <- pi[-which(pi == as.numeric(nodes(NG[[ii]])))];
-        if(ii==1){
-          #behalten alte Nummer
-          pspectra[[i]] <- sort(as.numeric(nodes(NG[[ii]])));
-        } else {
-          pspectra[[length(pspectra)+1]] <- sort(as.numeric(nodes(NG[[ii]])));
-#           peaks_old[as.numeric(nodes(NG[[ii]]))]<-paste(i,"_",ii-1,sep="");
+      ##Hold M+H,M+Na
+      mz<-imz[pi];ix<-order(mz);mz<-mz[ix]
+      mm<-matrix(NA,ncol=2)
+      for(x in 1:length(mz)){
+        for(y in x:length(mz)){
+            diff<-mz[y]-mz[x];
+            if(diff>39){break} ##Diff zu gross
+            if(length(unlist(fastMatch(rules[,"massdiff"],diff,0.02)))>0){
+              #One rule fit, not of interest which one
+              mm<-rbind(mm,c(pi[ix[x]],pi[ix[y]]));
+            }
         }
       }
-#       if(length(pi)>0){
-#       #peaks ohne zuordnung
-#         for(ii in 1:length(pi)){
-#           pspectra[[length(pspectra)+1]] <- pi[ii];
-#         }
-#       }
+
+      if(nrow(mm)>1){
+        mm<-mm[-1,]#remove NA        
+        mm<-matrix(mm,ncol=2);
+        for(x in 1:nrow(mm)){
+          grp<-NG[which(NG[,2]==mm[x,1]),1];
+          NG[which(NG[,2]==mm[x,2]),1]<-grp;
+        }
+      }
+      ##Hold Isotope together
+      if(length(idx)>0){
+        iidx<-which(pi %in% idx);
+        if(length(iidx)>0){
+          #Monoiso. in grp gefunden
+          for(h in 1:length(iidx)){
+            mindex<-pi[iidx[h]];
+            isoindex<-object@isoID[which(object@isoID[,1]==mindex),2];
+            grp<-NG[which(mindex==NG[,2]),1]
+            NG[sapply(isoindex,function(x,NG) {which(x==NG[,2])},NG),1]<-grp;#Setze isotope auf gleichen index wie monoiso.
+          }
+        }
+      }
+      NG<-NG[-1,];#Remove NA
+      ## calculate all new pspectra
+      grps<-unique(NG[,1]);
+      cnts<-unlist(lapply(grps,function(x,NG) { length( which( NG[,1] == x) ) },NG))
+      grps<-grps[order(cnts,decreasing = TRUE)]
+      for (ii in 1:length(grps)){
+        if(ii==1){
+          #behalten alte Nummer
+          pspectra[[i]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
+        } else {
+          pspectra[[length(pspectra)+1]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
+        }
+      }
     } else {
+      #Only one peak in the pseudospectra
       pspectra[[i]] <- pi[1];
-      cat ("Grp.",i," shows strange values.\n")
     }
   }
   ##Workarround: peaks without groups
