@@ -72,7 +72,7 @@ if(object@sample>=1){
         index<-sample;
     }else{
         cat(paste("xcmsSet contains more than one sample, using sample:",sample,"and category:",category,"\n"));
-        index<-which(sampclass(xs)==category)+sample-1;
+        index<-which(sampclass(xs)==category)[sample];
     }
 }
 #generate Peaklist
@@ -513,6 +513,28 @@ annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) 
   return(hypothese);
 }
 
+quickdiff <- function(object,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,,sample=1,category=NA,polarity="positive",nslaves=1,class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into","maxo","intb"), metlin = FALSE, h=480,w=640, ...) {
+
+  if (!class(object)=="xcmsSet") stop ("no xsAnnotate object");
+
+diffrep <- diffreport(object, class1 = class1, class2 = class2, filebase = filebase, eicmax = eicmax, eicwidth = eicwidth, sortpval = FALSE, classeic = classeic, value=value, metlin = metlin, h=h,w=w, ...);
+xa <- xsAnnotate(object);
+xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
+xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
+# xa <- annotate(object,sigma=sigma, perfwhm=perfwhm,cor_eic_th=cor_eic_th,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs,multiplier=multiplier,sample=sample,category=category,polarity=polarity,nSlaves=1,grid=100)
+xa_result<-getPeaklist(xa);
+#Kombiniere Resultate
+
+result <- cbind(diffrep,xs_result[,c("isotopes","adduct","pcgroup")])
+return(result);
+} 
+
+combine_diff_anno<- function(diffreport,xs_anno){
+
+if(!class(xs_anno)=="xsAnnoatate") stop ("no xsAnnotate object");
+xa_result<-getPeaklist(xs_anno);
+return(cbind(diffreport,xs_result[,c("isotopes","adduct","pcgroup")]));
+}
 
 ###End xsAnnotate generic Methods###
 
@@ -659,14 +681,6 @@ annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,
     xs_anno4 <- findIsotopes(xs_anno3,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs);
     xs_anno5 <- findAdducts(xs_anno4,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,max_peaks=grid);
 return(xs_anno5);
-}
-
-diffreport<-function(object,...){
-# creates diffreport with xsAnnotate object
-  if(!class(object)=="xsAnnotate")      stop("object is not a xsAnnotate object")
-  diff_rep<-xcms::diffreport(object@xcmsSet,...)
-  pl<-getPeaklist(object)
-  cbind(diff_rep,pl[,c("","","")])
 }
 
 ###End xsAnnotate exported Methods###
