@@ -48,7 +48,7 @@ if(length(levels(sampclass(xs))) > 1){
     } else if( any(is.na(c(sample,category))) | any(is.null(c(sample,category)))){
       stop ('For a grouped xcmsSet parameter sample and category must be set and not NULL.')
     } else if(! category %in% sampclass(xs)){
-      stop (paste('Paramter category:',category,'is not in',paste(levels(sampclass(xs)),collapse=" ")))
+      stop (paste('Parameter category:',category,'is not in',paste(levels(sampclass(xs)),collapse=" ")))
     } else if(length(which(sampclass(xs) == category))< sample | sample < 1){
       stop("Parameter sample must be lower equal than number of samples for the specific category and greater than 0.")
     } else {object@sample=sample; object@category=category;}
@@ -72,7 +72,7 @@ if(object@sample>=1){
         index<-sample;
     }else{
         cat(paste("xcmsSet contains more than one sample, using sample:",sample,"and category:",category,"\n"));
-        index<-which(sampclass(xs)==category)[1]+sample-1;
+        index<-which(sampclass(xs)==category)+sample-1;
     }
 }
 #generate Peaklist
@@ -1179,7 +1179,7 @@ annoID.pos<-xsa.pos@annoID;annoID.neg<-xsa.neg@annoID;
 annoGrp.pos<-xsa.pos@annoGrp;annoGrp.neg<-xsa.neg@annoGrp;
 grp2del<-c();
 for(i in 1:length(m)){
-#     print(i);
+#     print(paste("i: ",i));
     if(is.null(m[[i]])) next;
     for(j in 1:length(m[[i]])){
 #         print(j);
@@ -1236,7 +1236,7 @@ for(i in 1:length(m)){
                   if(length(xsa.pos@derivativeIons[[id.pos]]) >0){ #Pfad: 2
                       if(length(index.pos <- which(annoID.pos[,1]==id.pos & annoID.pos[,3] == id_h_pos))>0){ #Pfad: 3
                           #3.1
-                          if(length(index.pos)>1) cat("index.pos are greater than allowed. please debug!");
+                          if(length(index.pos)>1) warning(paste("index.pos are greater than allowed. Debug! i,j:",i,j));
                           if(!length(del_hypo<-which(annoID.pos[,1]==id.pos & annoID.pos[,3] != id_h_pos))>0) { #Pfad 3.1
                               #Pfad: 3.1.1
                               #bestätige Hypothese
@@ -1640,7 +1640,7 @@ calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th,nSlaves=2){
   ncl<-length(CL);npeaks=0;
   npspectra <- length(object@pspectra);
   peaks<-object@peaks;
-  cat('Calculating peak correlations... \n% finished: '); lp <- -1;
+  cat('Calculating peak correlations... \n');
   #Wenn groupFWHM nicht vorher aufgerufen wurde!
   if(npspectra<1){
     npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@peaks));
