@@ -17,61 +17,41 @@
 }
 
 %Slots for class 'xsAnnotate'
-%  Code: annoGrp annoID category derivativeIons formula grp_info isoID
-%        isotopes peaks polarity pspectra ruleset sample xcmsSet
-
+%  Code: annoGrp annoID derivativeIons formula isoID groupInfo
+%        isotopes polarity pspectra psSamples ruleset runParallel sample xcmsSet
 
 \section{Slots}{
   \describe{
     \item{\code{annoGrp}:}{Assignment of mass hypotheses to correlation groups}
-    \item{\code{annoID}:}{The assignemnt of peaks to the mass difference
-  rule used.}
-    \item{\code{category}:}{A single string category}
-    \item{\code{grp_info}:}{grp_info}
-    \item{\code{isoID}:}{isoID}
-    \item{\code{polarity}:}{A single string with the polarity mode of
-  the peaks}
-    \item{\code{ruleset}:}{A dataframe describing the
-  mass difference rules used for the annotion}
-    \item{\code{xcmsSet}:}{The embedded xcmsSet, from which the
-  annotation was created}
-    \item{\code{peaks}:}{
-      matrix containing peak data
-    }
-    \item{\code{runParallel}:}{
-      flag if CAMERA runs in serial or parallel mode
-    }
-\item{\code{pspectra}:}{
-      list containing peak data
-    }
-\item{\code{isotopes}:}{
-      matrix containing peak data
-    }
-\item{\code{derivativeIons}:}{
-      matrix containing peak data
-    }
-\item{\code{formula}:}{
-      matrix containing peak data
-    }
-\item{\code{sample}:}{
-      the number of the used xcmsSet sample
-    }
+    \item{\code{annoID}:}{The assignemnt of peaks to the mass difference rule used}
+    \item{\code{derivativeIons}:}{List with annotation result for every peak}
+    \item{\code{formula}:}{Matrix containing putative sum formula (intended for future use)}
+    \item{\code{isoID}:}{Matrix containing IDs and additional of all annotated isotope peaks}
+    \item{\code{groupInfo}:}{(grouped) Peaktable with "into" values}
+    \item{\code{isotopes}:}{List with annotated isotopid results for every peak}
+    \item{\code{polarity}:}{A single string with the polarity mode of the peaks}
+    \item{\code{pspectra}:}{List contains all pseudospectra with there peak IDs}
+    \item{\code{psSamples}:}{List containing information with sample was sample was selecteted as representative (automatic selection)}
+    \item{\code{ruleset}:}{A dataframe describing the mass difference rules used for the annotion}
+    \item{\code{runParallel}:}{Flag if CAMERA runs in serial or parallel mode}
+    \item{\code{sample}:}{Number of the used xcmsSet sample (beforehand sample selection)}
+    \item{\code{xcmsSet}:}{The embedded xcmsSet}
   }
 }
+
 \section{Methods}{
   \describe{
     \item{\link{groupFWHM}}{
       \code{signature(object = "xsAnnotate")}: group the peak data after the FWHM of the retention time
     }
     \item{\link{groupCorr}}{
-      \code{signature(object = "xsAnnotate")}: group the peak data after the Correlation of the EIC
+      \code{signature(object = "xsAnnotate")}: group the peak data after the correlation of the EICs
     }
     \item{\link{findIsotopes}}{
       \code{signature(object = "xsAnnotate")}: search for possible isotopes in the spectra
     }
     \item{\link{findAdducts}}{
-      \code{signature(object = "xsAnnotate")}: search for possible
-      adducts in the spectra
+      \code{signature(object = "xsAnnotate")}: search for possible adducts in the spectra
     }
     \item{\link{plotEICs}}{
       \code{signature(object = "xsAnnotate")}: plot EICs of pseudospectra 

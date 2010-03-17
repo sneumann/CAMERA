@@ -6,15 +6,12 @@
   is generate from a xcmsSet object adapt its peaktable.
 }
 \usage{
-  xsAnnotate(xs = NULL,sample=NA,category=NA,nSlaves = 1)
+  xsAnnotate(xs = NULL,sample=NA,nSlaves = 1)
 }
 \arguments{
   \item{xs}{a \code{xcmsSet} object}
   \item{sample}{
-    Index of the group xcmsSet sample, that is used for the EIC corelations step.
-  }
-  \item{category}{
-    Class label, for the class label of a grouped xcmsSet with different classes.
+    Index of the group xcmsSet sample, that is used for the EIC corelations step. For automatic selection don''t set a value.
   }
   \item{nSlaves}{
     For parallel mode set nSlaves higher than 1, but not higher than the number of cpu cores.
@@ -23,7 +20,9 @@
 \examples{
  library(faahKO)
  xs <- group(faahko)
- xs_anno <- xsAnnotate(xs, sample=1, category="WT")
+ xs.anno <- xsAnnotate(xs, sample=1)
+ #With automatic selection
+ xs.anno.autoselect <-xsAnnotate(xs)
 }
 \value{
   A \code{xsAnnotate} object.

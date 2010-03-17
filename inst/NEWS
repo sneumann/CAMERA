@@ -1,3 +1,6 @@
+2010-03-17 ckuhl <ckuhl@ipb-halle.de>
+	* Hugh changes in CAMERA for working with multiple sample
+	* Add check constrains in groupCorr for isotopes and primary adducts
 2009-11-24 ckuhl <ckuhl@ipb-halle.de>
         * Add experimental parallel mode with MPI
 2009-11-20 ckuhl <ckuhl@ipb-halle.de>
