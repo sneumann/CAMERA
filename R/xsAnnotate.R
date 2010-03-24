@@ -150,7 +150,7 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
       peakmat <- object@xcmsSet@peaks;
       groupmat <- groups(object@xcmsSet);
       #errechne höchsten Peaks
-      maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){max(peakmat[x, "maxo"])}, peakmat));
+      maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){max(peakmat[x, "maxo"],na.rm=TRUE)}, peakmat));
       #index des höchsten peaks
       max_int   <- as.numeric(apply(gvals, 1, function(x, peakmat){which.max(peakmat[x, "maxo"])}, peakmat));
       peakrange <- matrix(apply(gvals, 1, function(x,peakmat) { peakmat[x[which.max(peakmat[x, "maxo"])], c("rtmin", "rtmax")]}, peakmat), ncol=2, byrow=TRUE); 

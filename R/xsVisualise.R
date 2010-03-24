@@ -111,12 +111,26 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
           ##
           ## Loop through all requested pspectra
           ##
-
+          if(is.na(object@sample)){
+              gvals <- groupval(object@xcmsSet);
+              peakmat <- object@xcmsSet@peaks;
+              groupmat <- groups(object@xcmsSet);
+              #errechne höchsten Peaks
+              max_mat  <- apply(gvals, 1, function(x, peakmat){peakmat[x, value]}, peakmat);
+            }else{
+              peakmat <- getPeaks(object@xcmsSet, index=object@sample);
+              maxo  <- peakmat[,value]
+            }
           for (psp in pspec) {
-            pspectrum <- getpspectra(object, grp=psp)
-              intensity <- pspectrum[, value]
-              o <- order(intensity, decreasing=TRUE)
-              mz <- pspectrum[o, "mz"]
+            pspectrum <- getpspectra(object, grp=psp);
+            pindex<-object@pspectra[[psp]];
+            if(is.na(object@sample)){
+              intensity <- max_mat[object@psSamples[psp],pindex]
+            }else{
+              intensity <- maxo[pindex]
+            }
+            o <- order(intensity, decreasing=TRUE)
+            mz <- pspectrum[o, "mz"]
 
               if (log) {
                   intensity <- log(intensity[o])
@@ -126,10 +140,18 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
 
               mzrange <- range(mz)
               mzborder <- (mzrange[2]-mzrange[1])*0.05
-              plot(mz, intensity, type="h",
-                   xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
-                   main=title, col="darkgrey")
+              if(is.null(title)){
+                  title <- paste("Plot m/z values of pseudospectrum",psp);
+                  plot(mz, intensity, type="h",
+                    xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
+                    main=title, col="darkgrey")
+                  title <- NULL;
 
+              }else{
+                  plot(mz, intensity, type="h",
+                      xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
+                      main=title, col="darkgrey")
+              }
               if (maxlabel>0) {
                   ## Also check for labels:  https://stat.ethz.ch/pipermail/r-help/2008-November/178666.html
                   ## There is also the spread.labs function in the TeachingDemos package that
