@@ -217,7 +217,7 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
      if(npspectra<1){
       npspectra<-1;
       object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
-      cat('Calculating peak correlations for 1 big group.\nTry groupFWHM bevor, to reduce runtime. \n% finished: ');
+      cat('Calculating peak correlations for 1 big group.\nTry groupFWHM before, to reduce runtime. \n');
      }
     if(object@runParallel==1){
         if(mpi.comm.size() >0){
@@ -2048,7 +2048,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   #Wenn groupFWHM nicht vorher aufgerufen wurde!
   if(npspectra<1){
     npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
-    cat('Calculating peak correlations for 1 big group.\nTry groupFWHM bevor, to reduce runtime. \n% finished: '); lp <- -1;
+    cat('Calculating peak correlations for 1 big group.\nTry groupFWHM before, to reduce runtime. \n% finished: '); lp <- -1;
     pspectra_list<-1;
   }else{
     if(is.null(psg_list)){
@@ -2073,7 +2073,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     #select sample f
     if(is.na(object@sample)){
       if(length(pi)>1){
-        f <- as.numeric(which.max(apply(peaks[pi,],2,mean))) #errechne höchsten Peaks, oder als mean,median
+        f <- as.numeric(which.max(apply(peaks[pi,],2,function(x){mean(x,na.rm=TRUE)}))) #errechne höchsten Peaks, oder als mean,median
       }else{ f <- which.max(peaks[pi,]);}
 #     }else if(object@sample){
 #       ##TODO @Joe: Sollte nicht auftreten oder?
