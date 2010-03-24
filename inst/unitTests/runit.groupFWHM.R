@@ -15,6 +15,7 @@ test.groupFWHM_CORR <- function() {
  ## groupCorr with findIsotopes before
     anI <- findIsotopes(an)
     anIC <- groupCorr(anI)
+
     }
 
 test.groupFWHM_CORR_multi <- function() {
