@@ -166,7 +166,7 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
           if(length(irt) > 0){
               #if peaks are found
               pspectra[[length(pspectra)+1]] <- irt; #create groups
-              psSamples[length(pspectra)+1]  <- max_int[iint] # saves the sample of the peak which is in charge for this pspectrum
+              psSamples[length(pspectra)]  <- max_int[iint] # saves the sample of the peak which is in charge for this pspectrum
               maxo[irt] <- NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
