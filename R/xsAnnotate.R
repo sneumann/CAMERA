@@ -1769,11 +1769,10 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL,psSamples=NULL) {
 
         } else {
           pspectra[[length(pspectra)+1]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
+          psSamples[length(psSamples)+1] <- psSamples[i] 
         }
       }
     } else {
-
-hier irgendwo in den psSamples-vektor den wert für die aktuelle gruppe anhängen ....
       #Only one peak in the pseudospectra
 #       pspectra[[i]] <- pi;
     }
@@ -1791,6 +1790,7 @@ hier irgendwo in den psSamples-vektor den wert für die aktuelle gruppe anhänge
       }
     }
   object@pspectra<-pspectra;
+  object@psSamples<-psSamples;
   cat("\n");
   return(object)
 }
