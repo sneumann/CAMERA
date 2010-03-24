@@ -7,15 +7,19 @@ test.groupFWHM_CORR <- function() {
     checkEqualsNumeric(nrow(xs@peaks),126)
     checkEqualsNumeric(length(anF@pspectra),14)
     checkEqualsNumeric(anF@pspectra[[5]][5],86)
-    anC <- groupCorr(an) ## groupCORR without groupFWHM
+ ## groupCORR without groupFWHM
+    anC <- groupCorr(an) 
     checkEqualsNumeric(length(anC@pspectra),55)
-    anFC <- groupCorr(anF) ## groupCORR with groupFWHM
+ ## groupCORR with groupFWHM
+    anFC <- groupCorr(anF) 
     checkEqualsNumeric(length(anFC@pspectra),43)
-
  ## groupCorr with findIsotopes before
-    anI <- findIsotopes(an)
+    anI <- findIsotopes(anF)
     anIC <- groupCorr(anI)
-
+    checkEqualsNumeric(length(anIC@pspectra),35)
+ ## groupCorr with polarity = "negative"
+    anCN <- groupCorr(anF,polarity="negative")
+    checkEqualsNumeric(length(anCN@pspectra),41)
     }
 
 test.groupFWHM_CORR_multi <- function() {
@@ -32,11 +36,7 @@ test.groupFWHM_CORR_multi <- function() {
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
-    checkEqualsNumeric(length(xsaC@pspectra),344)
- ## groupCorr with polarity = "negative"
-    xsaCN <- groupCorr(xsaF,polarity="negative")
-    checkEqualsNumeric(length(xsaCN@pspectra),344)
-
+    checkEqualsNumeric(length(xsaC@pspectra),222)
   ##  groupCorr without groupFWHM
     ## manual selection
     xsa <- xsAnnotate(xsg, sample=1)
@@ -45,5 +45,5 @@ test.groupFWHM_CORR_multi <- function() {
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaC <- groupCorr(xsa)
-    ## checkEqualsNumeric(length(xsaC@pspectra),344) --> erzeugt blos ein pspectrum .. wieso?
+    checkEqualsNumeric(length(xsaC@pspectra),363)
     }
