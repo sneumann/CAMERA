@@ -6,7 +6,7 @@
  Annotate isotope peaks, adducts and fragments for a (grouped) xcmsSet \code{xs}. Returns a xsAnnotate object.
 }
 \usage{
-annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01, multiplier = 3, sample=1, polarity="positive", nSlaves = 1, max_peaks=100)
+annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01, multiplier = 3, sample=NA, polarity="positive", nSlaves = 1, max_peaks=100)
 }
 \arguments{
   \item{xs}{ xcmsSet with peak group assignments}
@@ -18,14 +18,16 @@ annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso 
   \item{ppm}{ppm error}
   \item{mzabs}{absolut error}
   \item{multiplier}{max. number n of [nM+x] clusterions}
-  \item{sample}{Index of which sample is used for the correlation}
+  \item{sample}{Index of which sample is used for the correlation, NA for auto-selection}
   \item{polarity}{Which polarity mode was used for measuring of the ms sample}
   \item{nSlaves}{Number of slaves for parallel calculation (Warning: Beta)}
-  \item{max_peaks}{If run in parralel mode, this number defines how much peaks will be calculated in every thread }
+  \item{max_peaks}{If run in parallel mode, value defines how much peaks will be calculated in every thread }
 }
 \details{
-  Batch script for a annotation for a a (grouped) xcmsSet \code{xs}. Generate intern a xsAnnotate object and calls the member function for the annotation step. Returns a peaklist with additonal columns for isotopes, adducts and an index for the pseudo spectra group. xsAnnotate groups Peaks into spectra groups, after there Retentiontime and EIC correlations.
-  Attention: For the EIC correlation only one sample can be used, so if the xcmsSet contains more than one sample, one must be chosen.
+  Batch script for a annotation for a (grouped) xcmsSet \code{xs}. Generate intern a xsAnnotate object and calls the member function for the annotation step.
+  Function list: 1: groupFWHM() , 2: findIsotopes() , 3: groupCorr(), 4: findAdducts()
+  Return the xsAnnotate object which all the annotations.
+  For more information see the funtion manpages.
 }
 \value{
 \code{annotate}	returns an xsAnnotate object. For more information about see \link{xsAnnotate-class}
@@ -35,7 +37,7 @@ annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso 
  library(CAMERA)
  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
- annotated_xs<- annotate(xs)
+ xsa  <- annotate(xs)
 }
 
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}

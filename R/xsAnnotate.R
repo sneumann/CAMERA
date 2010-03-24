@@ -213,14 +213,19 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
       cat("Isotope annotation found, used as grouping information.\n")
     }
     if(object@runParallel==1){
-      if(mpi.comm.size() >0){
-        tmp<- calcCL2(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
-      }else{
-        warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
-        tmp <- calcCL(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th);
-        }
+        if(mpi.comm.size() >0){
+          tmp<- calcCL2(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
+        }else{
+          warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
+          tmp <- calcCL(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th);
+          }
     }else{
       tmp <- calcCL(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th,psg_list=psg_list)
+    }
+    if(is.null(tmp)){
+      #found no subgroups
+      cat("No group was seperated.\n")
+      return(invisible(object));
     }
     CL<-tmp$CL;
     CI<-as.matrix(tmp$CI)
@@ -263,11 +268,11 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
     irt<-groupmat[,"rtmed"];
     if(is.na(object@sample)){
       mint <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"into"])},peakmat)); #errechne höchsten Peaks
-    }else if(sample== -1){
+    }else if(object@sample== -1){
       ##TODO @ Joe: Was machen wir hier?
     }else{
       #Group mit vorgegebenen Sample
-      mint <- peakmat[gvals[,sample],"into"]; #errechne höchsten Peaks
+      mint <- peakmat[gvals[,object@sample],"into"]; #errechne höchsten Peaks
     }
   }
 
@@ -611,30 +616,67 @@ annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) 
   return(hypothese);
 }
 
-annotateDiffreport <- function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, polarity="positive", nslaves=1, psg_list=NULL, pval_th=NULL, fc_th=NULL, quick=FALSE, class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into", "maxo", "intb"), metlin = FALSE, h=480,w=640, ...) {
+annotateDiffreport <- function(object, sample=NA,sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, polarity="positive", nSlaves=1, psg_list=NULL, pval_th=NULL, fc_th=NULL, quick=FALSE, class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into", "maxo", "intb"), metlin = FALSE, h=480,w=640, ...) {
 
-  if (!class(object)=="xcmsSet") stop ("no xsAnnotate object");
+  if (!class(object)=="xcmsSet") stop ("no xcmsSet object");
   diffrep <- diffreport(object, class1 = class1, class2 = class2, filebase = filebase, eicmax = eicmax, eicwidth = eicwidth, sortpval = FALSE, classeic = classeic, value=value, metlin = metlin, h=h,w=w, ...);
   if(quick){
     #Quick run, no groupCorr and findAdducts
-    xa <- xsAnnotate(object);
+    xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
     xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
     xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
     xa.result<-getPeaklist(xa);
   }else{
-    xa <- xsAnnotate(object);
+    xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
     xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
     xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
-    if(is.null(psg_list)){
-      #keine Liste vorgegeben! 
+    if(is.null(psg_list) & is.null(pval_th) & is.null(fc_th)){
+      #keine Liste vorgegeben!
+      #Werde alle gruppen berechent, psg_list=NULL
+    }else{
+      #Ein Wert wurde vorgegeben
+      #Generiere psg_list
+      peaklist<-getPeaklist(xa);
+      if(is.null(psg_list)){
+        psg_list<-1:length(xa@pspectra);
+      }
       if(!is.null(pval_th)){
         #Finde alle Gruppen, welche Feature enthalten, mit p-val < pval_th
-      }else{
-        #Auch kein threshold vorgegeben 
-        #psg_list bleibt NULL
+        index <- which(diffrep[, "pvalue"] < pval_th);
+        index.grp <- unique(peaklist[index, "pcgroup"]);
+        if(length(index.grp)>0){
+          psg_list  <- psg_list[which(psg_list %in% index.grp)]
+        }else{
+          cat("No groups found, which satisfy your conditions!\n")
+          result <- cbind(diffrep, peaklist[, c("isotopes","adduct","pcgroup")])
+          return(result);
+        }
       }
+      if(!is.null(fc_th)){
+        #Finde alle Gruppen, welche Feature enthalten, mit fc > pval_th
+        index <- which(diffrep[, "fold"] > fc_th);
+        index.grp <- unique(peaklist[index, "pcgroup"]);
+        if(length(index.grp)>0){
+          psg_list  <- psg_list[which(psg_list %in% index.grp)]
+        }else{
+          cat("No groups found, which satisfy your conditions!\n")
+          result <- cbind(diffrep, peaklist[, c("isotopes","adduct","pcgroup")])
+          return(result);
+        }
+      }
+        if(length(psg_list) < 1){
+          #Keine Grp mehr uebrig
+          cat("No groups found, which satisfy your conditions!\n")
+          result <- cbind(diffrep, peaklist[, c("isotopes","adduct","pcgroup")])
+          return(result);
+        }
     }
-    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list)
+    #Add to psg_list all groups, with has been created after groupCorr
+    cnt <- length(xa@pspectra);
+    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list, polarity=polarity)
+    if(!is.null(psg_list)){
+      psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
+    }
     xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,psg_list=psg_list);
     xa.result<-getPeaklist(xa);
   }
@@ -777,14 +819,16 @@ getPeaklist<-function(object){
     return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
 
-annotate<-function(xs,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,sample=1, polarity="positive",nSlaves=1, max_peaks=100){
-    if (!class(xs)=="xcmsSet")     stop ("xs is not an xcmsSet object")
-    xs_anno  <- xsAnnotate(xs, sample=sample, nSlaves=nSlaves);
-    xs_anno2 <- groupFWHM(xs_anno,sigma=sigma,perfwhm=perfwhm);
-    xs_anno3 <- groupCorr(xs_anno2,cor_eic_th=cor_eic_th);
-    xs_anno4 <- findIsotopes(xs_anno3,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs);
-    xs_anno5 <- findAdducts(xs_anno4,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,max_peaks=max_peaks);
-return(xs_anno5);
+annotate<-function(xs, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, sample=NA, polarity="positive", nSlaves=1, max_peaks=100){
+  if (!class(xs)=="xcmsSet"){
+    stop ("xs is not an xcmsSet object")
+  }
+  xs_anno  <- xsAnnotate(xs, sample=sample, nSlaves=nSlaves);
+  xs_anno2 <- groupFWHM(xs_anno, sigma=sigma, perfwhm=perfwhm);
+  xs_anno3 <- findIsotopes(xs_anno2, maxcharge=maxcharge ,maxiso=maxiso, ppm=ppm, mzabs=mzabs);
+  xs_anno4 <- groupCorr(xs_anno3, cor_eic_th=cor_eic_th, polarity=polarity);
+  xs_anno5 <- findAdducts(xs_anno4, multiplier=multiplier, ppm=ppm, mzabs=mzabs, polarity=polarity, max_peaks=max_peaks);
+  return(xs_anno5);
 }
 
 ###End xsAnnotate exported Methods###
@@ -1765,21 +1809,22 @@ getAllEICs <- function(xs,file=NULL) {
   nfiles <- length(filepaths(xs))
   scantimes <- list()
   maxscans <- 0
+  cat('Generating EIC\'s .. \n') 
   if (nfiles > 1) { 
-      cat('Searching maxima .. \n') 
+      # cat('Searching maxima .. \n') 
       for (f in 1:nfiles){
-        cat('Reading raw data file:',filepaths(xs)[f]) 
+      #  cat('Reading raw data file:',filepaths(xs)[f]) 
         xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
-        cat(',', length(xraw@scantime),'scans. \n') 
+#         cat(',', length(xraw@scantime),'scans. \n') 
         maxscans <- max(maxscans,length(xraw@scantime))
         scantimes[[f]] <- xraw@scantime
       }
   
       for (f in 1:nfiles){
         if (file.exists(filepaths(xs)[f])) { 
-          cat('Reading raw data file:',filepaths(xs)[f],'\n') 
+      #    cat('Reading raw data file:',filepaths(xs)[f],'\n') 
           xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
-          cat('Generating EIC\'s .. \n') 
+      #    cat('Generating EIC\'s .. \n') 
           pdata <- as.data.frame(xs@peaks[peaki[,f],]) # data for peaks from file f
           if (f==1) EIC <- array(integer(0),c(nrow(pdata),maxscans,length(filepaths(xs))))   
           EIC[,,f] <- getEICs(xraw,pdata,maxscans)
@@ -1788,9 +1833,9 @@ getAllEICs <- function(xs,file=NULL) {
       }
   }  else { ## create EIC's for single file
        if (file.exists(filepaths(xs)[1])) { 
-          cat('Reading raw data file:',filepaths(xs)[1],'\n') 
+         #cat('Reading raw data file:',filepaths(xs)[1],'\n') 
           xraw <- xcmsRaw(filepaths(xs)[1],profstep=0)
-          cat('Generating EIC\'s .. \n') 
+         #cat('Generating EIC\'s .. \n') 
           maxscans <- length(xraw@scantime)
           scantimes[[1]] <- xraw@scantime
           pdata <- as.data.frame(xs@peaks[peaki,]) 
@@ -1997,6 +2042,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   if(npspectra<1){
     npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
     cat('Calculating peak correlations for 1 big group.\nTry groupFWHM bevor, to reduce runtime. \n% finished: '); lp <- -1;
+    pspectra_list<-1;
   }else{
     if(is.null(psg_list)){
       cat('\nCalculating peak correlations in',npspectra,'Groups... \n % finished: '); lp <- -1;

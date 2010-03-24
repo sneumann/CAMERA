@@ -9,7 +9,7 @@
 \section{Methods}{
 \describe{
 \item{object = "xsAnnotate"}{
-  \code{findIsotopes(object,maxcharge=3,maxiso=3,ppm=5,mzabs=0.01)}
+  \code{findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01)}
 }
 }}
 \arguments{
@@ -20,7 +20,7 @@
   \item{mzabs}{allowed variance for the search}
 }
 \details{
-  Isotope peaks are annotated for a xsAnnotate object according to given rules (maxcharge, maxiso). The algorithm benefits from a earlier grouping of the data, with groupFWHM and groupCorr. Generates a list of all possible isotopes, which is stored in object@isotopes.
+  Isotope peaks are annotated for a xsAnnotate object according to given rules (maxcharge, maxiso). The algorithm benefits from a earlier grouping of the data, with groupFWHM. Generates a list of all possible isotopes, which is stored in object@isotopes. Those isotope information will be used in the groupCorr funtion. 
 }
 \examples{
  library(CAMERA)
