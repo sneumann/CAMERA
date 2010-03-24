@@ -3,7 +3,7 @@ useDynLib(CAMERA)
 import("methods")
 import("xcms")
 
-export("annotate","xsAnnotate","getPeaklist","getpspectra")
+export("annotate","xsAnnotate","getPeaklist","getpspectra","annotateDiffreport")
 exportClasses("xsAnnotate")
 exportMethods("groupFWHM")
 exportMethods("findIsotopes")
