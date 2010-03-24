@@ -212,6 +212,13 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
     if(nrow(object@isoID)>0){
       cat("Isotope annotation found, used as grouping information.\n")
     }
+    npspectra <- length(object@pspectra);
+    #Wenn groupFWHM nicht vorher aufgerufen wurde!
+     if(npspectra<1){
+      npspectra<-1;
+      object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
+      cat('Calculating peak correlations for 1 big group.\nTry groupFWHM bevor, to reduce runtime. \n% finished: ');
+     }
     if(object@runParallel==1){
         if(mpi.comm.size() >0){
           tmp<- calcCL2(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
