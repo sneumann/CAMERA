@@ -1765,11 +1765,14 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
         if(ii==1){
           #behalten alte Nummer
           pspectra[[i]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
+
         } else {
           pspectra[[length(pspectra)+1]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
         }
       }
     } else {
+
+hier irgendwo in den psSamples-vektor den wert für die aktuelle gruppe anhängen ....
       #Only one peak in the pseudospectra
 #       pspectra[[i]] <- pi;
     }
