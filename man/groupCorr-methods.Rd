@@ -20,15 +20,35 @@
 }
 \examples{
  library(CAMERA)
- file  <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
- xs    <- xcmsSet(c(file), method="centWave", ppm=30, peakwidth=c(5,10))
- an    <- xsAnnotate(xs)
- an    <- groupFWHM(an)
- an    <- findIsotopes(an) #optional step
- index <- c(1,4) #Only group one and four will be calculate
- an    <- groupCorr(an, psg_list=index, polarity="positive")
+ file        <- system.file('mzdata/MM14.mzdata', package = "CAMERA");
+ xs          <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5, 10));
+ an          <- xsAnnotate(xs);
+ an.group    <- groupFWHM(an);
+ an.iso      <- findIsotopes(an.group); #optional step
+ index       <- c(1,4); #Only group one and four will be calculate
+ an.grp.corr <- groupCorr(an.iso, psg_list=index, polarity="positive");
+ 
  #For csv output
  # write.csv(file="peaklist_with_isotopes.csv",getPeaklist(an))
+
+ #Multiple sample 
+ library(faahKO)
+ xs.grp       <- group(faahko)
+ 
+ #With selected sample
+ xsa          <- xsAnnotate(xs.grp, sample=1)
+ xsa.group    <- groupFWHM(xsa)
+ xsa.iso      <- findIsotopes(an) #optional step
+ index        <- c(1,4) #Only group one and four will be calculate
+ xsa.grp.corr <- groupCorr(xsa.iso, psg_list=index, polarity="positive")
+
+ #With automatic selection
+ xsa.auto     <- xsAnnotate(xs)
+ xsa.grp      <- groupFWHM(xsa.auto)
+ xsa.iso      <- findIsotopes(xsa.grp) #optional step
+ index        <- c(1,4) #Only group one and four will be calculate
+ xsa.grp.corr <- groupCorr(xsa.iso, psg_list=index, polarity="positive")
+
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
 \keyword{methods}
