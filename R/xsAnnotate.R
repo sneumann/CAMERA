@@ -137,52 +137,58 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
   # Gruppierung nach fwhm
   # sigma - number of standard deviation arround the mean (6 = 2 x 3 left and right)
   # perfwhm - 0.3;
-  if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
-  sample<-object@sample;
-  pspectra <- list()
-  psSamples=NA
-  if(object@groupInfo[1,"rt"] == -1) {
+  if (!class(object) == "xsAnnotate") stop ("no xsAnnotate object")
+  sample <- object@sample;
+  pspectra <- list();
+  psSamples <- NA;
+  if(object@groupInfo[1, "rt"] == -1) {
      warning("Warning: no retention times avaiable. Do nothing\n")
   }else{
     if(is.na(sample)) {
       #Gruppierte Peaktable with automatic selection 
       gvals <- groupval(object@xcmsSet);
       peakmat <- object@xcmsSet@peaks;
-      groupmat <- groups(object@xcmsSet)
-  
-      maxo <- as.numeric(apply(gvals,1,function(x,peakmat){ max(peakmat[x,"maxo"])},peakmat)); #errechne höchsten Peaks
-      max_int <- as.numeric(apply(gvals,1,function(x,peakmat){ which.max(peakmat[x,"maxo"])},peakmat)); #index des höchsten peaks
-      peakrange   <- matrix(apply(gvals,1,function(x,peakmat) { peakmat[ x [which.max(peakmat[x,"maxo"])],c("rtmin","rtmax")]},peakmat),ncol=2,byrow=TRUE); #errechne höchsten Pea
-      colnames(peakrange) <- c("rtmin","rtmax")
-  
-      while(!all(is.na(maxo)==TRUE)){
-          iint<-which.max(maxo);rtmed<-groupmat[iint,"rtmed"]; #highest peak in whole spectra
-          rt_min <- peakrange[iint,"rtmin"];rt_max <- peakrange[iint,"rtmax"] #begin and end of the highest peak
-          hwhm <- ((rt_max-rt_min)/sigma*2.35*perfwhm)/2; #fwhm of the highest peak
-          irt<-which(groupmat[,'rtmed']>(rtmed-hwhm)&groupmat[,'rtmed']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
-          if(length(irt)>0){
+      groupmat <- groups(object@xcmsSet);
+      #errechne höchsten Peaks
+      maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){max(peakmat[x, "maxo"])}, peakmat));
+      #index des höchsten peaks
+      max_int   <- as.numeric(apply(gvals, 1, function(x, peakmat){which.max(peakmat[x, "maxo"])}, peakmat));
+      peakrange <- matrix(apply(gvals, 1, function(x,peakmat) { peakmat[x[which.max(peakmat[x, "maxo"])], c("rtmin", "rtmax")]}, peakmat), ncol=2, byrow=TRUE); 
+      colnames(peakrange) <- c("rtmin", "rtmax")
+      while(!all(is.na(maxo) == TRUE)){
+          iint   <- which.max(maxo);
+          rtmed  <- groupmat[iint, "rtmed"]; #highest peak in whole spectra
+          rt_min <- peakrange[iint, "rtmin"];
+          rt_max <- peakrange[iint, "rtmax"]; #begin and end of the highest peak
+          hwhm   <- ((rt_max-rt_min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
+          #all other peaks whose retensiontimes are in the fwhm of the highest peak
+          irt    <- which(groupmat[, 'rtmed'] > (rtmed-hwhm) & groupmat[, 'rtmed'] < (rtmed + hwhm) & !is.na(maxo)) 
+          if(length(irt) > 0){
               #if peaks are found
-              pspectra[[length(pspectra)+1]]<-irt; #create groups
-              psSamples[length(pspectra)+1]<-max_int[iint] # saves the sample of the peak which is in charge for this pspectrum
-              maxo[irt]<-NA; #set itensities of peaks to NA, due to not to be found in the next cycle
+              pspectra[[length(pspectra)+1]] <- irt; #create groups
+              psSamples[length(pspectra)+1]  <- max_int[iint] # saves the sample of the peak which is in charge for this pspectrum
+              maxo[irt] <- NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
     }else{
       #Group with specific sample, using all sample or only a one sample experiment
-      peakmat <- getPeaks(object@xcmsSet,index=sample);
-      maxo <- peakmat[,'maxo']; #max intensities of all peaks
-      while(!all(is.na(maxo)==TRUE)){
-          iint<-which.max(maxo);rtmed<-peakmat[iint,"rt"]; #highest peak in whole spectra
-          rt_min <- peakmat[iint,"rtmin"];rt_max <- peakmat[iint,"rtmax"] #begin and end of the highest peak
-          hwhm <- ((rt_max-rt_min)/sigma*2.35*perfwhm)/2; #fwhm of the highest peak
-          irt<-which(peakmat[,'rt']>(rtmed-hwhm)&peakmat[,'rt']<(rtmed+hwhm)&!is.na(maxo)) #all other peaks whose retensiontimes are in the fwhm of the highest peak
+      peakmat <- getPeaks(object@xcmsSet, index=sample);
+      maxo    <- peakmat[, 'maxo']; #max intensities of all peaks
+      while(!all(is.na(maxo) == TRUE)){
+          iint   <- which.max(maxo);
+          rtmed  <- peakmat[iint, "rt"]; #highest peak in whole spectra
+          rt_min <- peakmat[iint, "rtmin"];
+          rt_max <- peakmat[iint, "rtmax"]; #begin and end of the highest peak
+          hwhm   <- ((rt_max - rt_min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
+          #all other peaks whose retensiontimes are in the fwhm of the highest peak
+          irt    <- which(peakmat[, 'rt'] > (rtmed - hwhm) & peakmat[, 'rt'] < (rtmed + hwhm) & !is.na(maxo)) 
           if(length(irt)>0){
               #if peaks are found
-              pspectra[[length(pspectra)+1]]<-irt; #create groups
-              maxo[irt]<-NA; #set itensities of peaks to NA, due to not to be found in the next cycle
+              pspectra[[length(pspectra)+1]] <- irt; #create groups
+              maxo[irt] <- NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
-    psSamples=rep(sample, length(pspectra))
+    psSamples <- rep(sample, length(pspectra))
     }
     object@pspectra  <- pspectra;
     object@psSamples <- psSamples;
@@ -605,15 +611,16 @@ annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) 
   return(hypothese);
 }
 
-diffreport <- function(object,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01,multiplier=3,polarity="positive",nslaves=1,psg_list=NULL,pval_th=NULL,fc_th=NULL,quick=FALSE,class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into","maxo","intb"), metlin = FALSE, h=480,w=640, ...) {
+annotateDiffreport <- function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, polarity="positive", nslaves=1, psg_list=NULL, pval_th=NULL, fc_th=NULL, quick=FALSE, class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into", "maxo", "intb"), metlin = FALSE, h=480,w=640, ...) {
 
   if (!class(object)=="xcmsSet") stop ("no xsAnnotate object");
   diffrep <- diffreport(object, class1 = class1, class2 = class2, filebase = filebase, eicmax = eicmax, eicwidth = eicwidth, sortpval = FALSE, classeic = classeic, value=value, metlin = metlin, h=h,w=w, ...);
   if(quick){
+    #Quick run, no groupCorr and findAdducts
     xa <- xsAnnotate(object);
     xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
     xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
-    xa_result<-getPeaklist(xa);
+    xa.result<-getPeaklist(xa);
   }else{
     xa <- xsAnnotate(object);
     xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
@@ -621,7 +628,7 @@ diffreport <- function(object,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,m
     if(is.null(psg_list)){
       #keine Liste vorgegeben! 
       if(!is.null(pval_th)){
-        
+        #Finde alle Gruppen, welche Feature enthalten, mit p-val < pval_th
       }else{
         #Auch kein threshold vorgegeben 
         #psg_list bleibt NULL
@@ -629,12 +636,13 @@ diffreport <- function(object,sigma=6, perfwhm=0.6,cor_eic_th=0.75,maxcharge=3,m
     }
     xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list)
     xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,psg_list=psg_list);
-    xa_result<-getPeaklist(xa);
+    xa.result<-getPeaklist(xa);
   }
   #Kombiniere Resultate
 
-  result <- cbind(diffrep,xa_result[,c("isotopes","adduct","pcgroup")])
+  result <- cbind(diffrep, xa.result[, c("isotopes","adduct","pcgroup")])
   if(sortpval){
+    #Sortierung wieder herstellen
     result <- result[order(result[,"pvalue"]),];
   }
   return(result);

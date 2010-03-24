@@ -4,10 +4,10 @@
 \alias{groupFWHM,xsAnnotate-method}
 \title{FWHM-Grouping of LC/ESI-MS data}
 \description{
-  Grouping the peaks after the FWHM of the retentiontimes into pseudospectragroups for a xsAnnotate object. Returns a xsAnnotate object with group information.
+  Group peaks of one xsAnnotate object after the FWHM of there retentiontimes into pseudospectra-groups. Returns a xsAnnotate object with group information.
 }
 \usage{
- groupFWHM(object,sigma = 6 , perfwhm = 0.6)
+  groupFWHM(object, sigma = 6 , perfwhm = 0.6)
 }
 \arguments{
   \item{object}{the \code{xsAnnotate} object}
@@ -15,7 +15,7 @@
   \item{perfwhm}{percentage of the width of the FWHM}
 }
 \details{
-  Every peak who eluated at the same time as a selected peak, will be part of the group. Same time is defined about the Rt-med +/-FWHM*perfwhm.
+  Every peak who eluated at the same time as a selected peak, will be part of the group. Same time is defined about the Rt_med +/- FWHM * perfwhm.
   For single sample the selection of peaks starts at the most abundant and goes down the smaller ones. In a multiple sample set you can define a sample, 
   that will be used for the process or use the automatic selection. This select the most abundant peak as an representative for every peak group. 
   Peak group means here those ones from the xcms grouping.
@@ -33,11 +33,11 @@
  library(faahKO)
  xs   <- group(faahko)
  #With selected sample
- xs.anno <- xsAnnotate(xs, sample=1)
+ xs.anno  <- xsAnnotate(xs, sample=1)
  xs.group <- groupFWHM(xs.anno)
  
  #With automatic selection
- xs.anno.auto <-xsAnnotate(xs)
+ xs.anno.auto  <- xsAnnotate(xs)
  xs.group.auto <- groupFWHM(xs.anno.auto)
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
