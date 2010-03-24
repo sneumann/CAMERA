@@ -236,6 +236,7 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
     }
     CL<-tmp$CL;
     CI<-as.matrix(tmp$CI)
+    psSamples <- tmp$psSamples;
     cor_matrix<-matrix(NA,ncol=nrow(object@groupInfo),nrow=nrow(object@groupInfo))
     for(i in 1:nrow(CI)){
       cor_matrix[CI[i,1],CI[i,2]]<-CI[i,3]
@@ -246,7 +247,7 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
           object@polarity<-polarity
         }else{cat("Unknown polarity parameter.\n"); }
     }
-    object <- calc_pc(object,CL,cor_matrix,psg_list=psg_list)
+    object <- calc_pc(object,CL,cor_matrix,psg_list=psg_list,psSamples=psSamples)
     cat("xsAnnotate has now",length(object@pspectra),"groups, instead of",cnt,"\n"); 
   }
 return(invisible(object));
@@ -1630,7 +1631,7 @@ naOmit <- function(x) {
     return (x[!is.na(x)]);
 }
 
-calc_pc <-function(object,CL,cor_matrix,psg_list=NULL) {
+calc_pc <-function(object,CL,cor_matrix,psg_list=NULL,psSamples=NULL) {
   
   require(RBGL)
   pspectra<-object@pspectra;
@@ -2053,6 +2054,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
     cat('Calculating peak correlations for 1 big group.\nTry groupFWHM before, to reduce runtime. \n% finished: '); lp <- -1;
     pspectra_list<-1;
+    object@psSamples<-1;
   }else{
     if(is.null(psg_list)){
       cat('\nCalculating peak correlations in',npspectra,'Groups... \n % finished: '); lp <- -1;
@@ -2063,6 +2065,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
       ncl<-sum(sapply(object@pspectra[psg_list],length));
     }
   }
+  psSamples <- object@psSamples;
   for(j in 1:length(pspectra_list)){
     i <- pspectra_list[j];
     pi <- object@pspectra[[i]];
@@ -2077,11 +2080,14 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     if(is.na(object@sample)){
       if(length(pi)>1){
         f <- as.numeric(which.max(apply(peaks[pi,],2,function(x){mean(x,na.rm=TRUE)}))) #errechne höchsten Peaks, oder als mean,median
-      }else{ f <- which.max(peaks[pi,]);}
-#     }else if(object@sample){
-#       ##TODO @Joe: Sollte nicht auftreten oder?
+        psSamples[i] <- f;
+      }else{
+        f <- which.max(peaks[pi,]);
+        psSamples[i] <- f;
+      }
     }else {
         f<-object@sample;
+        psSamples[i] <- f;
     }
     #end selection
 
@@ -2128,6 +2134,6 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     CI <- data.frame(t(sapply(CIL,function(x) x$p)),sapply(CIL,function(x) x$cor) );
   } else { return(NULL) }
   colnames(CI) <- c('xi','yi','cors')
-  return(invisible(list(CL=CL,CI=CI)))
+  return(invisible(list(CL=CL,CI=CI,psSamples=psSamples)))
 }
 ###End xsAnnotate intern Function###
