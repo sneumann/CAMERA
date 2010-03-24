@@ -38,17 +38,17 @@
  #With selected sample
  xsa          <- xsAnnotate(xs.grp, sample=1)
  xsa.group    <- groupFWHM(xsa)
- xsa.iso      <- findIsotopes(an) #optional step
+ xsa.iso      <- findIsotopes(xsa.group) #optional step
  index        <- c(1,4) #Only group one and four will be calculate
  xsa.grp.corr <- groupCorr(xsa.iso, psg_list=index, polarity="positive")
 
  #With automatic selection
- xsa.auto     <- xsAnnotate(xs)
+ xsa.auto     <- xsAnnotate(xs.grp)
  xsa.grp      <- groupFWHM(xsa.auto)
  xsa.iso      <- findIsotopes(xsa.grp) #optional step
  index        <- c(1,4) #Only group one and four will be calculate
  xsa.grp.corr <- groupCorr(xsa.iso, psg_list=index, polarity="positive")
-
+ #Note: Group 1 and 4 have no subgroups
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
 \keyword{methods}

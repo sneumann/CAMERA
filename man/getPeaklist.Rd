@@ -11,7 +11,7 @@
   \item{object}{ xsAnnotate object}
 }
 \details{
-  xsAnnotate groups LC/MS Peaklist after there EIC correlation and FWHM. These function extract one of these so called "pseudo spectra groups" with include the peaklist with there annotations.
+  xsAnnotate groups LC/MS Peaklist after there EIC correlation and FWHM. These function extract one of these so called "pseudo spectra groups" with include the peaklist with there annotations. For a grouped xcmsSet it returns the grouped peaktable.
 }
 \examples{
 library(CAMERA)

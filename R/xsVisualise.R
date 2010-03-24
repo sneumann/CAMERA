@@ -100,10 +100,10 @@ setMethod("plotEICs", "xsAnnotate", function(object,
    })
 
 
-setGeneric("plotPeaks", function(object, pspec=1:length(object@pspectra), log=FALSE,
+setGeneric("plotPsSpectrum", function(object, pspec=1:length(object@pspectra), log=FALSE,
                        value="into", maxlabel=0, title=NULL,
-                                              sleep=0) standardGeneric("plotPeaks"))
-setMethod("plotPeaks", "xsAnnotate", function(object, pspec=1:length(object@pspectra), log=FALSE,
+                                              sleep=0) standardGeneric("plotPsSpectrum"))
+setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object@pspectra), log=FALSE,
                        value="into", maxlabel=0, title=NULL,
                                               sleep=0)
       {

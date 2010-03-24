@@ -1,8 +1,8 @@
-\name{plotPeaks-methods}
+\name{plotPsSpectra-methods}
 \docType{methods}
-\alias{plotPeaks.xsAnnotate}
-\alias{plotPeaks}
-\alias{plotPeaks,xsAnnotate-method}
+\alias{plotPsSpectra.xsAnnotate}
+\alias{plotPsSpectra}
+\alias{plotPsSpectra,xsAnnotate-method}
 \title{Plot a Pseudospectrum}
 \description{
   Plot a pseudospectrum, with the most intense peaks labelled,
