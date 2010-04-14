@@ -1,5 +1,5 @@
 ## single sample
-test.groupFWHM_CORR <- function() {
+test.anno_single <- function() {
     file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
     xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
     an   <- xsAnnotate(xs)
@@ -13,6 +13,9 @@ test.groupFWHM_CORR <- function() {
  ## groupCORR with groupFWHM
     anFC <- groupCorr(anF) 
     checkEqualsNumeric(length(anFC@pspectra),43)
+    ## groupCorr with  psg_list
+         anFCp <- groupCorr(anF, psg_list=c(5,6,7,8,9,10,11,12)) 
+        
  ## groupCorr with findIsotopes before
     anI <- findIsotopes(anF)
     anIC <- groupCorr(anI)
@@ -20,9 +23,18 @@ test.groupFWHM_CORR <- function() {
  ## groupCorr with polarity = "negative"
     anCN <- groupCorr(anF,polarity="negative")
     checkEqualsNumeric(length(anCN@pspectra),41)
+ ## findIsotopes and findAdducts
+    
+    anFI <- findIsotopes(anFC)
+    checkEqualsNumeric(nrow(anFI@isoID),28)
+    anFA <- findAdducts(anFI, polarity="positive")
+    checkEqualsNumeric(length(unique(anFA@annoID[,1])),35)
+    ## findAdducts with psg_list
+    anFAc <- findAdducts(anFI, polarity="positive", psg_list=c(5,6,7,8,9,10,11,12))
+    checkEqualsNumeric(length(unique(anFAc@annoID[,1])),8)
     }
 
-test.groupFWHM_CORR_multi <- function() {
+test.anno_multi <- function() {
     library(faahKO)         
     filepath <- system.file("cdf", package = "faahKO")
     xsg <- group(faahko)
@@ -46,4 +58,11 @@ test.groupFWHM_CORR_multi <- function() {
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaC <- groupCorr(xsa)
     checkEqualsNumeric(length(xsaC@pspectra),363)
+ ## findIsotopes and findAdducts
+    xsaFI <- findIsotopes(xsaC)
+    checkEqualsNumeric(nrow(xsaFI@isoID),14)
+    xsaFA <- findAdducts(xsaFI, polarity="positive")
+    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),26)
     }
+
+
