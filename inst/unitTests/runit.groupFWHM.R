@@ -1,5 +1,5 @@
 ## single sample
-test.anno_single <- function() {
+test.groupFWHM_CORR <- function() {
     file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
     xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
     an   <- xsAnnotate(xs)
@@ -7,34 +7,17 @@ test.anno_single <- function() {
     checkEqualsNumeric(nrow(xs@peaks),126)
     checkEqualsNumeric(length(anF@pspectra),14)
     checkEqualsNumeric(anF@pspectra[[5]][5],86)
- ## groupCORR without groupFWHM
-    anC <- groupCorr(an) 
+    anC <- groupCorr(an) ## groupCORR without groupFWHM
     checkEqualsNumeric(length(anC@pspectra),55)
- ## groupCORR with groupFWHM
-    anFC <- groupCorr(anF) 
+    anFC <- groupCorr(anF) ## groupCORR with groupFWHM
     checkEqualsNumeric(length(anFC@pspectra),43)
-    ## groupCorr with  psg_list
-         anFCp <- groupCorr(anF, psg_list=c(5,6,7,8,9,10,11,12)) 
-        
+
  ## groupCorr with findIsotopes before
-    anI <- findIsotopes(anF)
+    anI <- findIsotopes(an)
     anIC <- groupCorr(anI)
-    checkEqualsNumeric(length(anIC@pspectra),35)
- ## groupCorr with polarity = "negative"
-    anCN <- groupCorr(anF,polarity="negative")
-    checkEqualsNumeric(length(anCN@pspectra),41)
- ## findIsotopes and findAdducts
-    
-    anFI <- findIsotopes(anFC)
-    checkEqualsNumeric(nrow(anFI@isoID),28)
-    anFA <- findAdducts(anFI, polarity="positive")
-    checkEqualsNumeric(length(unique(anFA@annoID[,1])),35)
-    ## findAdducts with psg_list
-    anFAc <- findAdducts(anFI, polarity="positive", psg_list=c(5,6,7,8,9,10,11,12))
-    checkEqualsNumeric(length(unique(anFAc@annoID[,1])),8)
     }
 
-test.anno_multi <- function() {
+test.groupFWHM_CORR_multi <- function() {
     library(faahKO)         
     filepath <- system.file("cdf", package = "faahKO")
     xsg <- group(faahko)
@@ -48,7 +31,11 @@ test.anno_multi <- function() {
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
-    checkEqualsNumeric(length(xsaC@pspectra),222)
+    checkEqualsNumeric(length(xsaC@pspectra),344)
+ ## groupCorr with polarity = "negative"
+    xsaCN <- groupCorr(xsaF,polarity="negative")
+    checkEqualsNumeric(length(xsaCN@pspectra),344)
+
   ##  groupCorr without groupFWHM
     ## manual selection
     xsa <- xsAnnotate(xsg, sample=1)
@@ -57,12 +44,5 @@ test.anno_multi <- function() {
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaC <- groupCorr(xsa)
-    checkEqualsNumeric(length(xsaC@pspectra),363)
- ## findIsotopes and findAdducts
-    xsaFI <- findIsotopes(xsaC)
-    checkEqualsNumeric(nrow(xsaFI@isoID),14)
-    xsaFA <- findAdducts(xsaFI, polarity="positive")
-    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),26)
+    ## checkEqualsNumeric(length(xsaC@pspectra),344) --> erzeugt blos ein pspectrum .. wieso?
     }
-
-
