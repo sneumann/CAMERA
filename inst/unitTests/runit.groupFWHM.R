@@ -48,7 +48,7 @@ test.anno_multi <- function() {
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
-    checkEqualsNumeric(length(xsaC@pspectra),222)
+    checkEqualsNumeric(length(xsaC@pspectra),213)
   ##  groupCorr without groupFWHM
     ## manual selection
     xsa <- xsAnnotate(xsg, sample=1)
