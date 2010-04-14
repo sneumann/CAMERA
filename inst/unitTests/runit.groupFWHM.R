@@ -26,9 +26,9 @@ test.anno_single <- function() {
  ## findIsotopes and findAdducts
     
     anFI <- findIsotopes(anFC)
-    checkEqualsNumeric(nrow(anFI@isoID),28)
+    checkEqualsNumeric(nrow(anFI@isoID),27)
     anFA <- findAdducts(anFI, polarity="positive")
-    checkEqualsNumeric(length(unique(anFA@annoID[,1])),35)
+    checkEqualsNumeric(length(unique(anFA@annoID[,1])),33)
     ## findAdducts with psg_list
     anFAc <- findAdducts(anFI, polarity="positive", psg_list=c(5,6,7,8,9,10,11,12))
     checkEqualsNumeric(length(unique(anFAc@annoID[,1])),8)
@@ -57,12 +57,12 @@ test.anno_multi <- function() {
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaC <- groupCorr(xsa)
-    checkEqualsNumeric(length(xsaC@pspectra),363)
+    checkEqualsNumeric(length(xsaC@pspectra),353)
  ## findIsotopes and findAdducts
     xsaFI <- findIsotopes(xsaC)
     checkEqualsNumeric(nrow(xsaFI@isoID),14)
     xsaFA <- findAdducts(xsaFI, polarity="positive")
-    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),26)
+    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),23)
     }
 
 
