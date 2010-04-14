@@ -1773,6 +1773,8 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL,psSamples=NULL) {
         }
       }
     } else {
+
+hier irgendwo in den psSamples-vektor den wert für die aktuelle gruppe anhängen ....
       #Only one peak in the pseudospectra
 #       pspectra[[i]] <- pi;
     }
