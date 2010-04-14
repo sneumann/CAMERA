@@ -321,17 +321,17 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
       mz  <- imz[ipeak];
       int <- mint[ipeak];
       #matrix der peaks mit allen wichtigen Informationen
-      spectra<-matrix(c(mz,int,ipeak),ncol=3)
-      spectra<-spectra[order(spectra[,1]),];
-      cnt<-nrow(spectra);
+      spectra <- matrix(c(mz, int, ipeak), ncol=3)
+      spectra <- spectra[order(spectra[, 1]), ];
+      cnt <- nrow(spectra);
       #für jeden Peak
-      for ( j in 1:(length(mz)-1)){
+      for ( j in 1:(length(mz) - 1)){
         #erzeuge Differenzmatrix
-        MI <- spectra[j:cnt,1] - spectra[j,1];
+        MI <- spectra[j:cnt, 1] - spectra[j, 1];
         #für alle erlaubte Ladungen
         for(charge in maxcharge:1){
           #Suche Übereinstimmungen der Isotopenabständen mit der Differenzmatrix
-          m<- fastMatch(MI,IM[,charge],tol= max(2*devppm*mz)+ mzabs)
+          m <- fastMatch(MI,IM[,charge],tol= max(2*devppm*mz)+ mzabs)
           #Für jeden Match, teste welches Isotope gefunden wurde
           if(any(sapply(m,is.null))){
             #für alle erlaubten Isotopenpeaks
@@ -346,10 +346,18 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
                   int.available <- all(!is.na(c(spectra[pos+j-1,2],spectra[j,2])))
                   if (iso == 1){
                     #wenn der erste Isotopenpeak gefunden wurde
-                    if (int.available)
-                    ISO_RULE1 <- (spectra[pos+j-1,2] < spectra[j,2] ) ## isotopic rule
-                    else ISO_RULE1 <- TRUE
-                    ISO_RULE <- TRUE
+                    if (int.available){
+                      ISO_RULE1 <- (spectra[pos+j-1, 2] < spectra[j, 2] ) ## isotopic rule
+                      theo.mass <- spectra[j, 1] * charge; #theoretical mass
+                      numC      <- round(theo.mass / 12); #max. number of C in molecule
+                      inten.max <- spectra[j, 2] * numC * 0.011; #highest possible intensity
+                      inten.min <- spectra[j, 2] * 1    * 0.011; #lowest possible intensity
+                      ## here C12/C13 rule
+                      ISO_RULE  <- (spectra[pos+j-1, 2] < inten.max && spectra[pos+j-1,2] > inten.min)
+                    } else {
+                      ISO_RULE1 <- TRUE
+                      ISO_RULE  <- TRUE
+                    }
                   }else{
                     # Sind alle anderen isotopen Peaks da?
                     test<-match(apply(isomatrix[,c(1,3,4)],1,function(x) {paste(x,collapse=" ")}),apply(matrix(cbind(spectra[j,3],1:(iso-1),charge),ncol=3),1, function(x) {paste(x,collapse=" ")}))
@@ -361,7 +369,9 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
                       ISO_RULE1 <- FALSE
                     }
                   }
-                  if (!ISO_RULE1) { break;}
+                  if (!ISO_RULE1) { 
+                    break;
+                  }
                   if (ISO_RULE1 && ISO_RULE){
                     #Neues Isotope gefunden
                     #TODO: Intrinsische Ladungen betrachten
@@ -371,8 +381,12 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
                       }
                     }
                   }
-                } else break;
-              } else break;
+                } else { 
+                  break;
+                }
+              } else { 
+                break;
+              }
             }
           }
         }
@@ -380,17 +394,20 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
     }
   }
   #clean isotopes
-  isomatrix<-isomatrix[-1,];
-  if(is.null(nrow(isomatrix))) { isomatrix = matrix(isomatrix,byrow=F,ncol=length(isomatrix)) }
-  object@isoID<-rbind(object@isoID,isomatrix[,1:4]);
+  isomatrix <- isomatrix[-1, ];
+  if(is.null(nrow(isomatrix))) {
+    isomatrix = matrix(isomatrix, byrow=F, ncol=length(isomatrix)) 
+  }
+  object@isoID <- rbind(object@isoID, isomatrix[, 1:4]);
   # Zähler für Isotopengruppen
-  globalcnt <- 0;oldnum<-0;
-  if(nrow(isomatrix)>0){
+  globalcnt <- 0;
+  oldnum    <- 0;
+  if(nrow(isomatrix) > 0){
     for( i in 1:nrow(isomatrix)){
-      if(!isomatrix[i,1]==oldnum){
-          globalcnt<-globalcnt+1; 
-          isotope[[isomatrix[i,1]]]<-list(y=globalcnt, iso=0, charge= isomatrix[i,4], val=isomatrix[i,5]);
-          oldnum<-isomatrix[i,1];
+      if(!isomatrix[i, 1] == oldnum){
+          globalcnt <- globalcnt+1; 
+          isotope[[isomatrix[i, 1]]] <- list(y=globalcnt, iso=0, charge=isomatrix[i, 4], val=isomatrix[i, 5]);
+          oldnum <- isomatrix[i, 1];
       };
       isotope[[isomatrix[i,2]]]<-list(y=globalcnt,iso=isomatrix[i,3],charge=isomatrix[i,4],val=isomatrix[i,5]);
     }
