@@ -352,8 +352,8 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
                       numC      <- round(theo.mass / 12); #max. number of C in molecule
                       inten.max <- spectra[j, 2] * numC * 0.011; #highest possible intensity
                       inten.min <- spectra[j, 2] * 1    * 0.011; #lowest possible intensity
-                      ## here C12/C13 rule
-                      ISO_RULE  <- (spectra[pos+j-1, 2] < inten.max && spectra[pos+j-1,2] > inten.min)
+                      ## here C12/C13 rule, isotopic rule now obsolete?
+                      ISO_RULE  <- (spectra[pos+j-1, 2] < inten.max && spectra[pos+j-1, 2] > inten.min)
                     } else {
                       ISO_RULE1 <- TRUE
                       ISO_RULE  <- TRUE
@@ -398,6 +398,31 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   if(is.null(nrow(isomatrix))) {
     isomatrix = matrix(isomatrix, byrow=F, ncol=length(isomatrix)) 
   }
+  #check if every isotope in one isotope grp, have the same charge
+  if(length(idx.duplicated <- which(duplicated(paste(isomatrix[, 1], isomatrix[, 3])))) > 0){
+    #at least one pair of peakindex and number of isotopic peak is identical
+    peak.idx <- unique(isomatrix[idx.duplicated,1]);
+    for( i in 1:length(peak.idx)){
+      #peak.idx has two or more annotated charge
+      #select the charge with the higher cardinality
+      peak <- peak.idx[i];
+      #which charges we have
+      charges.list   <- unique(isomatrix[which(isomatrix[, 1] == peak), 4]);
+      #how many isotopes have been found, which this charges
+      charges.length <- sapply(charges.list, function(x,isomatrix,peak) { length(which(isomatrix[, 1] == peak & isomatrix[, 4] == x)) },isomatrix,peak);
+      #select the charge which the highest cardinality
+      idx <- which.max(charges.length);
+      if(length(idx) == 1){
+        #max is unique
+        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] == charges.list[-idx]),]
+      }else{
+        #select this one, which lower charge
+        idx <- which.min(charges.list[idx]);
+        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] == charges.list[-idx]),]
+      }
+    }
+  }
+
   object@isoID <- rbind(object@isoID, isomatrix[, 1:4]);
   # Zähler für Isotopengruppen
   globalcnt <- 0;
