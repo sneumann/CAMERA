@@ -204,7 +204,30 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
   if(object@xcmsSet@peaks[1,"rt"] == -1) {
      warning("Warning: no retention times avaiable. Do nothing\n")
   }else {
-    tmp <- getAllEICs(object@xcmsSet)
+    npspectra <- length(object@pspectra);
+    #Wenn groupFWHM nicht vorher aufgerufen wurde!
+    if(npspectra<1){
+      npspectra<-1;
+      object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
+      if(is.na(object@sample)){
+        object@psSamples <- 1;
+      }else{
+        object@psSamples <- object@sample;
+      }
+      cat("Calculating peak correlations for all peaks in one big group on sample ",object@psSamples,".\nUse groupFWHM before, to reduce runtime.\n");
+    }
+    if(is.na(object@sample)){
+        index <- rep(0,nrow(object@groupInfo));
+        for(i in 1:npspectra){
+          index[object@pspectra[[i]]] <- object@psSamples[[i]];
+        }
+    }else if(object@sample > 0){
+        index <- rep(object@sample,nrow(object@groupInfo));
+    }else{
+      #sample:-1 way, @joe fix pls
+      stop("NYI");
+    }
+    tmp <- getAllEICs(object@xcmsSet,index=index)
     EIC <- tmp$EIC
     scantimes <- tmp$scantimes
     cnt<-length(object@pspectra);
@@ -212,13 +235,6 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
     if(nrow(object@isoID)>0){
       cat("Isotope annotation found, used as grouping information.\n")
     }
-    npspectra <- length(object@pspectra);
-    #Wenn groupFWHM nicht vorher aufgerufen wurde!
-     if(npspectra<1){
-      npspectra<-1;
-      object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
-      cat('Calculating peak correlations for 1 big group.\nTry groupFWHM before, to reduce runtime. \n');
-     }
     if(object@runParallel==1){
         if(mpi.comm.size() >0){
           tmp<- calcCL2(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th)
@@ -247,59 +263,63 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
           object@polarity<-polarity
         }else{cat("Unknown polarity parameter.\n"); }
     }
-    object <- calc_pc(object,CL,cor_matrix,psg_list=psg_list,psSamples=psSamples)
-    cat("xsAnnotate has now",length(object@pspectra),"groups, instead of",cnt,"\n"); 
+    object <- calc_pc(object, CL, cor_matrix, psg_list=psg_list, psSamples=psSamples)
+    cat("xsAnnotate has now", length(object@pspectra), "groups, instead of", cnt, "\n"); 
   }
 return(invisible(object));
 })
 
 setGeneric("findIsotopes", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01) standardGeneric("findIsotopes"));
 setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01){
-  if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object");
- # calculate Isotope_Matrix
-  IM <- calcIsotopes(maxiso=maxiso,maxcharge=maxcharge);
+  if (!class(object) == "xsAnnotate"){
+    stop ("no xsAnnotate object");
+  }
+  # calculate Isotope_Matrix
+  IM <- calcIsotopes(maxiso=maxiso, maxcharge=maxcharge);
   # Normierung
   devppm <- ppm / 1000000;
   # get mz,rt,into from peaktable
   if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
     ##Ein Sample Fall
-    imz <- object@xcmsSet@peaks[,"mz"];
-    irt <- object@xcmsSet@peaks[,"rt"];
-    mint <- object@xcmsSet@peaks[,"into"];
+    imz  <- object@xcmsSet@peaks[, "mz"];
+    irt  <- object@xcmsSet@peaks[, "rt"];
+    mint <- object@xcmsSet@peaks[, "into"];
   }else {
     ##Mehrsample Fall
     #Gibt es Unterschiede
-    gvals <- groupval(object@xcmsSet);
-    peakmat <- object@xcmsSet@peaks;
-    groupmat <- groups(object@xcmsSet)
-    imz<-groupmat[,"mzmed"];
-    irt<-groupmat[,"rtmed"];
+    gvals    <- groupval(object@xcmsSet);
+    peakmat  <- object@xcmsSet@peaks;
+    groupmat <- groups(object@xcmsSet);
+    imz <- groupmat[, "mzmed"];
+    irt <- groupmat[, "rtmed"];
     if(is.na(object@sample)){
-      mint <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"into"])},peakmat)); #errechne höchsten Peaks
-    }else if(object@sample== -1){
+      mint <- as.numeric(apply(gvals, 1, function(x, peakmat) { max(peakmat[x, "into"]) }, peakmat)); #errechne höchsten Peaks
+    }else if(object@sample == -1){
       ##TODO @ Joe: Was machen wir hier?
     }else{
       #Group mit vorgegebenen Sample
-      mint <- peakmat[gvals[,object@sample],"into"]; #errechne höchsten Peaks
+      mint <- peakmat[gvals[, object@sample], "into"]; #errechne höchsten Peaks
     }
   }
-
-  isotope <- vector("list",length(imz));
+  isotope   <- vector("list", length(imz));
   npspectra <- length(object@pspectra);
-  isomatrix<-matrix(NA,ncol=5);
+  isomatrix <- matrix(NA, ncol=5);
   
   #wenn vorher nicht groupFWHM aufgerufen wurde, gruppiere alle Peaks in eine Gruppe
-  if(npspectra < 1) { npspectra <- 1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));}
-  
-  cat("Run isotope peak annotation\n")
+  if(npspectra < 1) { 
+    npspectra <- 1;
+    object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
+  }
+  cat("Run isotope peak annotation\n");
   #Suche Isotope in jeder Gruppe
   for(i in 1:npspectra){
     #indizes der peaks aus der gruppe in der peaktable
     ipeak <- object@pspectra[[i]];
     #hat gruppe mehr als einen Peak, sonst mach nichts
-    if(length(ipeak)>1){
+    if(length(ipeak) > 1){
       #masse und intensität der Peaks
-      mz <- imz[ipeak];int <- mint[ipeak];
+      mz  <- imz[ipeak];
+      int <- mint[ipeak];
       #matrix der peaks mit allen wichtigen Informationen
       spectra<-matrix(c(mz,int,ipeak),ncol=3)
       spectra<-spectra[order(spectra[,1]),];
@@ -1850,7 +1870,7 @@ calc_pc <-function(object,CL,cor_matrix,psg_list=NULL,psSamples=NULL) {
   return(object)
 }
 
-getAllEICs <- function(xs,file=NULL) {
+getAllEICs <- function(xs,index=NULL,file=NULL) {
   ##old CAMERA
   ##index = sample
 #   peaki <- getPeaksIdxCol(xs,NULL);
@@ -1874,25 +1894,35 @@ getAllEICs <- function(xs,file=NULL) {
   nfiles <- length(filepaths(xs))
   scantimes <- list()
   maxscans <- 0
+  if(is.null(index)){
+    cat("Missing Index, generate all EICs from sample 1.\n");
+    index <- rep(1,nrow(peaki));
+  }
   cat('Generating EIC\'s .. \n') 
   if (nfiles > 1) { 
-      # cat('Searching maxima .. \n')
+#       cat('Searching maxima .. \n')
       for (f in 1:nfiles){
-      #  cat('Reading raw data file:',filepaths(xs)[f]) 
+#         cat('Reading raw data file:',filepaths(xs)[f]) 
         xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
 #         cat(',', length(xraw@scantime),'scans. \n') 
         maxscans <- max(maxscans,length(xraw@scantime))
         scantimes[[f]] <- xraw@scantime
       }
-  
+      EIC <- array(integer(0),c(nrow(peaki),maxscans,1))     
       for (f in 1:nfiles){
         if (file.exists(filepaths(xs)[f])) { 
-      #    cat('Reading raw data file:',filepaths(xs)[f],'\n') 
+#           cat('Reading raw data file:',filepaths(xs)[f],'\n') 
           xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
       #    cat('Generating EIC\'s .. \n') 
-          pdata <- as.data.frame(xs@peaks[peaki[,f],]) # data for peaks from file f
-          if (f==1) EIC <- array(integer(0),c(nrow(pdata),maxscans,length(filepaths(xs))))   
-          EIC[,,f] <- getEICs(xraw,pdata,maxscans)
+          idx.peaks <- which(index == f);
+          if(length(idx.peaks)>0){
+            pdata <- as.data.frame(xs@peaks[peaki[idx.peaks,f],]) # data for peaks from file f
+            if(length(idx.peaks)==1){
+              pdata <- t(pdata);
+            }
+  #           if (f==1) EIC <- array(integer(0),c(nrow(pdata),maxscans,length(filepaths(xs))))   
+            EIC[idx.peaks,,1] <- getEICs(xraw,pdata,maxscans)
+          }
         }
         else stop('Raw data file:',filepaths(xs)[f],' not found ! \n')
       }
@@ -2131,19 +2161,20 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     #end percent output
 
     #select sample f
-    if(is.na(object@sample)){
-      if(length(pi)>1){
-        f <- as.numeric(which.max(apply(peaks[pi,],2,function(x){mean(x,na.rm=TRUE)}))) #errechne höchsten Peaks, oder als mean,median
-        psSamples[i] <- f;
-      }else{
-        f <- which.max(peaks[pi,]);
-        psSamples[i] <- f;
-      }
-    }else {
-        f<-object@sample;
-        psSamples[i] <- f;
-    }
+#     if(is.na(object@sample)){
+#       if(length(pi)>1){
+#         f <- as.numeric(which.max(apply(peaks[pi,],2,function(x){mean(x,na.rm=TRUE)}))) #errechne höchsten Peaks, oder als mean,median
+#         psSamples[i] <- f;
+#       }else{
+#         f <- which.max(peaks[pi,]);
+#         psSamples[i] <- f;
+#       }
+#     }else {
+#         f<-object@sample;
+#         psSamples[i] <- f;
+#     }
     #end selection
+    f <- psSamples[j];
 
     if(length(pi)>1){
       for(x in 2:length(pi)){
@@ -2152,12 +2183,12 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
           yi <- pi[y];pyi<-peaki[yi,f];
           if ( ! (yi %in% CL[[xi]] || yi == xi)){
             cors <-0;
-            eicx <-  EIC[xi,,f]
-            eicy <-  EIC[yi,,f]
+            eicx <-  EIC[xi,,1]
+            eicy <-  EIC[yi,,1]
             px <- xs@peaks[pxi,]
             py <- xs@peaks[pyi,]
             crt <- range(px["rtmin"],px["rtmax"],py["rtmin"],py["rtmax"])
-            rti <- which(scantimes[[1]] >= crt[1] & scantimes[[1]] <= crt[2])
+            rti <- which(scantimes[[f]] >= crt[1] & scantimes[[f]] <= crt[2])
             if (length(rti)>1){
               dx <- eicx[rti]; dy <- eicy[rti]
               dx[dx==0] <- NA; dy[dy==0] <- NA;
