@@ -1,3 +1,6 @@
+2010-04-19 ckuhl <ckuhl@ipb-halle.de>
+	* Last changes for the next BioC release
+	* Rewrite of the vignette
 2010-03-17 ckuhl <ckuhl@ipb-halle.de>
 	* Hugh changes in CAMERA for working with multiple sample
 	* Add check constrains in groupCorr for isotopes and primary adducts

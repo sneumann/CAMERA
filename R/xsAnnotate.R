@@ -889,16 +889,31 @@ getPeaklist<-function(object){
     return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
 
-annotate<-function(xs, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, sample=NA, polarity="positive", nSlaves=1, max_peaks=100){
+annotate<-function(xs, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, sample=NA, quick=FALSE, psg_list=NULL, polarity="positive", nSlaves=1, max_peaks=100){
   if (!class(xs)=="xcmsSet"){
     stop ("xs is not an xcmsSet object")
   }
-  xs_anno  <- xsAnnotate(xs, sample=sample, nSlaves=nSlaves);
-  xs_anno2 <- groupFWHM(xs_anno, sigma=sigma, perfwhm=perfwhm);
-  xs_anno3 <- findIsotopes(xs_anno2, maxcharge=maxcharge ,maxiso=maxiso, ppm=ppm, mzabs=mzabs);
-  xs_anno4 <- groupCorr(xs_anno3, cor_eic_th=cor_eic_th, polarity=polarity);
-  xs_anno5 <- findAdducts(xs_anno4, multiplier=multiplier, ppm=ppm, mzabs=mzabs, polarity=polarity, max_peaks=max_peaks);
-  return(xs_anno5);
+  if(quick){
+    #Quick run, no groupCorr and findAdducts
+    xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
+    xa <- groupFWHM(xa,perfwhm=perfwhm, sigma=sigma);
+    xa <- findIsotopes(xa,maxcharge=maxcharge, maxiso=maxiso, ppm=ppm,mzabs=mzabs)
+    xa.result<-getPeaklist(xa);
+  }else{
+    xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
+    xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
+    xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
+    cnt <- length(xa@pspectra);
+    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list, polarity=polarity)
+    if(!is.null(psg_list)){
+      psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
+    }
+    xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,psg_list=psg_list);
+    xa.result<-getPeaklist(xa);
+  }
+  #Kombiniere Resultate
+
+  return(result);
 }
 
 ###End xsAnnotate exported Methods###
@@ -1481,13 +1496,13 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2){
       #no annotation exists
       masslist.pos <- NULL;
     }
-    cat("i: ",i,"\nj: ");
+#     cat("i: ",i,"\nj: ");
     #for every matching neg pseudospectra
     for(j in 1:length(m[[i]])){
       #get all m/z values from neg pseudospectrum
       grp.neg <- getpspectra(xsa.neg, m[[i]][j]);
       m.neg<-NA;
-      cat(" ",j);
+#       cat(" ",j);
       #remove masses of annotated isotope peaks
       for(k in 1:nrow(grp.neg)){
         if(!is.null(xsa.neg@isotopes[[xsa.neg@pspectra[[m[[i]][j]]][k]]])){
@@ -1688,7 +1703,7 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2){
 #     }else{
       peaklist<-cbind(peaklist,add.adducts);
 #     }
-    colnames(peaklist)[index+1]<-"neg. Mode"
+    colnames(peaklist)[index+1] <- "neg. Mode"
   }else if(!pos){
   index<-which(annoID.neg[,2] %in% grp2del);
   if(length(index)>0){
