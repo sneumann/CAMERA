@@ -913,7 +913,7 @@ annotate<-function(xs, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxis
   }
   #Kombiniere Resultate
 
-  return(result);
+  return(xa.result);
 }
 
 ###End xsAnnotate exported Methods###
