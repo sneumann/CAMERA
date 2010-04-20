@@ -889,9 +889,9 @@ getPeaklist<-function(object){
     return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
 
-annotate<-function(xs, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, sample=NA, quick=FALSE, psg_list=NULL, polarity="positive", nSlaves=1, max_peaks=100){
-  if (!class(xs)=="xcmsSet"){
-    stop ("xs is not an xcmsSet object")
+annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, sample=NA, quick=FALSE, psg_list=NULL, polarity="positive", nSlaves=1, max_peaks=100){
+  if (!class(object)=="xcmsSet"){
+    stop ("Object is not an xcmsSet object")
   }
   if(quick){
     #Quick run, no groupCorr and findAdducts
