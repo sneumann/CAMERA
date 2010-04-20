@@ -1765,7 +1765,6 @@ naOmit <- function(x) {
 
 calc_pc <-function(object,CL,cor_matrix,psg_list=NULL,psSamples=NULL) {
   
-  require(RBGL)
   pspectra<-object@pspectra;
 #   gm <- matrix(-1,1,2); colnames(gm) <- c('fromID','toID')
   li <- sapply(CL,function(x) length(x) > 0); #l <- which(li)
