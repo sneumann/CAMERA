@@ -6,10 +6,10 @@
  Annotate isotope peaks, adducts and fragments for a (grouped) xcmsSet \code{xs}. Returns a xsAnnotate object.
 }
 \usage{
-annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01, multiplier = 3, sample=NA, polarity="positive", nSlaves = 1, max_peaks=100)
+annotate(object, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01, multiplier = 3, sample=NA, quick= FALSE, psg_list=NULL, polarity="positive", nSlaves = 1, max_peaks=100)
 }
 \arguments{
-  \item{xs}{ xcmsSet with peak group assignments}
+  \item{object}{ xcmsSet with peak group assignments}
   \item{sigma}{Isotopic peak relationship table}
   \item{perfwhm}{Adduct/Fragment peak relationship table}
   \item{cor_eic_th}{correlation threshold (0..1)}
@@ -19,6 +19,8 @@ annotate(xs, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso 
   \item{mzabs}{absolut error}
   \item{multiplier}{max. number n of [nM+x] clusterions}
   \item{sample}{Index of which sample is used for the correlation, NA for auto-selection}
+  \item{quick}{Use only groupFWHM and findIsotopes}
+  \item{psg_list}{Calculation will only be done for the selected groups}
   \item{polarity}{Which polarity mode was used for measuring of the ms sample}
   \item{nSlaves}{Number of slaves for parallel calculation (Warning: Beta)}
   \item{max_peaks}{If run in parallel mode, value defines how much peaks will be calculated in every thread }
