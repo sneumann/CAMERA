@@ -463,11 +463,11 @@ devppm = ppm / 1000000;
     irt<-groupmat[,"rtmed"];
     if(is.na(object@sample)){
       mint <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"into"])},peakmat)); #errechne höchsten Peaks
-    }else if(sample== -1){
+    }else if(object@sample== -1){
       ##TODO @ Joe: Was machen wir hier?
     }else{
       #Group mit vorgegebenen Sample
-      mint <- peakmat[gvals[,sample],"into"]; #errechne höchsten Peaks
+      mint <- peakmat[gvals[,object@sample],"into"]; #errechne höchsten Peaks
     }
   }
 
@@ -1386,8 +1386,8 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
         ##Erzeuge Neutral loss
         index<-which(quasi==1)
         for(i in 1:nrow(neutralloss)){
-            name<-append(name,paste("[M-H-",neutralloss[i,1],"]+",sep=""));
-            charge<-append(charge,+1);
+            name<-append(name,paste("[M-H-",neutralloss[i,1],"]-",sep=""));
+            charge<-append(charge,-1);
             massdiff<-  append(massdiff,-neutralloss[i,2]-1.0076);
             nmol<-append(nmol,1);
             quasi<-append(quasi,0)
