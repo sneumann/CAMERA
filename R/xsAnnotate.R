@@ -303,7 +303,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   }
   isotope   <- vector("list", length(imz));
   npspectra <- length(object@pspectra);
-  isomatrix <- matrix(NA, ncol=5);
+  isomatrix <- matrix(NA, ncol=5, nrow=1);
   
   #wenn vorher nicht groupFWHM aufgerufen wurde, gruppiere alle Peaks in eine Gruppe
   if(npspectra < 1) { 
@@ -333,11 +333,17 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
           #Suche Übereinstimmungen der Isotopenabständen mit der Differenzmatrix
           m <- fastMatch(MI,IM[,charge],tol= max(2*devppm*mz)+ mzabs)
           #Für jeden Match, teste welches Isotope gefunden wurde
-          if(any(sapply(m,is.null))){
+          if(any(!sapply(m,is.null))){
             #für alle erlaubten Isotopenpeaks
             for( iso in 1:maxiso){
               #wurde der iso-Isotopenpeak gefunden?
-              pos <- which(sapply(m,function(x){ if(is.null(x))return(FALSE)else{x == iso}}))
+              pos <- which(sapply(m, function(x){ 
+		if(is.null(x)){
+		  return(FALSE);
+		} else { 
+		  x == iso;
+		  }
+		}));
               if (length(pos) > 0){
                 # Isotop Nr. iso scheint zu existieren
                 dev <- (devppm * spectra[pos+j-1,1]) + (devppm + spectra[j,1])
@@ -360,7 +366,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
                     }
                   }else{
                     # Sind alle anderen isotopen Peaks da?
-                    test<-match(apply(isomatrix[,c(1,3,4)],1,function(x) {paste(x,collapse=" ")}),apply(matrix(cbind(spectra[j,3],1:(iso-1),charge),ncol=3),1, function(x) {paste(x,collapse=" ")}))
+		    test <- match(apply(isomatrix[, c(1, 3, 4),drop=FALSE], 1, function(x) {paste(x,collapse=" ")}),apply(matrix(cbind(spectra[j,3],1:(iso-1),charge),ncol=3),1, function(x) {paste(x,collapse=" ")}))
                     if(length(naOmit(test))==(iso-1)){
                       ISO_RULE1 <- TRUE
                       if (int.available) ISO_RULE <- (spectra[pos+j-1,2] < spectra[j,2])
@@ -652,32 +658,42 @@ return(result);
 }
 
 annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) {
-  ipeak <- pspectra[[i]];
-  mz <- imz[ipeak];
-  na_ini<-which(!is.na(mz))
-  ML <- massDiffMatrix(mz[na_ini],rules)
-  m <- fastMatch(as.vector(ML),as.vector(ML),tol = max(2*devppm*mean(mz,na.rm=TRUE))+ mzabs)
-  c<-sapply(m,length)
-  index<-which(c>=2)
-  if(length(index)==0){ return(NULL);}
+  ipeak  <- pspectra[[i]];
+  mz     <- imz[ipeak];
+  na_ini <- which(!is.na(mz))
+  ML     <- massDiffMatrix(mz[na_ini],rules)
+  m      <- fastMatch(as.vector(ML), as.vector(ML), tol = max(2*devppm*mean(mz, na.rm=TRUE))+ mzabs)
+  c      <- sapply(m, length)
+  index  <- which(c >= 2)
+  if(length(index) == 0) {
+    return(NULL);
+  }
   
   #Erstelle Hypothesen
-  hypothese<-create_hypothese(m,index,ML,rules,na_ini)
-  if(is.null(nrow(hypothese))){return(NULL);}
+  hypothese <- create_hypothese(m, index, ML, rules, na_ini)
+  if(is.null(nrow(hypothese))){
+    return(NULL);
+  }
   
   #Entferne Hypothesen, welche gegen Isotopenladungen verstossen!
-  if(length(isotopes)>0){
-      hypothese <-check_isotopes(hypothese,isotopes,ipeak)
+  if(length(isotopes) > 0){
+      hypothese <- check_isotopes(hypothese, isotopes, ipeak)
   }
-  if(nrow(hypothese)<2){return(NULL);};
+  if(nrow(hypothese) < 2){
+    return(NULL);
+  };
   
   #Test auf Quasi-Molekülionen
-  hypothese <-check_quasimolion(hypothese,quasimolion)
-  if(nrow(hypothese)<2){return(NULL);};
+  hypothese <- check_quasimolion(hypothese, quasimolion)
+  if(nrow(hypothese) < 2){
+    return(NULL);
+  };
   
   #Entferne Hypothesen, welche gegen OID-Score&Kausalität verstossen!
-  hypothese <- check_oid_causality(hypothese,rules)
-  if(nrow(hypothese)<2){return(NULL);};
+  hypothese <- check_oid_causality(hypothese, rules)
+  if(nrow(hypothese) < 2){
+    return(NULL);
+  };
   
   #Prüfe IPS-Score
   hypothese <- check_ips(hypothese)
