@@ -1,3 +1,5 @@
+2010-05-03 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findIsotopes, crashed with dim error
 2010-04-20 ckuhl <ckuhl@ipb-halle.de>
         * Fix bug in annotate function
 2010-04-19 ckuhl <ckuhl@ipb-halle.de>
