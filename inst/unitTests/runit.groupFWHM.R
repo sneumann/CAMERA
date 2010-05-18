@@ -28,7 +28,7 @@ test.anno_single <- function() {
     anFI <- findIsotopes(anFC)
     checkEqualsNumeric(nrow(anFI@isoID),27)
     anFA <- findAdducts(anFI, polarity="positive")
-    checkEqualsNumeric(length(unique(anFA@annoID[,1])),33)
+    checkEqualsNumeric(length(unique(anFA@annoID[,1])),39)
     ## findAdducts with psg_list
     anFAc <- findAdducts(anFI, polarity="positive", psg_list=c(5,6,7,8,9,10,11,12))
     checkEqualsNumeric(length(unique(anFAc@annoID[,1])),9)
