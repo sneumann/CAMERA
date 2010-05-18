@@ -251,19 +251,19 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
       return(invisible(object));
     }
     CL<-tmp$CL;
-    CI<-as.matrix(tmp$CI)
+#     CI<-as.matrix(tmp$CI)
     psSamples <- tmp$psSamples;
-    cor_matrix<-matrix(NA,ncol=nrow(object@groupInfo),nrow=nrow(object@groupInfo))
-    for(i in 1:nrow(CI)){
-      cor_matrix[CI[i,1],CI[i,2]]<-CI[i,3]
-    }
+#     cor_matrix<-matrix(NA,ncol=nrow(object@groupInfo),nrow=nrow(object@groupInfo))
+#     for(i in 1:nrow(CI)){
+#       cor_matrix[CI[i,1],CI[i,2]]<-CI[i,3]
+#     }
     rm(tmp);
     if(!is.na(polarity)){
         if(polarity %in% c("positive","negative")){
           object@polarity<-polarity
         }else{cat("Unknown polarity parameter.\n"); }
     }
-    object <- calc_pc(object, CL, cor_matrix, psg_list=psg_list, psSamples=psSamples)
+    object <- calc_pc(object, CL, psg_list=psg_list, psSamples=psSamples)
     cat("xsAnnotate has now", length(object@pspectra), "groups, instead of", cnt, "\n"); 
   }
 return(invisible(object));
@@ -914,7 +914,7 @@ annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, m
     xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
     xa <- groupFWHM(xa,perfwhm=perfwhm, sigma=sigma);
     xa <- findIsotopes(xa,maxcharge=maxcharge, maxiso=maxiso, ppm=ppm,mzabs=mzabs)
-    xa.result<-getPeaklist(xa);
+#     xa.result<-getPeaklist(xa);
   }else{
     xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
     xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
@@ -925,11 +925,11 @@ annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, m
       psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
     }
     xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,psg_list=psg_list);
-    xa.result<-getPeaklist(xa);
+#     xa.result<-getPeaklist(xa);
   }
   #Kombiniere Resultate
 
-  return(xa.result);
+  return(xa);
 }
 
 ###End xsAnnotate exported Methods###
@@ -1779,165 +1779,194 @@ naOmit <- function(x) {
     return (x[!is.na(x)]);
 }
 
-calc_pc <-function(object,CL,cor_matrix,psg_list=NULL,psSamples=NULL) {
+calc_pc <-function(object,CL,psg_list=NULL,psSamples=NULL) {
   
-  pspectra<-object@pspectra;
-#   gm <- matrix(-1,1,2); colnames(gm) <- c('fromID','toID')
-  li <- sapply(CL,function(x) length(x) > 0); #l <- which(li)
-  if (!any(li)) { return(object@pspectra) }
+  pspectra <- object@pspectra;
+  li <- sapply(CL, function(x) length(x) > 0);
+  if (!any(li)){
+    #No Connection Found
+    return(object@pspectra);
+  }
+
   npspectra <- length(object@pspectra);
   if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
     ##Ein Sample Fall
-    imz <- object@xcmsSet@peaks[,"mz"];
+    imz <- object@xcmsSet@peaks[, "mz"];
   }else {
     ##Mehrsample Fall
     imz <- groups(object@xcmsSet)[,"mzmed"]
   }
+
   if(is.null(psg_list)){
-    cat('\nCalculating graph cross linking in',npspectra,'Groups... \n % finished: '); lp <- -1;
-    pspectra_list<-1:npspectra;
-    ncl<-sum(sapply(object@pspectra,length));
+    cat('\nCalculating graph cross linking in', npspectra, 'Groups... \n % finished: ');
+    lp <- -1;
+    pspectra_list <- 1:npspectra;
+    ncl <- sum(sapply(object@pspectra, length));
   }else{
-    cat('\nCalculating graph cross linking in',length(psg_list),'Groups... \n % finished: '); lp <- -1;
-    pspectra_list<-psg_list;
-    ncl<-sum(sapply(object@pspectra[psg_list],length));
+    cat('\nCalculating graph cross linking in',length(psg_list),'Groups... \n % finished: ');
+    lp <- -1;
+    pspectra_list <- psg_list;
+    ncl <- sum(sapply(object@pspectra[psg_list], length));
   }
 
-  npeaks = 0;
+  npeaks <- 0;
   if(nrow(object@isoID)){
     #Isotope wurden vorher erkannt
-    
-    idx<-unique(object@isoID[,1]); #ID aller monoisotopischen Peaks
-  }else {idx<-NULL};
+    idx <- unique(object@isoID[, 1]); #ID aller monoisotopischen Peaks
+  }else{
+    idx<-NULL
+  };
   for(j in 1:length(pspectra_list)){
-    i <- pspectra_list[j];
-    pi <- object@pspectra[[i]];
-    npeaks <- npeaks + length(pi);
+    i  <- pspectra_list[j];#index of pseudospectrum
+    pi <- object@pspectra[[i]]; #peak_id in pseudospectrum
+    
+    ## % output
+    npeaks <- npeaks + length(pi); 
     perc <- round(npeaks / ncl * 100)
-    if ((perc %% 10 == 0) && (perc != lp)) { cat(perc,' '); lp <- perc }
-    if (.Platform$OS.type == "windows") flush.console()
- 
+    if ((perc %% 10 == 0) && (perc != lp)) { 
+      cat(perc, ' ');
+      lp <- perc; 
+    }
+    if (.Platform$OS.type == "windows"){
+      flush.console();
+    }
+  
     ## create list of connected components
-    V <- as.character(pi);
-    OG <- new("graphNEL",nodes=V)
-    edgemode(OG) <- "undirected"
-    gm <- matrix(NA,ncol=2);
+    V  <- as.character(pi);
+    OG <- new("graphNEL", nodes=V)
+    edgemode(OG) <- "undirected";
     ow <- options("warn");
     options(warn = -1);
     for(k in 1:length(pi)){
       to <- CL[[pi[k]]];
       if(length(to)>0) {
-        OG <- addEdge(from=as.character(pi[k]),to=as.character(to),graph=OG,weights=1);
+        OG <- addEdge(from=as.character(pi[k]), to=as.character(to), graph=OG, weights=1);
       }
     }
     options(ow);
-    NG <- matrix(NA,ncol=2);
+
+    NG <- matrix(NA, ncol=2);
     ## verify all correlation graphs
-    G <- OG;
-    if (length(nodes(G)) > 2) {
+    if (length(nodes(OG)) > 2) {
       ## decomposition might be necessary
-      # G <- removeSelfLoops(G)
-      hcs <-  highlyConnSG(G)
-      lsg <- sapply(hcs$clusters,function(x) length(x))
+      hcs <- highlyConnSG(OG);
+      rm(OG);gc();
+      #calculate size of hcs cluster
+      lsg <- sapply(hcs$clusters, function(x) length(x));
       lsg.i <- which(lsg > 1)
-      if (length(lsg.i)<1) next;
-      for(z in 1:length(hcs$clusters)){
-        NG<-rbind(NG,cbind(z,as.numeric(hcs$clusters[[z]])))
+      #Have we at least one hcs with length > 1
+      if (length(lsg.i) < 1){
+        next;
       }
-      NG<-NG[-1,];#Remove NA
+      #NG[index of cluster, index of peak]
+      for(z in 1:length(hcs$clusters)){
+        NG <- rbind(NG, cbind(z, as.numeric(hcs$clusters[[z]])))
+      }
+      NG <- NG[-1,];#Remove NA
+      rm(hcs);gc();
+
+      ##Hold primary adducts together
       if(object@polarity %in% c("positive","negative")){
         if(object@polarity == "positive"){
           ##Hold M+H,M+Na
-          rules<-data.frame(c("[M+H-M+Na]","[M+H-M+K]","[M+Na-M+Na]"),1,1,c(21.9812,37.9552,15.974),1,1,1)
-          colnames(rules)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips");         
+          rules <- data.frame(c("[M+H-M+Na]","[M+H-M+K]","[M+Na-M+Na]"),1,1,c(21.9812,37.9552,15.974),1,1,1)
+          colnames(rules) <- c("name","nmol","charge","massdiff","oidscore","quasi","ips");         
         }else {
           #negative Way
           ##Hold M-H,M-Na
-          rules<-data.frame(c("[M-H-M-2H+Na]","[M-H-M+Cl]"),1,1,c(21.9812,35.9758),1,1,1)
-          colnames(rules)<-c("name","nmol","charge","massdiff","oidscore","quasi","ips");         
+          rules <- data.frame(c("[M-H-M-2H+Na]","[M-H-M+Cl]"),1,1,c(21.9812,35.9758),1,1,1)
+          colnames(rules) <- c("name","nmol","charge","massdiff","oidscore","quasi","ips");         
         }
-        mz<-imz[pi];ix<-order(mz);mz<-mz[ix]
-        mm<-matrix(NA,ncol=2)
+        mz <- imz[pi];
+        ix <- order(mz);
+        mz <- mz[ix];
+        mm <- matrix(NA, ncol=2);
         for(x in 1:length(mz)){
           for(y in x:length(mz)){
-            diff<-mz[y]-mz[x];
-            if(diff>39){break} ##Diff zu gross
-            if(length(unlist(fastMatch(rules[,"massdiff"],diff,0.02)))>0){
+            diff <- mz[y]-mz[x];
+            if(diff > 39){
+              break; ##Diff zu gross
+            }
+            if(length(unlist(fastMatch(rules[, "massdiff"], diff, 0.02))) > 0){
               #One rule fit, not of interest which one
-              mm<-rbind(mm,c(pi[ix[x]],pi[ix[y]]));
+              mm <- rbind(mm, c(pi[ix[x]], pi[ix[y]]));
             }
           }
         }
-        if(nrow(mm)>1){
-          mm<-mm[-1,]#remove NA        
-          mm<-matrix(mm,ncol=2);
+        if(nrow(mm) > 1){
+          mm <- mm[-1, ]; #remove NA        
+          mm <- matrix(mm, ncol=2);
           for(x in 1:nrow(mm)){
             if(!mm[x,1] %in% NG[,2]){
-                  NG<-rbind(NG,c(max(NG[,1])+1,mm[x,1]));
+              NG <- rbind(NG, c(max(NG[, 1])+1, mm[x, 1]));
             }
-            grp<-NG[which(NG[,2]==mm[x,1]),1];
+            grp <- NG[which(NG[, 2]==mm[x, 1]), 1];
             if(!mm[x,2] %in% NG[,2]){
-                  NG<-rbind(NG,c(grp,mm[x,2]));
+              NG <- rbind(NG, c(grp, mm[x, 2]));
             }else{
-              NG[which(NG[,2]==mm[x,2]),1]<-grp;
+              NG[which(NG[, 2] == mm[x, 2]), 1] <- grp;
             }
-          }
-        }
-      }
-      ##Hold Isotope together
-      if(length(idx)>0){
-        iidx<-which(pi %in% idx);
-        if(length(iidx)>0){
-          #Monoiso. in grp gefunden
-          for(h in 1:length(iidx)){
-            mindex<-pi[iidx[h]];
-            if(!mindex %in% NG[,2]){
-                NG<-rbind(NG,c(max(NG[,1])+1,mindex));
-            }
-            isoindex<-object@isoID[which(object@isoID[,1]==mindex),2];
-            for(t in 1:length(isoindex)){
-              #if hcs sorted isopeak out
-              if(!isoindex[t] %in% NG[,2]) {NG<-rbind(NG,c(0,isoindex[t]))}
-            }
-            grp<-NG[which(mindex==NG[,2]),1]
-            NG[sapply(isoindex,function(x,NG) {which(x==NG[,2])},NG),1]<-grp;#Setze isotope auf gleichen index wie monoiso.
           }
         }
       }
 
-      ## calculate all new pspectra
-      grps<-unique(NG[,1]);
-      cnts<-unlist(lapply(grps,function(x,NG) { length( which( NG[,1] == x) ) },NG))
-      grps<-grps[order(cnts,decreasing = TRUE)]
+      ##Hold Isotope together
+      if(length(idx) > 0){
+        iidx <- which(pi %in% idx);
+        if(length(iidx) > 0){
+          #Monoiso. in grp gefunden
+          for(h in 1:length(iidx)){
+            mindex <- pi[iidx[h]];
+            if(!mindex %in% NG[, 2]){
+                NG <- rbind(NG, c(max(NG[, 1])+1, mindex));
+            }
+            isoindex <- object@isoID[which(object@isoID[, 1] == mindex), 2];
+            for(t in 1:length(isoindex)){
+              #if hcs sorted isopeak out
+              if(!isoindex[t] %in% NG[, 2]) {
+                NG <- rbind(NG, c(0, isoindex[t]))
+              }
+            }
+            grp <- NG[which(mindex == NG[, 2]), 1];
+            NG[sapply(isoindex, function(x, NG) {which(x == NG[, 2])}, NG), 1] <- grp;#Setze isotope auf gleichen index wie monoiso.
+          }
+        }
+      }
+     ## calculate all new pspectra
+      grps <- unique(NG[, 1]);
+      cnts <- unlist(lapply(grps, function(x, NG) { length( which( NG[,1] == x) ) }, NG))
+      grps <- grps[order(cnts, decreasing = TRUE)]
       for (ii in 1:length(grps)){
         if(ii==1){
           #behalten alte Nummer
-          pspectra[[i]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
-
+          pspectra[[i]] <- sort(NG[which(NG[, 1] == grps[ii]), 2]);
         } else {
-          pspectra[[length(pspectra)+1]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
-          psSamples[length(psSamples)+1] <- psSamples[i] 
+          pspectra[[length(pspectra)+1]] <- sort(NG[which(NG[, 1] == grps[ii]), 2]);
+          psSamples[length(psSamples)+1] <- psSamples[i];
         }
       }
     } else {
       #Only one peak in the pseudospectra
 #       pspectra[[i]] <- pi;
+        rm(OG);gc();
     }
-  }
+    ##rm not used data
+    rm(NG);gc();
+}
   ##Workarround: peaks without groups
     peaks<-vector("logical",nrow(object@groupInfo))
     npspectra<-length(pspectra)
     for(i in 1:npspectra){
-        peaks[pspectra[[i]]]<-TRUE;
+        peaks[pspectra[[i]]] <- TRUE;
     }
-    index<-which(peaks==FALSE);
-    if(length(index)>0){
+    index <- which(peaks==FALSE);
+    if(length(index) > 0){
       for(i in 1:length(index)){
-        pspectra[npspectra+i]<-index[i];
+        pspectra[npspectra+i] <- index[i];
       }
     }
-  object@pspectra<-pspectra;
-  object@psSamples<-psSamples;
+  object@pspectra <- pspectra;
+  object@psSamples <- psSamples;
   cat("\n");
   return(object)
 }
@@ -2132,22 +2161,56 @@ for (i in 1:length(m))
 return(DM)
 }
 
-calcCL2 <- function(object,xs, EIC, scantimes, cor_eic_th,nSlaves=2){
-  CL <- vector("list",nrow(object@groupInfo));
+calcCL2 <- function(object,EIC, scantimes, cor_eic_th,nSlaves=2){
+  xs <- object@xcmsSet;
+  if(is.na(object@sample)){
+    peaki <- getPeaksIdxCol(xs, col=NULL);
+    peaks <- groupval(xs, value="maxo");
+  }else if(object@sample == -1){
+    ##TODO @Joe: Sollte das hier auftreten?
+  }else{
+    peaki <- getPeaksIdxCol(xs, col=object@sample);
+  };
+  Nf <- length(filepaths(xs))
+  if(is.vector(peaki)){ 
+    peaki <- as.matrix(peaki);
+  };
+  Nrow <- nrow(peaki);
+  
+  CL  <- vector("list", nrow(object@groupInfo));
   CIL <- list();
-  ncl<-length(CL);npeaks=0;
+  ncl <- length(CL);
+
+  npeaks    <- 0;
   npspectra <- length(object@pspectra);
-  peaks<-object@groupInfo;
-  cat('Calculating peak correlations... \n');
+
   #Wenn groupFWHM nicht vorher aufgerufen wurde!
-  if(npspectra<1){
-    npspectra<-1;object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
+  if(npspectra < 1){
+    npspectra <- 1;
+    object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
+    cat('Calculating peak correlations for 1 big group.\nTry groupFWHM before, to reduce runtime. \n% finished: '); 
+    lp <- -1;
+    pspectra_list    <- 1;
+    object@psSamples <- 1;
+  }else{
+    if(is.null(psg_list)){
+      cat('\nCalculating peak correlations in',npspectra,'Groups... \n % finished: '); 
+      lp <- -1;
+      pspectra_list <- 1:npspectra;
+    }else{
+      cat('\nCalculating peak correlations in',length(psg_list),'Groups... \n % finished: '); 
+      lp <- -1;
+      pspectra_list <- psg_list;
+      ncl <- sum(sapply(object@pspectra[psg_list], length));
+    }
   }
+
   cormat<-matrix(,ncol=2)
   for(i in 1:npspectra){
           pi <- object@pspectra[[i]];
           cormat<-rbind(cormat,as.matrix(expand.grid(pi,pi)));
   }
+
   index<-which(cormat[,1]>=cormat[,2]);
   cormat<-cormat[-index,]
   cormat<-cormat[-1,]
@@ -2199,7 +2262,8 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   if(is.vector(peaki)){ peaki <- as.matrix(peaki) }
   Nrow <- nrow(peaki)
   CL <- vector("list",Nrow)
-  CIL <- list()
+#   CIL <- list()
+  CI <- NULL;
   ncl<-length(CL);
   
   npeaks=0;
@@ -2279,7 +2343,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
             if(cors>cor_eic_th){
               CL[[xi]] <- c(CL[[xi]],yi)
               CL[[yi]] <- c(CL[[yi]],xi) ## keep the list symmetric
-              CIL[[length(CIL)+1]] <- list(p=c(xi,yi),cor=cors)
+#               CIL[[length(CIL)+1]] <- list(p=c(xi,yi),cor=cors)
             }
           }
         }
@@ -2287,10 +2351,10 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     }
   }
   cat("\n");
-  if (length(CIL) >0) {
-    CI <- data.frame(t(sapply(CIL,function(x) x$p)),sapply(CIL,function(x) x$cor) );
-  } else { return(NULL) }
-  colnames(CI) <- c('xi','yi','cors')
+#   if (length(CIL) >0) {
+#     CI <- data.frame(t(sapply(CIL,function(x) x$p)),sapply(CIL,function(x) x$cor) );
+#   } else { return(NULL) }
+#   colnames(CI) <- c('xi','yi','cors')
   return(invisible(list(CL=CL,CI=CI,psSamples=psSamples)))
 }
 ###End xsAnnotate intern Function###
