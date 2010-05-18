@@ -31,7 +31,7 @@ test.anno_single <- function() {
     checkEqualsNumeric(length(unique(anFA@annoID[,1])),33)
     ## findAdducts with psg_list
     anFAc <- findAdducts(anFI, polarity="positive", psg_list=c(5,6,7,8,9,10,11,12))
-    checkEqualsNumeric(length(unique(anFAc@annoID[,1])),8)
+    checkEqualsNumeric(length(unique(anFAc@annoID[,1])),9)
     }
 
 test.anno_multi <- function() {
@@ -62,5 +62,5 @@ test.anno_multi <- function() {
     xsaFI <- findIsotopes(xsaC)
     checkEqualsNumeric(nrow(xsaFI@isoID),14)
     xsaFA <- findAdducts(xsaFI, polarity="positive")
-    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),23)
+    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),27)
     }
