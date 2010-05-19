@@ -1963,6 +1963,7 @@ calc_pc <-function(object,CL,psg_list=NULL,psSamples=NULL) {
     if(length(index) > 0){
       for(i in 1:length(index)){
         pspectra[npspectra+i] <- index[i];
+        psSamples[npspectra+i] <- object@groupInfo[index[i], "sample"];
       }
     }
   object@pspectra <- pspectra;
