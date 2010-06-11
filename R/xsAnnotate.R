@@ -457,24 +457,24 @@ devppm = ppm / 1000000;
  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
     ##Ein Sample Fall
     imz <- object@xcmsSet@peaks[,"mz"];
-    irt <- object@xcmsSet@peaks[,"rt"];
-    mint <- object@xcmsSet@peaks[,"into"];
+#     irt <- object@xcmsSet@peaks[,"rt"];
+#     mint <- object@xcmsSet@peaks[,"into"];
   }else {
     ##Mehrsample Fall
     #Gibt es Unterschiede
-    gvals <- groupval(object@xcmsSet);
-    peakmat <- object@xcmsSet@peaks;
-    groupmat <- groups(object@xcmsSet)
-    imz<-groupmat[,"mzmed"];
-    irt<-groupmat[,"rtmed"];
-    if(is.na(object@sample)){
-      mint <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"into"])},peakmat)); #errechne höchsten Peaks
-    }else if(object@sample== -1){
-      ##TODO @ Joe: Was machen wir hier?
-    }else{
+#     gvals <- groupval(object@xcmsSet);
+#     peakmat <- object@xcmsSet@peaks;
+#     groupmat <- groups(object@xcmsSet)
+      imz <- object@groupInfo[,"mz"];
+#     irt<-groupmat[,"rtmed"];
+#     if(is.na(object@sample)){
+#       mint <- as.numeric(apply(gvals,1,function(x,peakmat) { max(peakmat[x,"into"])},peakmat)); #errechne höchsten Peaks
+#     }else if(object@sample== -1){
+#       ##TODO @ Joe: Was machen wir hier?
+#     }else{
       #Group mit vorgegebenen Sample
-      mint <- peakmat[gvals[,object@sample],"into"]; #errechne höchsten Peaks
-    }
+#       mint <- peakmat[gvals[,object@sample],"into"]; #errechne höchsten Peaks
+#     }
   }
 
 # anzahl peaks in gruppen für % Anzeige
