@@ -1,3 +1,6 @@
+2010-11-06 ckuhl <ckuhl@ipb-halle.de>
+	* Speed up in findAdducts
+	* Fix unit tests
 2010-05-03 ckuhl <ckuhl@ipb-halle.de>
 	* Fix bug in findIsotopes, crashed with dim error
 2010-04-20 ckuhl <ckuhl@ipb-halle.de>
