@@ -6,7 +6,7 @@
  Annotate isotope peaks, adducts and fragments for a (grouped) xcmsSet \code{xs}. Returns a xsAnnotate object.
 }
 \usage{
-annotate(object, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01, multiplier = 3, sample=NA, quick= FALSE, psg_list=NULL, polarity="positive", nSlaves = 1, max_peaks=100)
+annotate(object, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.015, multiplier = 3, sample=NA, quick= FALSE, psg_list=NULL, polarity="positive", nSlaves = 1, max_peaks=100)
 }
 \arguments{
   \item{object}{ xcmsSet with peak group assignments}

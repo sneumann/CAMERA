@@ -626,7 +626,7 @@ if(!(object@polarity=="")){
       if (.Platform$OS.type == "windows") flush.console()
       #wenn mehr als ein Peaks in einer Gruppe ist
       if(length(ipeak)>1){
-        hypothese<-annotateGrp(object@pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion)
+        hypothese<-annotateGrp(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion)
         #Speichern
         if(is.null(hypothese)){next;}
         charge=0;old_massgrp=0;
@@ -657,20 +657,22 @@ result<-list();
 return(result);
 }
 
-annotateGrp <- function(pspectra,i,imz,rules,mzabs,devppm,isotopes,quasimolion) {
-  ipeak  <- pspectra[[i]];
+annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
   mz     <- imz[ipeak];
   na_ini <- which(!is.na(mz))
+
   ML     <- massDiffMatrix(mz[na_ini],rules)
-  m      <- fastMatch(as.vector(ML), as.vector(ML), tol = max(2*devppm*mean(mz, na.rm=TRUE))+ mzabs)
-  c      <- sapply(m, length)
-  index  <- which(c >= 2)
-  if(length(index) == 0) {
-    return(NULL);
-  }
+  hypothese <- createHypothese(ML,rules,devppm,mzabs,na_ini);
+
+#   m      <- fastMatch(as.vector(ML), as.vector(ML), tol = max(2*devppm*mean(mz, na.rm=TRUE))+ mzabs)
+#   c      <- sapply(m, length)
+#   index  <- which(c >= 2)
+#   if(length(index) == 0) {
+#     return(NULL);
+#   }
   
   #Erstelle Hypothesen
-  hypothese <- create_hypothese(m, index, ML, rules, na_ini)
+#   hypothese <- create_hypothese(m, index, ML, rules, na_ini)
   if(is.null(nrow(hypothese))){
     return(NULL);
   }
@@ -905,7 +907,7 @@ getPeaklist<-function(object){
     return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 }
 
-annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, sample=NA, quick=FALSE, psg_list=NULL, polarity="positive", nSlaves=1, max_peaks=100){
+annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.015, multiplier=3, sample=NA, quick=FALSE, psg_list=NULL, polarity="positive", nSlaves=1, max_peaks=100){
   if (!class(object)=="xcmsSet"){
     stop ("Object is not an xcmsSet object")
   }
@@ -964,49 +966,131 @@ getderivativeIons <- function(annoID,annoGrp,rules,npeaks){
 return(derivativeIons);
 }
 
-create_hypothese<-function(m,index,ML,rules,na_ini){
-a<-m[index];
-b<-a[which(duplicated(a)==FALSE)];
-b_length <- sapply(b,length);b_ini <- 1:length(b);
-b2 <- b[order(b_length)];b_ini<-b_ini[order(b_length)];
-add<-1;
-ini_new<-c();
-while(length(b2)>0)
-{
-    ini<-which(sapply(b2,function(x) {all((b2[[1]]) %in% x)})==TRUE);
-    if(length(ini)>1){
-        ini_new<-append(ini_new,add);
-        b2<-b2[-1];
-        add<-add+1;
-    }else{
-    b2<-b2[-1];add<-add+1;}
-}
-if(length(ini_new>0)){
-ini_new<-b_ini[ini_new];
-b<-b[-ini_new];}
-
-nrow_b<-length(b);
-ncol_b<-sapply(b,length)
-nrow_ML<-nrow(ML);
-ncol_ML<-ncol(ML);
-c<-as.vector(ML);
-hypomass<-sapply(b,function(x) {mean(c[x])})
-hypo<-matrix(NA,ncol=8)
-colnames(hypo)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp")
-for(row in 1:nrow_b)
-{
-    for(col in 1:ncol_b[row])
-    {
-        adduct<-b[[row]][col]%/%nrow_ML+1;
-        mass <- b[[row]][col]%%nrow_ML;if(mass==0){mass<-nrow_ML;adduct<-adduct-1;}
-        hypo <- rbind(hypo,c(na_ini[mass],adduct,rules[adduct,"nmol"],rules[adduct,"charge"],hypomass[row],rules[adduct,"oidscore"],rules[adduct,"ips"],row));
+createHypothese <- function(ML,rules,devppm,mzabs,na_ini){
+  ML.nrow <- nrow(ML);
+  ML.vec <- as.vector(ML);
+  max.value <- max(round(ML,0));
+  hashmap <- vector(mode="list",length=max.value);
+  for(i in 1:length(ML)){
+    val <- trunc(ML[i],0);
+    if(val>1){
+      hashmap[[val]] <- c(hashmap[[val]],i);
     }
+  }
+
+  hypothese <- matrix(NA,ncol=9,nrow=0);
+  colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips", "massgrp", "check");
+  massgrp <- 1;
+
+  for(i in 1:length(hashmap)){
+    if(is.null(hashmap[[i]])){
+      next;
+    }
+    candidates <- ML.vec[hashmap[[i]]];
+    candidates.index <- hashmap[[i]];
+    if(i != 1 && !is.null(hashmap[[i-1]]) && min(candidates) < i+(2*devppm*i+mzabs)){
+      index <- which(ML.vec[hashmap[[i-1]]]> i-(2*devppm*i+mzabs))
+      if(length(index)>0) {
+        candidates <- c(candidates, ML.vec[hashmap[[i-1]]][index]);
+        candidates.index <- c(candidates.index,hashmap[[i-1]][index]);
+      }    
+    }
+    if(length(candidates) < 2){
+      next;
+    }
+    tol <- max(2*devppm*mean(candidates, na.rm=TRUE))+ mzabs;
+    result <- cutree(hclust(dist(candidates)),h=tol);
+    index <- which(table(result) >= 2);
+    if(length(index) == 0){
+      next;
+    }
+    m <- lapply(index, function(x) which(result == x));
+    for(ii in 1:length(m)){
+        ini.adducts <- candidates.index[m[[ii]]];
+        for( iii in 1:length(ini.adducts)){
+          adduct <- ini.adducts[iii] %/% ML.nrow +1;
+          mass   <- ini.adducts[iii] %% ML.nrow;
+          if(mass == 0){
+            mass <- ML.nrow;
+            adduct <- adduct -1;
+          }
+          hypothese <- rbind(hypothese, c(na_ini[mass], adduct, rules[adduct, "nmol"], rules[adduct, "charge"], mean(candidates[m[[ii]]]), rules[adduct, "oidscore"], rules[adduct,"ips"],massgrp ,1));
+        }
+        massgrp <- massgrp +1;
+    }
+  }
+  return(hypothese);
 }
-hypo<-hypo[-1,]
-check<-1
-hypothese<-matrix(NA,ncol=9)
-colnames(hypothese)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp","check")
-hypothese<-cbind(hypo,check);
+
+
+create_hypothese <- function(m, index, ML, rules, na_ini){
+a <- m[index];
+# a2 <- lapply(a, sort);
+b <- a[which(duplicated(a) == FALSE)];
+b_length <- sapply(b, length);
+b_ini    <- 1:length(b);
+b2       <- b[order(b_length)];
+b_ini    <- b_ini[order(b_length)];
+add      <- 1;
+ini_new  <- c();
+
+b2_length <- sapply(b2,length);
+b.index <- vector("numeric",length=max(b_length)-1);
+
+for( i in 2:max(b_length) - 1){
+  b.index[i-1] <- which( b2_length > i)[1];
+}
+b.index[max(b_length)-1] <- which(b2_length >= max(b_length)-1)[1]
+
+# time <- proc.time()
+while(length(b2) > 0){
+  ind <- b.index[length(b2[[1]])-1];
+  ini <- which(sapply(b2[ind:length(b2)], function(x) {all((b2[[1]]) %in% x)}) == TRUE);
+  if(length(ini) >= 1){
+    ini_new <- append(ini_new, add);
+    b2  <- b2[-1];
+    add <- add+1;
+  }else{
+    b2 <- b2[-1];
+    add<-add+1;
+  }
+}
+# proc.time() - time
+
+
+
+
+if(length(ini_new > 0)){
+  ini_new <- b_ini[ini_new];
+  b <- b[-ini_new];
+}
+
+nrow_b   <- length(b);
+ncol_b   <- sapply(b, length)
+nrow_ML  <- nrow(ML);
+ncol_ML  <- ncol(ML);
+ML.v     <- as.vector(ML);
+hypomass <- sapply(b, function(x) {mean(ML.v[x])})
+hypo     <- matrix(NA,ncol=8);
+colnames(hypo) <- c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp");
+
+for(row in 1:nrow_b){
+  for(col in 1:ncol_b[row]){
+    adduct <- b[[row]][col] %/% nrow_ML + 1;
+    mass   <- b[[row]][col] %% nrow_ML;
+    if(mass == 0){
+      mass   <- nrow_ML;
+      adduct <- adduct - 1;
+    }
+    hypo   <- rbind(hypo, c(na_ini[mass], adduct, rules[adduct, "nmol"], rules[adduct, "charge"], hypomass[row], rules[adduct, "oidscore"], rules[adduct,"ips"], row));
+  }
+}
+hypo  <- hypo[-1,];
+check <- 1;
+hypothese <- matrix(NA, ncol=9);
+colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips", "massgrp", "check");
+hypothese <- cbind(hypo, check);
+
 return(hypothese)
 }
 
@@ -1799,12 +1883,12 @@ calc_pc <-function(object,CL,psg_list=NULL,psSamples=NULL) {
 
   if(is.null(psg_list)){
     cat('\nCalculating graph cross linking in', npspectra, 'Groups... \n % finished: ');
-    lp <- -1;
+    lperc <- -1;
     pspectra_list <- 1:npspectra;
     ncl <- sum(sapply(object@pspectra, length));
   }else{
     cat('\nCalculating graph cross linking in',length(psg_list),'Groups... \n % finished: ');
-    lp <- -1;
+    lperc <- -1;
     pspectra_list <- psg_list;
     ncl <- sum(sapply(object@pspectra[psg_list], length));
   }
@@ -1823,9 +1907,9 @@ calc_pc <-function(object,CL,psg_list=NULL,psSamples=NULL) {
     ## % output
     npeaks <- npeaks + length(pi); 
     perc <- round(npeaks / ncl * 100)
-    if ((perc %% 10 == 0) && (perc != lp)) { 
+    if ((perc %% 10 == 0) && (perc != lperc)) { 
       cat(perc, ' ');
-      lp <- perc; 
+      lperc <- perc; 
     }
     if (.Platform$OS.type == "windows"){
       flush.console();
@@ -1936,13 +2020,25 @@ calc_pc <-function(object,CL,psg_list=NULL,psSamples=NULL) {
       grps <- unique(NG[, 1]);
       cnts <- unlist(lapply(grps, function(x, NG) { length( which( NG[,1] == x) ) }, NG))
       grps <- grps[order(cnts, decreasing = TRUE)]
+      pcollect<-NULL ## collecting all indicies used for old/new pspectra
       for (ii in 1:length(grps)){
         if(ii==1){
           #behalten alte Nummer
           pspectra[[i]] <- sort(NG[which(NG[, 1] == grps[ii]), 2]);
+          pcollect <- c(pcollect, pspectra[[i]]);
         } else {
-          pspectra[[length(pspectra)+1]] <- sort(NG[which(NG[, 1] == grps[ii]), 2]);
-          psSamples[length(psSamples)+1] <- psSamples[i];
+          lp <- length(pspectra)+1
+          pspectra[[lp]] <- sort(NG[which(NG[,1]==grps[ii]),2]);
+          psSamples[lp] <- psSamples[i]
+          pcollect <- c(pcollect, pspectra[[lp]])
+        }
+      }
+      singleton <- pi[which(!(pi %in% pcollect))]
+      if (length(singleton)>0){
+        npspectra <- length(pspectra)
+        for(i in 1:length(singleton)){ ## inserting singleton peaks in own pspectra
+          pspectra[npspectra+i] <- singleton[i];
+          psSamples[npspectra+i] <- psSamples[j]
         }
       }
     } else {
@@ -1953,19 +2049,19 @@ calc_pc <-function(object,CL,psg_list=NULL,psSamples=NULL) {
     ##rm not used data
     rm(NG);gc();
 }
-  ##Workarround: peaks without groups
-    peaks<-vector("logical",nrow(object@groupInfo))
-    npspectra<-length(pspectra)
-    for(i in 1:npspectra){
-        peaks[pspectra[[i]]] <- TRUE;
-    }
-    index <- which(peaks==FALSE);
-    if(length(index) > 0){
-      for(i in 1:length(index)){
-        pspectra[npspectra+i] <- index[i];
-        psSamples[npspectra+i] <- object@groupInfo[index[i], "sample"];
-      }
-    }
+#   ##Workarround: peaks without groups
+#     peaks<-vector("logical",nrow(object@groupInfo))
+#     npspectra<-length(pspectra)
+#     for(i in 1:npspectra){
+#         peaks[pspectra[[i]]] <- TRUE;
+#     }
+#     index <- which(peaks==FALSE);
+#     if(length(index) > 0){
+#       for(i in 1:length(index)){
+#         pspectra[npspectra+i] <- index[i];
+#         psSamples[npspectra+i] <- object@groupInfo[index[i], "sample"];
+#       }
+#     }
   object@pspectra <- pspectra;
   object@psSamples <- psSamples;
   cat("\n");
