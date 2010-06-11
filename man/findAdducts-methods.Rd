@@ -28,8 +28,8 @@
  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
  an   <- xsAnnotate(xs)
- an <- findIsotopes(an)  # optional but recommended.
  an   <- groupFWHM(an)
+ an <- findIsotopes(an)  # optional but recommended.
 # an <- groupCorr(an) # optional but very recommended step
  an <- findAdducts(an,polarity="positive")
  peaklist <- getPeaklist(an) # get the annotated peak list
