@@ -8,7 +8,7 @@
 \usage{
 annotateDiffreport(object, sample=NA, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.75, maxcharge = 3, maxiso = 4, ppm = 5, mzabs = 0.01,
                  multiplier = 3, polarity = "positive", nSlaves = 1, psg_list = NULL, pval_th = NULL, fc_th = NULL, quick = FALSE,
-                 class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(),
+                 rules = NULL,class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(),
                  eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1, class2), value = c("into", "maxo", "intb"),
                   metlin = FALSE, h = 480, w = 640, ...)
 }
@@ -29,6 +29,7 @@ annotateDiffreport(object, sample=NA, sigma = 6, perfwhm = 0.6, cor_eic_th = 0.7
   \item{pval_th}{pval threshold. Creates a new psg_list. A pseudospectra is selected if it contains peaks, with pval < pval_th }
   \item{fc_th}{Same as pval. Select those groups with contains peaks with fold-change > fc_th. Pval_th and fc_th can be combined}
   \item{quick}{If quick is TRUE, only groupFWHM and findIsotopes will be calculated. Useful for preselecting groups with psg_list}
+  \item{rules}{User defined ruleset}
   \item{class1}{
     character vector with the first set of sample classes to be
     compared

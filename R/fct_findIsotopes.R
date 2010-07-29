@@ -14,6 +14,9 @@ calcIsotopes <- function(maxiso,maxcharge){
 getderivativeIons <- function(annoID,annoGrp,rules,npeaks){
     derivativeIons<-vector("list",npeaks);
     charge=0;
+    if(nrow(annoID) < 1){
+      return(derivativeIons);
+    }
     for(i in 1:nrow(annoID)){
         peakid  <-  annoID[i,1];
         grpid   <-  annoID[i,2];

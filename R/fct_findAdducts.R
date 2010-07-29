@@ -14,38 +14,32 @@ annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
   mz     <- imz[ipeak];
   na_ini <- which(!is.na(mz))
 
-  ML     <- massDiffMatrix(mz[na_ini],rules)
+  ML     <- massDiffMatrix(mz[na_ini],rules);
   hypothese <- createHypothese(ML,rules,devppm,mzabs,na_ini);
 
-#   m      <- fastMatch(as.vector(ML), as.vector(ML), tol = max(2*devppm*mean(mz, na.rm=TRUE))+ mzabs)
-#   c      <- sapply(m, length)
-#   index  <- which(c >= 2)
-#   if(length(index) == 0) {
-#     return(NULL);
-#   }
-  
   #Erstelle Hypothesen
-#   hypothese <- create_hypothese(m, index, ML, rules, na_ini)
   if(is.null(nrow(hypothese))){
     return(NULL);
   }
   
   #Entferne Hypothesen, welche gegen Isotopenladungen verstossen!
   if(length(isotopes) > 0){
-      hypothese <- check_isotopes(hypothese, isotopes, ipeak)
+      hypothese <- check_isotopes(hypothese, isotopes, ipeak);
   }
   if(nrow(hypothese) < 2){
     return(NULL);
   };
   
   #Test auf Quasi-Molekülionen
-  hypothese <- check_quasimolion(hypothese, quasimolion)
+  if(length(quasimolion) > 0){
+    hypothese <- check_quasimolion(hypothese, quasimolion);
+  }
   if(nrow(hypothese) < 2){
     return(NULL);
   };
   
   #Entferne Hypothesen, welche gegen OID-Score&Kausalität verstossen!
-  hypothese <- check_oid_causality(hypothese, rules)
+  hypothese <- check_oid_causality(hypothese, rules);
   if(nrow(hypothese) < 2){
     return(NULL);
   };
@@ -211,45 +205,54 @@ return(hypothese)
 
 check_oid_causality <- function(hypothese,rules){
 for(hyp in 1:nrow(hypothese)){
-    #check nmol
-    if(hypothese[hyp,"nmol"]>1){
-        check_sure<-TRUE;
-        if(hypothese[hyp,"charge"]==1){
-            if(length(which(hypothese[,"mass"]==hypothese[hyp,"mass"] & hypothese[,"oidscore"]== hypothese[hyp,"oidscore"]))>1){
-                for(prof in (hypothese[hyp,"nmol"]-1):1){
-                    indi<-which(hypothese[,"mass"]==hypothese[hyp,"mass"] & hypothese[,"oidscore"]== hypothese[hyp,"oidscore"] & hypothese[,"nmol"]==prof)
-                    if(length(indi)==0){
-                        check_sure<-FALSE;
-                        hypothese[hyp,"check"]<-0;next;
-                    }
-                }
-            }
-        }else if(abs(hypothese[hyp,"charge"])==hypothese[hyp,"nmol"]){
-            if(length(which(hypothese[,"mass"]==hypothese[hyp,"mass"] & hypothese[,"oidscore"]== hypothese[hyp,"oidscore"]))>1){
-                for(prof in (hypothese[hyp,"nmol"]-1):1){
-                    indi<-which(hypothese[,"mass"]==hypothese[hyp,"mass"] & hypothese[,"oidscore"]== hypothese[hyp,"oidscore"] & hypothese[,"nmol"]==prof)
-                    if(length(indi)==0){
-                        check_sure<-FALSE;
-                        hypothese[hyp,"check"]<-0;#next;
-                    }
-                }
-            }
-            if(length(indi<-which(hypothese[,"mass"]==hypothese[hyp,"mass"] & abs(hypothese[,"charge"])==hypothese[,"nmol"]))>1){
-                massdiff<-rules[hypothese[indi,"ruleID"],"massdiff"]/rules[hypothese[indi,"ruleID"],"charge"]
-                if(length(indi_new<-which(duplicated(massdiff)))>0){
-                    check_sure<-FALSE;
-                    hypothese[hyp,"check"]<-0;
-                }
-            }
+  #check nmol
+  if(hypothese[hyp, "nmol"] > 1){
+    #nmol > 1;
+    check_sure <- TRUE;
+    if(hypothese[hyp, "charge"] == 1){
+      #nmol > 1 and charge = 1; e.g. [2M+H]+, ensure [M+H] is there
+      if(length(which(hypothese[, "mass"] == hypothese[hyp, "mass"] & hypothese[, "oidscore"] == hypothese[hyp, "oidscore"])) > 1){
+        #same oidscore is there, could also be [3M+H]; otherwise could not check
+        for(prof in (hypothese[hyp, "nmol"] - 1):1){
+        #check if [M+H] is there, for a [3M+H], [2M+H] and [M+H] has to be there
+          indi <- which(hypothese[,"mass"] == hypothese[hyp,"mass"] & hypothese[,"oidscore"] == hypothese[hyp,"oidscore"] & hypothese[,"nmol"] == prof)
+          if(length(indi) == 0){
+            check_sure <- FALSE;
+            hypothese[hyp,"check"] <- 0;
+            next;
+          }
         }
-        if(check_sure){hypothese[hyp,"check"]<-1;}
-    }else{
-        if(hypothese[hyp,"charge"]>1){
-            ##todo
-        }else{
-            #nothing to say
+      }
+    }else if(abs(hypothese[hyp, "charge"]) == hypothese[hyp, "nmol"]){
+      #nmol > 1 and charge = nmol; e.g. [2M+2H]2+
+      if(length(which(hypothese[, "mass"] == hypothese[hyp, "mass"] & hypothese[, "oidscore"] == hypothese[hyp, "oidscore"])) > 1){
+        for(prof in (hypothese[hyp,"nmol"]-1):1){
+          indi<-which(hypothese[,"mass"]==hypothese[hyp,"mass"] & hypothese[,"oidscore"]== hypothese[hyp,"oidscore"] & hypothese[,"nmol"]==prof)
+          if(length(indi) == 0){
+            check_sure <- FALSE;
+            hypothese[hyp,"check"] <- 0;#next;
+          }
         }
+      }
+      if(length(indi <- which(hypothese[, "mass"] == hypothese[hyp, "mass"] & abs(hypothese[, "charge"]) == hypothese[, "nmol"])) > 1){
+        #check if [M+H] [2M+2H]... annotate the same molecule
+        massdiff <- rules[hypothese[indi,"ruleID"],"massdiff"] / rules[hypothese[indi,"ruleID"],"charge"]
+        if(length(indi_new <- which(duplicated(massdiff)))>0){
+          check_sure <- FALSE;
+          hypothese[hyp, "check"] <- 0;
+        }
+      }
     }
+    if(check_sure){
+      hypothese[hyp,"check"] <- 1;
+    }
+  }else{
+    if(hypothese[hyp,"charge"]>1){
+            ##todo
+    }else{
+            #nothing to say
+    }
+  }
 }
 hypothese<-hypothese[which(hypothese[,"check"]==TRUE),];
 if(is.null(nrow(hypothese))) hypothese = matrix(hypothese,byrow=F,ncol=9)

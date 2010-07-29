@@ -14,7 +14,7 @@
   \code{
     plotPsSpectrum(object, pspec=NULL, log=FALSE,
     value="maxo", maxlabel=0,
-        title=NULL, sleep=0)
+        title=NULL,mzrange=numeric() sleep=0)
 }
 }}}
 \value{
@@ -27,6 +27,7 @@
   \item{value}{Which of a peak's intensities should be used}
   \item{maxlabel}{How many m/z labels to print}
   \item{title}{Main title of the Plot}
+  \item{mzrange}{Which m/z range should plotted}
   \item{sleep}{Time (in seconds) to wait between successive Spectra, if
     multiple \code{pspec} are requested.}    
 }

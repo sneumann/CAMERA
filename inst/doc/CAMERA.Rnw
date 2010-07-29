@@ -437,7 +437,7 @@ xs   <- xcmsSet(file, method="centWave",ppm=30, peakwidth=c(5,10))
 an   <- xsAnnotate(xs)
 an   <- groupFWHM(an)
 an   <- findAdducts(an, polarity="positive")
-plotEICs(an, pspecIdx=2, maxlabel=5)
+plotEICs(an, pspec=2, maxlabel=5)
 @
 
 \begin{figure}

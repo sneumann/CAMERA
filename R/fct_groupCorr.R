@@ -313,151 +313,6 @@ calcCL3 <- function(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th,
 
 }
 
-calcCL2 <- function(object,EIC, scantimes, cor_eic_th,psg_list=NULL){
-  xs <- object@xcmsSet;
-  peaks <- xs@peaks;
-
-  if(is.na(object@sample)){
-    peaki <- getPeaksIdxCol(xs, col=NULL);
-    #peaks <- groupval(xs, value="maxo");
-  }else if(object@sample == -1){
-    ##TODO @Joe: Sollte das hier auftreten?
-  }else{
-    peaki <- getPeaksIdxCol(xs, col=object@sample);
-  };
-
-  Nf <- length(filepaths(xs)) #Anzahl Samples
-
-  if(is.vector(peaki)){ 
-    peaki <- as.matrix(peaki);
-  };
-
-  Nrow <- nrow(peaki);
-  
-  CL  <- vector("list", nrow(object@groupInfo));
-  CIL <- list();
-  ncl <- length(CL);
-
-  npeaks    <- 0;
-  npspectra <- length(object@pspectra);
-
-  #Wenn groupFWHM nicht vorher aufgerufen wurde!
-  if(npspectra < 1){
-    npspectra <- 1;
-    object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
-    cat('Calculating peak correlations for 1 big group.\nTry groupFWHM before, to reduce runtime. \n% finished: '); 
-    lp <- -1;
-    pspectra_list    <- 1;
-    object@psSamples <- 1;
-  }else{
-    if(is.null(psg_list)){
-      cat('\nCalculating peak correlations in',npspectra,'Groups... \n % finished: '); 
-      lp <- -1;
-      pspectra_list <- 1:npspectra;
-    }else{
-      cat('\nCalculating peak correlations in',length(psg_list),'Groups... \n % finished: '); 
-      lp <- -1;
-      pspectra_list <- psg_list;
-      ncl <- sum(sapply(object@pspectra[psg_list], length));
-    }
-  }
-  psSamples <- object@psSamples;
-
-  cormat<-matrix(,ncol=3)
-  for(j in 1:length(pspectra_list)){
-    i <- pspectra_list[j];
-    pi <- object@pspectra[[i]];
-    cormat<-rbind(cormat,cbind(as.matrix(expand.grid(pi,pi)),psSamples[j]));
-  }
-
-  index<-which(cormat[,1]>=cormat[,2]);
-  cormat<-cormat[-index,]
-  cormat<-cormat[-1,]
-  colnames(cormat) <- c("x1","x2","x3");
-  dimnames(cormat)[[1]] <- 1:nrow(cormat);
-
-  options(show.error.messages = FALSE);
- 
-  for(j in 1:length(pspectra_list)){
-    i <- pspectra_list[j];
-    pi <- object@pspectra[[i]];
-    pindex <- peaki[pi,psSamples[j]];
-    rttimes <- peaks[pindex,c("rtmin","rtmax")];
-    apply(as.vector(rttimes),1, function(x){
-       which(scantimes[[psSamples[j]]] >=x[1] & scantimes[[psSamples[j]]] <=x[1]);
-       which(scantimes[[psSamples[j]]] >=x[2] & scantimes[[psSamples[j]]] <=x[2]);
-    })
-    rt.max <- max(rttimes[,2]);
-    rt.min <- min(rttimes[,1]);
-    
-    rti <- which(scantimes[[psSamples[j]]] >=rt.min & scantimes[[psSamples[j]]] <=rt.max)
-    
-    pmat <- matrix(NA,nrow=length(pi),ncol=length(rti))
-    
-    apply(rttimes,1, function (x) {
-       which(scantimes[[psSamples[j]]] >=x[1] & scantimes[[psSamples[j]]] <=x[2]);
-    })
-    rti <- which(scantimes[[psSamples[j]]] >=rttimes[,1] & scantimes[[psSamples[j]]] <=rttimes[,2])
-    peak.eic <- EIC[pindex]
-    scantimes[[psSamples[j]]][rttimes];
-    
-  }
-
-   proc <- proc.time()
-   res <- mpi.parApply(cormat,1,function(x,EIC=EIC,peaks=xs@peaks,scantimes=scantimes,peaki=peaki) {
-    eicx <-  EIC[x[1],,1];eicy <-  EIC[x[2],,1];
-    px <- peaks[peaki[x[1],x[3]],];py <- peaks[peaki[x[2],x[3]],];
-    crt <- range(px["rtmin"],px["rtmax"],py["rtmin"],py["rtmax"]);
-    rti <- which(scantimes[[x[3]]] >= crt[1] & scantimes[[x[3]]] <= crt[2])
-    cors <- 0;
-    if (length(rti)>1){
-      dx <- eicx[rti]; dy <- eicy[rti]
-      dx[dx==0] <- NA; dy[dy==0] <- NA;
-      if (length(which(!is.na(dx) & !is.na(dy))) >= 4){
-      ct <- NULL;
-      try(ct <- cor.test(dx[-index],dy[-index],method='pearson',use='complete'));
-      if(!is.null(ct) && !is.na(ct)){if(ct$p.value <= 0.05){cors <- ct$estimate}else{ cors <- 0;}}else cors <- 0;                                                            
-      }
-    }
-  return(cors);
-  },EIC,xs@peaks,scantimes,peaki)
-  proc.time() - proc;
- 
-cor_function <- function(x,eicx,eicy,px,py,scantimes){
-    crt <- range(px["rtmin"],px["rtmax"],py["rtmin"],py["rtmax"]);
-    rti <- which(scantimes[[x[3]]] >= crt[1] & scantimes[[x[3]]] <= crt[2])
-    cors <- 0;
-    if (length(rti)>1){
-      dx <- eicx[rti]; dy <- eicy[rti]
-      dx[dx==0] <- NA; dy[dy==0] <- NA;
-      if (length(which(!is.na(dx) & !is.na(dy))) >= 4){
-      ct <- NULL;
-      try(ct <- cor.test(dx,dy,method='pearson',use='complete'));
-      if(!is.null(ct) && !is.na(ct)){if(ct$p.value <= 0.05){cors <- ct$estimate}else{ cors <- 0;}}else cors <- 0;                                                            
-      }
-    }
-  return(cors);
-}
-   proc <- proc.time()
-
-it <- iter(as.vector(sapply(1:nrow(cormat),function(x) rep(x,6))))
-
-res2 <- mpi.parApply(cormat,1, cor_function,eicx=EIC[cormat[nextElem(it),1],,1],eicy=EIC[cormat[nextElem(it),2],,1],px=peaks[peaki[cormat[nextElem(it),1],cormat[nextElem(it),3]],],py=peaks[peaki[cormat[nextElem(it),2],cormat[nextElem(it),3]],],scantimes=scantimes)
-  proc.time() - proc;
-
-  options(show.error.messages = TRUE);
-  index<-as.numeric(which(res>cor_eic_th))
-  sapply(index,function(x) {
-      CL[[cormat[x,1]]]<<-c(CL[[cormat[x,1]]],as.numeric(cormat[x,2]));
-      CL[[cormat[x,2]]]<<-c(CL[[cormat[x,2]]],as.numeric(cormat[x,1]));
-      invisible(CIL[[length(CIL)+1]]<<-list(p=c(cormat[x,1],cormat[x,2]),cor=as.numeric(res[x])));
-  })
-  if (length(CIL) >0){ CI <- data.frame(t(sapply(CIL,function(x) x$p)),sapply(CIL,function(x) x$cor) )
-  }else{ return(NULL)}
-  colnames(CI) <- c('xi','yi','cors');
-  return(invisible(list(CL=CL,CI=CI)));
-}
-
 calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   xs <- object@xcmsSet;
   if(is.na(object@sample)){
@@ -751,4 +606,31 @@ if (length(timerange) >= 2)
 .Call("getEIC",xraw@env$mz,xraw@env$intensity,xraw@scanindex,as.double(massrange),as.integer(scanrange),
 as.integer(length(xraw@scantime)), PACKAGE ='xcms' )
 
+}
+
+
+fast_corr <- function(x){
+  
+  x[is.na(x)] <- 1e30; #same factor as in rcorr
+
+  p <- as.integer(ncol(x))
+  if(p<1)
+    stop("must have >1 column")
+  
+  n <- as.integer(nrow(x))
+  if(n<5)
+    stop("must have >4 observations")
+  
+  x <- scale(x);
+  r <- crossprod(x) / (n-1);
+  
+  r[r>1e29] <- NA; #sace factor as in rcorr
+
+  npair <- matrix(rep(n,p*p),ncol=p)
+
+  P <- matrix(2*(1-pt(abs(r)*sqrt(npair-2)/sqrt(1-r*r), npair-2)),ncol=p);
+  
+  P[abs(r)==1] <- 0;
+  diag(P) <- NA;
+  invisible(list(r=r, n=npair, P=P))
 }
