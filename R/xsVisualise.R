@@ -123,6 +123,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
     }
     ## Plot Annotation Legend
     pspectrum <- getpspectra(object, grp=pspec[ps])
+    mz <- pspectrum[o, "mz"];
     if (lmaxlabel>0 & "adduct" %in% colnames(pspectrum)) {
         adduct <- sub("^ ","",pspectrum[o, "adduct"]) #Remove Fronting Whitespaces
         mass <- sapply(strsplit(adduct, " "), function(x) {x[2]})
@@ -147,7 +148,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
             test[[i]] <- mz[i];
           }
         }
-        leg <- as.expression(test[1:maxlabel]);  
+        leg <- as.expression(test[1:lmaxlabel]);  
         legend("topright", legend=leg, col=lcol, lty=1)
     }
     if (sleep > 0) {
