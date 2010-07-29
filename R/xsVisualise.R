@@ -110,7 +110,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
                    main = paste("Extracted Ion Chromatograms for ", main,"\nTime: From",rt.min,"to",rt.max,", mean",rt.med))
     ## Plot Peak and surrounding
     lcol <- rgb(0.6,0.6,0.6);
-    lcol <- c(col,rep(lcol,nrow(peaks)-maxlabel));
+    lcol <- c(col,rep(lcol,max(nrow(peaks)-maxlabel,0)));
     cnt <- 1;
     for (j in eicidx[o]) {
         pts <- xeic@eic[[ps]][[j]]
