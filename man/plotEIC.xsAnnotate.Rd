@@ -14,7 +14,7 @@
   \code{
     plotEICs(object,
     xraw,
-    pspecIdx=1:length(object@pspectra),
+    pspec=1:length(object@pspectra),
     maxlabel=0, sleep=0)}
   }
 }

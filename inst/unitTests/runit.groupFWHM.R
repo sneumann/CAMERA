@@ -9,7 +9,7 @@ test.anno_single <- function() {
     checkEqualsNumeric(anF@pspectra[[5]][5],86)
  ## groupCORR without groupFWHM
     anC <- groupCorr(an) 
-    checkEqualsNumeric(length(anC@pspectra),55)
+    checkEqualsNumeric(length(anC@pspectra),48)
  ## groupCORR with groupFWHM
     anFC <- groupCorr(anF) 
     checkEqualsNumeric(length(anFC@pspectra),43)
@@ -43,24 +43,23 @@ test.anno_multi <- function() {
     xsa <- xsAnnotate(xsg, sample=1)
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
-    checkEqualsNumeric(length(xsaC@pspectra),178)
+    checkEqualsNumeric(length(xsaC@pspectra),171)
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
-    checkEqualsNumeric(length(xsaC@pspectra),213)
+    checkEqualsNumeric(length(xsaC@pspectra),211)
   ##  groupCorr without groupFWHM
     ## manual selection
     xsa <- xsAnnotate(xsg, sample=1)
     xsaC <- groupCorr(xsa)
-    checkEqualsNumeric(length(xsaC@pspectra),353)
+    checkEqualsNumeric(length(xsaC@pspectra),316)
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaC <- groupCorr(xsa)
-    checkEqualsNumeric(length(xsaC@pspectra),353)
+    checkEqualsNumeric(length(xsaC@pspectra),316)
  ## findIsotopes and findAdducts
     xsaFI <- findIsotopes(xsaC)
-    checkEqualsNumeric(nrow(xsaFI@isoID),14)
+    checkEqualsNumeric(nrow(xsaFI@isoID),19)
     xsaFA <- findAdducts(xsaFI, polarity="positive")
-    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),25)
-    }
+    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),40)
