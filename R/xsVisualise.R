@@ -210,10 +210,10 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
       masslab <- paste(mzrange[1], "-", mzrange[2], " m/z, ", sep="")
     }
     mzborder <- (mzrange[2]-mzrange[1])*0.05
-    rtrange <- paste(round(median(pspectrum[o,"rt"]),digits=2), "(s)")
+    rtrange <- paste(round(median(pspectrum[o,"rt"]),digits=2), "s")
     sample  <- paste(", Sample:",object@psSamples[psp]);
     if(is.null(title)){
-      title.plot <- paste("Plot m/z values of pseudospectrum",psp,"\n",masslab,rtrange,sample);
+      title.plot <- paste("Pseudospectrum",psp,rtrange,sample);
     }else{
       title.plot <- title;
     }
