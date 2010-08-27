@@ -16,12 +16,12 @@ annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
 
   ML     <- massDiffMatrix(mz[na_ini],rules);
   hypothese <- createHypothese(ML,rules,devppm,mzabs,na_ini);
-
+  
   #Erstelle Hypothesen
-  if(is.null(nrow(hypothese))){
+  if(is.null(nrow(hypothese)) || nrow(hypothese) < 2 ){
     return(NULL);
   }
-  
+
   #Entferne Hypothesen, welche gegen Isotopenladungen verstossen!
   if(length(isotopes) > 0){
       hypothese <- check_isotopes(hypothese, isotopes, ipeak);

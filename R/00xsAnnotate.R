@@ -1,0 +1,33 @@
+###Constructor###
+setClass("xsAnnotate",
+    representation(
+                    groupInfo = "matrix" ,
+                    pspectra = "list",
+                    psSamples="numeric",
+                    isotopes="list",
+                    derivativeIons="list",
+                    formula="list",
+                    sample="numeric",
+                    xcmsSet="xcmsSet",
+                    ruleset="data.frame",
+                    annoID="matrix",
+                    annoGrp="matrix",
+                    isoID="matrix",
+                    polarity="character",
+                    runParallel="numeric"),
+    prototype(
+                    groupInfo= matrix(ncol=0,nrow=0),
+                    pspectra = list(),
+                    psSamples=NULL,
+                    isotopes=list(),
+                    derivativeIons=list(),
+                    formula=list(),
+                    sample=NULL,
+                    xcmsSet=NULL,
+                    ruleset=NULL,
+                    annoID=matrix(ncol=3,nrow=0),
+                    annoGrp=matrix(ncol=4,nrow=0),
+                    isoID=matrix(ncol=4,nrow=0),
+                    polarity="",
+                    runParallel=NULL)
+            );

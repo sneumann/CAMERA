@@ -1,38 +1,4 @@
-###Constructor###
-setClass("xsAnnotate",
-    representation(
-                    groupInfo = "matrix" ,
-                    pspectra = "list",
-                    psSamples="numeric",
-                    isotopes="list",
-                    derivativeIons="list",
-                    formula="list",
-                    sample="numeric",
-                    xcmsSet="xcmsSet",
-                    ruleset="data.frame",
-                    annoID="matrix",
-                    annoGrp="matrix",
-                    isoID="matrix",
-                    polarity="character",
-                    runParallel="numeric"),
-    prototype(
-                    groupInfo= matrix(ncol=0,nrow=0),
-                    pspectra = list(),
-                    psSamples=NULL,
-                    isotopes=list(),
-                    derivativeIons=list(),
-                    formula=list(),
-                    sample=NULL,
-                    xcmsSet=NULL,
-                    ruleset=NULL,
-                    annoID=matrix(ncol=3,nrow=0),
-                    annoGrp=matrix(ncol=4,nrow=0),
-                    isoID=matrix(ncol=4,nrow=0),
-                    polarity="",
-                    runParallel=NULL)
-            );
-
-xsAnnotate <- function(xs=NULL,sample=NA,nSlaves=1){
+xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1){
 
  ## sample is:
  ### NA for maxInt-way
@@ -1156,12 +1122,12 @@ return(peaklist);
  
 combineHypothese <- function(mass.pos,mass.neg,ruleset,ini1,ini2,tol=0.02){
     ##generiere neue Peaklist
-    tmp.ruleset <- ruleset[,c(1,2,4,6)];
+    tmp.ruleset <- ruleset[,c("name","nmol","charge","massdiff")];
     colnames(tmp.ruleset) <- c("name","nmol","charge","massdiff")
     ML <- massDiffMatrix(mass.pos,tmp.ruleset)
     ML.match <- apply(ML,2,function(x) {
       m <- fastMatch(x,mass.neg,tol=tol);
-      unlist(lapply(m, function(x) { if(is.null(x)){return(NA)}else{return(ini2[x])} }));
+      unlist(lapply(m, function(x) { if(is.null(x)){return(NA)}else{return(ini2[x[1]])} })); ##Select first hit, if more than one??
     });
     return(ML.match);
 #     results<-list();
