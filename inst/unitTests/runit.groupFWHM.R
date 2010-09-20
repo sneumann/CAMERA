@@ -63,3 +63,4 @@ test.anno_multi <- function() {
     checkEqualsNumeric(nrow(xsaFI@isoID),19)
     xsaFA <- findAdducts(xsaFI, polarity="positive")
     checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),41)
+    }
