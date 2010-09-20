@@ -881,7 +881,7 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
     }else{
       name <- "M-H/M+H";
     }
-    ruleset <- data.frame(name, 1, 1, 1,1,2.0152, 1, 1); 
+    ruleset <- data.frame(name, 1, 1, 1,1,2.014552, 1, 1); 
     colnames(ruleset) <- c("name", "nmol.pos", "nmol.neg","charge.pos","charge.neg", "massdiff", "ID.pos","ID.neg");
   }else{
     #generate rules stated in ruleset
