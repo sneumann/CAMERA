@@ -37,13 +37,13 @@
   an   <- findIsotopes(an) 
   isolist <- getIsotopeCluster(an)
 
-  ##Not run
   ##Interaction with Rdisop
+ \dontrun{
   library(Rdisop)
   isotopes.decomposed <- lapply(isolist,function(x) {
     decomposeIsotopes(x$peaks[,1],x$peaks[,2],z=x$charge);
   }) #decomposed isotope cluster, filter steps are recommended
-  ##End(Not run)
+ }
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
 \keyword{methods}
