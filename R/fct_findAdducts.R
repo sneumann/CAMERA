@@ -332,14 +332,14 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
         for(k in 1:mol){
             if(k == 1){
               str    <- "";
-              tmpips <- 1;
+              tmpips <- 1.0;
             }else{
               str    <-  k;
               tmpips <- 0.5;
             };
             name     <- append(name, paste("[", str, "M+H]+", sep=""));
             charge   <- append(charge, 1);
-            massdiff <- append(massdiff, 1.0076);
+            massdiff <- append(massdiff, 1.007276);
             nmol     <- append(nmol, k);
             if(k == 1) {
               quasi  <- append(quasi, 1);
@@ -350,13 +350,13 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
             ips      <- append(ips, tmpips)
             name     <- append(name,paste("[",str,"M+2H]2+",sep=""));
             charge<-append(charge,2);
-            massdiff<-append(massdiff,2.0152);
+            massdiff<-append(massdiff,2.014552);
             nmol<-append(nmol,k);quasi<-append(quasi,0);
             oidscore<-append(oidscore,2);
             ips<-append(ips,tmpips)
             name<-append(name,paste("[",str,"M+3H]3+",sep=""));
             charge<-append(charge,3);
-            massdiff<-append(massdiff,3.0228);
+            massdiff<-append(massdiff,3.021828);
             nmol<-append(nmol,k);
             quasi<-append(quasi,0);
             oidscore<-append(oidscore,3);
@@ -370,7 +370,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
                     name<-append(name,paste("[",str,"M+H+",ionlist[i,1],"]",ionlist[i,2]+1,"+",sep=""));
                 }
                 charge <- append(charge,ionlist[i,2]+1);
-                massdiff <- append(massdiff,ionlist[i,3]+1.0076);
+                massdiff <- append(massdiff,ionlist[i,3]+1.007276);
                 nmol <- append(nmol,k);
                 quasi <- append(quasi,0);
                 oidscore <- append(oidscore,oid+i);
@@ -413,7 +413,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
                     #Austausch hat stattgefunden, einfach bsp 1
                     tmpname<-paste(tmpname,"-H",sep="");
                     tmpcharge<-tmpcharge-1;
-                    tmpmass<-tmpmass-1.0076;
+                    tmpmass<-tmpmass-1.007276;
                     tmpips<-0.25;
                 }
                 if(tmpcharge>1){
@@ -461,7 +461,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
             if(neutraladdition[i,1]=="NaCOOH"){next;}
             name<-append(name,paste("[M+H+",neutraladdition[i,1],"]+",sep=""));
             charge<-append(charge,+1);
-            massdiff<- append(massdiff,neutraladdition[i,2]+1.0076);
+            massdiff<- append(massdiff,neutraladdition[i,2]+1.007276);
             nmol<-append(nmol,1);
             quasi<-append(quasi,0)
             oidscore<-append(oidscore,oid+1);oid<-oid+1;
@@ -476,11 +476,11 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
                 name<-append(name,paste("[M+",ii,"H-",neutralloss[i,1],"]",ii,"+",sep=""));
               }else {name<-append(name,paste("[M+H-",neutralloss[i,1],"]+",sep=""));}
               charge<-append(charge,ii);
-              massdiff<-  append(massdiff,-neutralloss[i,2]+1.0076*ii);
+              massdiff<-  append(massdiff,-neutralloss[i,2]+1.007276*ii);
               nmol<-append(nmol,1);
               quasi<-append(quasi,0)
               oidscore<-append(oidscore,oid+1);oid<-oid+1;
-              ips<-append(ips,0.5);
+              ips<-append(ips,0.25);
             }
         }
         ruleset <- data.frame(name,nmol,charge,massdiff,oidscore,quasi,ips)
@@ -490,18 +490,18 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
     }else if(polarity=="negative"){
         #Wasserstoff, hard codiert
         for(k in 1:mol){
-            if(k==1){str<-"";tmpips<-1;}else{str<-k;tmpips<-0.5};
+            if(k==1){str<-"";tmpips<-1.0;}else{str<-k;tmpips<-0.5};
             name<-append(name,paste("[",str,"M-H]-",sep=""));
-            charge<-append(charge,-1);massdiff<-append(massdiff,-1.0076);nmol<-append(nmol,k);if(k==1){quasi<-append(quasi,1);}else{quasi<-append(quasi,0);};oidscore<-append(oidscore,1);ips<-append(ips,tmpips)
-            name<-append(name,paste("[",str,"M-2H]2-",sep=""));charge<-append(charge,-2);massdiff<-append(massdiff,-2.0152);nmol<-append(nmol,k);quasi<-append(quasi,0);oidscore<-append(oidscore,2);ips<-append(ips,tmpips)
-            name<-append(name,paste("[",str,"M-3H]3-",sep=""));charge<-append(charge,-3);massdiff<-append(massdiff,-3.0228);nmol<-append(nmol,k);quasi<-append(quasi,0);oidscore<-append(oidscore,3);ips<-append(ips,tmpips)
+            charge<-append(charge,-1);massdiff<-append(massdiff,-1.007276);nmol<-append(nmol,k);if(k==1){quasi<-append(quasi,1);}else{quasi<-append(quasi,0);};oidscore<-append(oidscore,1);ips<-append(ips,tmpips)
+            name<-append(name,paste("[",str,"M-2H]2-",sep=""));charge<-append(charge,-2);massdiff<-append(massdiff,-2.014552);nmol<-append(nmol,k);quasi<-append(quasi,0);oidscore<-append(oidscore,2);ips<-append(ips,tmpips)
+            name<-append(name,paste("[",str,"M-3H]3-",sep=""));charge<-append(charge,-3);massdiff<-append(massdiff,-3.021828);nmol<-append(nmol,k);quasi<-append(quasi,0);oidscore<-append(oidscore,3);ips<-append(ips,tmpips)
             oid<-3;
             for(i in 1:nrow(ionlist)){
                 if(ionlist[i,2]>=0){
                     if(ionlist[i,2]>1) {next;}
                     name<-append(name,paste("[",str,"M-2H+",ionlist[i,1],"]-",sep=""));
                     charge <- append(charge,ionlist[i,2]-2);
-                    massdiff<- append(massdiff,ionlist[i,3]-(2*1.0076));
+                    massdiff<- append(massdiff,ionlist[i,3]-(2*1.007276));
                     nmol <- append(nmol,k);
                     quasi <- append(quasi,0);
                     oidscore<-append(oidscore,oid+i);
@@ -514,7 +514,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
                     name<-append(name,paste("[",str,"M-H+",ionlist[i,1],"]",ionlist[i,2]+1,"-",sep=""));
                 }
                 charge <- append(charge,ionlist[i,2]-1);
-                massdiff<- append(massdiff,ionlist[i,3]-1.0076);
+                massdiff<- append(massdiff,ionlist[i,3]-1.007276);
                 nmol <- append(nmol,k);
                 quasi <- append(quasi,0);
                 oidscore<-append(oidscore,oid+i);
@@ -547,7 +547,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
                     #Austausch hat stattgefunden, einfach bsp 1
                     tmpname<-paste(tmpname,"-H",sep="");
                     tmpcharge<-tmpcharge-1;
-                    tmpmass<-tmpmass-1.0076;
+                    tmpmass<-tmpmass-1.007276;
                     tmpips<-0.5;
                 }
                 if(tmpcharge< -1){
@@ -589,7 +589,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
             }
             name<-append(name,paste("[M-H+",neutraladdition[i,1],"]-",sep=""));
             charge<-append(charge,-1);
-            massdiff<- append(massdiff,neutraladdition[i,2]-1.0076);
+            massdiff<- append(massdiff,neutraladdition[i,2]-1.007276);
             nmol<-append(nmol,1);
             quasi<-append(quasi,0)
             oidscore<-append(oidscore,oid+1);oid<-oid+1;
@@ -601,11 +601,11 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
         for(i in 1:nrow(neutralloss)){
             name<-append(name,paste("[M-H-",neutralloss[i,1],"]-",sep=""));
             charge<-append(charge,-1);
-            massdiff<-  append(massdiff,-neutralloss[i,2]-1.0076);
+            massdiff<-  append(massdiff,-neutralloss[i,2]-1.007276);
             nmol<-append(nmol,1);
             quasi<-append(quasi,0)
             oidscore<-append(oidscore,oid+1);oid<-oid+1;
-            ips<-append(ips,0.5);
+            ips<-append(ips,0.25);
         }
         ruleset <- data.frame(name,nmol,charge,massdiff,oidscore,quasi,ips)
         if(length(index<-which(ruleset[,"charge"]< -maxcharge))>0){

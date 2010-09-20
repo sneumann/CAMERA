@@ -62,6 +62,4 @@ test.anno_multi <- function() {
     xsaFI <- findIsotopes(xsaC)
     checkEqualsNumeric(nrow(xsaFI@isoID),19)
     xsaFA <- findAdducts(xsaFI, polarity="positive")
-    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),40)
-}
-
+    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),41)

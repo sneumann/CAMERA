@@ -1,3 +1,5 @@
+2010-20-10 ckuhl <ckuhl@ipb-halle.de>
+    * Add function getIsotopeCluster for retrival of isotope cluster
 2010-11-06 ckuhl <ckuhl@ipb-halle.de>
 	* Speed up in findAdducts
 	* Fix unit tests
