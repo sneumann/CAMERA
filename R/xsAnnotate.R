@@ -830,6 +830,72 @@ annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, m
   return(xa);
 }
 
+findNeutralLossSpecs <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
+
+  nlmin <- mzdiff-mzabs
+  nlmax <- mzdiff+mzabs
+
+  hits <- sapply(1:length(object@pspectra), function(j) {
+    spec  <-  getpspectra(object, j)
+
+    mz  <-  spec[,1] #mz
+    nl  <-  as.matrix(dist(mz, method="manhattan"))
+      
+    length(which(nl > nlmin & nl < nlmax))>0
+  })
+}
+
+
+findNeutralLoss <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
+
+  nlmin <- mzdiff-mzabs
+  nlmax <- mzdiff+mzabs
+
+  xs <- new("xcmsSet");
+
+  peaks <- matrix(ncol=11, nrow=0);
+  colnames(peaks) <- c("mz", "mzmin", "mzmax", "rt", "rtmin", "rtmax",
+                       "into", "intb", "maxo", "sn", "sample");
+  sampnames(xs) <- c("NeutralLoss")
+  sampclass(xs) <- c("NeutralLoss")
+
+  for(j in 1:length(object@pspectra)) {
+    
+    spec  <-  getpspectra(object, j)
+    
+    mz  <-  spec[,1] #mz
+    nl  <-  as.matrix(dist(mz, method="manhattan"))
+      
+    hits <- which(nl > nlmin & nl < nlmax,
+                  arr.ind = TRUE)
+
+    if(length(hits) > 0) {
+      for (f in 1:nrow(hits)) {
+        hit <- as.vector( hits[f,])
+        
+        ## Remove hit from lower diagonal matrix
+        if (hit[1] > hit[2]) {
+          next;
+        }
+
+        lastcol <- ncol(spec);
+        if (mz[hit[1]] > mz[hit[2]]) {
+          newpeak <- spec[hit[1],c(1:10,lastcol), drop=FALSE]
+        } else {
+          newpeak <- spec[hit[2],c(1:10,lastcol), drop=FALSE]
+        }
+        rownames(newpeak) <- as.character(j)
+        peaks <- rbind(peaks, newpeak)
+      }
+
+    }
+  }
+  colnames(peaks) <- c("mz", "mzmin", "mzmax", "rt", "rtmin", "rtmax",
+                       "into", "intb", "maxo", "sn", "pseudospectrum");      
+  peaks(xs) <- as.matrix(peaks)
+  invisible(xs)
+}
+
 ###End xsAnnotate exported Methods###
 
 ###xsAnnotate intern Function###
@@ -1122,7 +1188,7 @@ return(peaklist);
  
 combineHypothese <- function(mass.pos,mass.neg,ruleset,ini1,ini2,tol=0.02){
     ##generiere neue Peaklist
-    tmp.ruleset <- ruleset[,c("name","nmol","charge","massdiff")];
+    tmp.ruleset <- ruleset[,c("name","nmol.pos","charge.pos","massdiff")];
     colnames(tmp.ruleset) <- c("name","nmol","charge","massdiff")
     ML <- massDiffMatrix(mass.pos,tmp.ruleset)
     ML.match <- apply(ML,2,function(x) {

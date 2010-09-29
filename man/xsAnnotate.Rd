@@ -2,11 +2,13 @@
 \alias{xsAnnotate}
 \title{Constructor for a xsAnnotate object which one assigned xcmsSet object}
 \description{
-  This function handles the construction of xsAnnotate object. It
-  is generate from a xcmsSet object adapt its peaktable.
+  This function handles the construction of xsAnnotate object. It extract the peaktable from a given xcmsSet, which is used for all further analysis.
+  The xcmsSet can be a single sample or multiple sample experiment. Since some functions needs to go back into the raw data, the selection algorithm must be choosen for a multiple sample.
+  CAMERA includes two different strategies: A fixed selection, which sample = index of sample, or the default automatic solution (sample = NA). 
+  The automatic solution chooses the best sample for a specifc groups called pseudospectrum, see groupFWHM and groupCorr.
 }
 \usage{
-  xsAnnotate(xs = NULL,sample=NA,nSlaves = 1)
+  xsAnnotate(xs = NULL,sample=NA, nSlaves = 1)
 }
 \arguments{
   \item{xs}{a \code{xcmsSet} object}
@@ -22,7 +24,7 @@
  xs <- group(faahko)
  xs.anno <- xsAnnotate(xs, sample=1)
  #With automatic selection
- xs.anno.autoselect <-xsAnnotate(xs)
+ xs.anno.autoselect <- xsAnnotate(xs)
 }
 \value{
   A \code{xsAnnotate} object.

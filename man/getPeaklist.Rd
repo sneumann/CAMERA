@@ -2,7 +2,7 @@
 \alias{getPeaklist}
 \title{Retrieve the annotatad peaklist}
 \description{
- Extract all groups from a xsAnnotate object. Returns a peaklist with annotated peaks.
+ Extract all information from an xsAnnotate object. Returns a peaklist with annotated peaks.
 }
 \usage{
   getPeaklist(object)
@@ -11,12 +11,12 @@
   \item{object}{ xsAnnotate object}
 }
 \details{
-  xsAnnotate groups LC/MS Peaklist after there EIC correlation and FWHM. These function extract one of these so called "pseudo spectra groups" with include the peaklist with there annotations. For a grouped xcmsSet it returns the grouped peaktable.
+  This function extract the peaktable from an xsAnnotate object, containing three additional columns (isotopes, adducts, pseudospectrum) with represents the annotation results. For a grouped xcmsSet it returns the grouped peaktable.
 }
 \examples{
 library(CAMERA)
   file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
-  xs   <- xcmsSet(c(file), method="centWave", ppm=30, peakwidth=c(5,10))
+  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   an   <- xsAnnotate(xs)
   an   <- groupFWHM(an)
   an   <- findIsotopes(an)
