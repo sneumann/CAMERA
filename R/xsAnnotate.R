@@ -257,7 +257,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   isotope   <- vector("list", length(imz));
   npspectra <- length(object@pspectra);
   isomatrix <- matrix(NA, ncol=5, nrow=1);
-  
+
   #wenn vorher nicht groupFWHM aufgerufen wurde, gruppiere alle Peaks in eine Gruppe
   if(npspectra < 1) { 
     npspectra <- 1;
@@ -357,6 +357,32 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   if(is.null(nrow(isomatrix))) {
     isomatrix = matrix(isomatrix, byrow=F, ncol=length(isomatrix)) 
   }
+  #check if every isotope has only one annotation
+  if(length(idx.duplicated <- which(duplicated(isomatrix[, 2]))) > 0){
+    peak.idx <- unique(isomatrix[idx.duplicated, 2]);
+    for( i in 1:length(peak.idx)){
+      #peak.idx has two or more annotated charge
+      #select the charge with the higher cardinality
+      peak <- peak.idx[i];
+      peak.mono.idx <- which(isomatrix[,2] == peak)
+      peak.mono <- isomatrix[peak.mono.idx,1]
+      #which charges we have
+      charges.list   <- unique(isomatrix[peak.mono.idx, 4]);
+      tmp <- cbind(peak.mono,charges.list);
+      charges.length <- apply(tmp,1, function(x,isomatrix) { length(which(isomatrix[, 1] == x[1] & isomatrix[,4] == x[2])) },isomatrix);
+      idx <- which(charges.length == max(charges.length));
+      if(length(idx) == 1){
+        #max is unique
+        isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),]
+      }else{
+        #select this one, which lower charge
+        idx <- which.max(charges.list[idx]);
+        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak.mono[-idx] & isomatrix[, 4] == charges.list[-idx]),]
+      }
+    }
+  }
+
+
   #check if every isotope in one isotope grp, have the same charge
   if(length(idx.duplicated <- which(duplicated(paste(isomatrix[, 1], isomatrix[, 3])))) > 0){
     #at least one pair of peakindex and number of isotopic peak is identical
@@ -370,7 +396,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
       #how many isotopes have been found, which this charges
       charges.length <- sapply(charges.list, function(x,isomatrix,peak) { length(which(isomatrix[, 1] == peak & isomatrix[, 4] == x)) },isomatrix,peak);
       #select the charge which the highest cardinality
-      idx <- which.max(charges.length);
+      idx <- which(charges.length == max(charges.length));
       if(length(idx) == 1){
         #max is unique
         isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] == charges.list[-idx]),]
