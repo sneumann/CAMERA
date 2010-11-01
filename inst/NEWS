@@ -1,3 +1,5 @@
+2010-01-11 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findIsotopes. Occurs if the first isotope peak, could be assigned from two different monoisotopic peaks.
 2010-11-10 ckuhl <ckuhl@ipb-halle.de>
 	* Rewrite Vignette
 2010-29-09 ckuhl <ckuhl@ipb-halle.de>
