@@ -365,6 +365,10 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
       #select the charge with the higher cardinality
       peak <- peak.idx[i];
       peak.mono.idx <- which(isomatrix[,2] == peak)
+      if(length(peak.mono.idx) < 2){
+        #peak has already been deleted
+        next;
+      }
       peak.mono <- isomatrix[peak.mono.idx,1]
       #which charges we have
       charges.list   <- unique(isomatrix[peak.mono.idx, 4]);
@@ -377,7 +381,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
       }else{
         #select this one, which lower charge
         idx <- which.max(charges.list[idx]);
-        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak.mono[-idx] & isomatrix[, 4] == charges.list[-idx]),]
+        isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),]
       }
     }
   }
