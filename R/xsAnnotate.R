@@ -299,7 +299,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
 
   isotope   <- vector("list", length(imz));
   npspectra <- length(object@pspectra);
-  isomatrix <- matrix(NA, ncol=5, nrow=1);
+  isomatrix <- matrix(ncol=5, nrow=0);
 
 
   cat("Run isotope peak annotation\n % finished: ");
