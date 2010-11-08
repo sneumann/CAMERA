@@ -783,7 +783,7 @@ return(invisible(data.frame(peaktable,isotopes,adduct,grp,stringsAsFactors=FALSE
 }
 
 
-setGeneric("getPeaklist", function(object, ...) standardGeneric("getPeaklist"))
+setGeneric("getPeaklist", function(object, intval="into") standardGeneric("getPeaklist"))
 setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
   
   if (!sum(intval == c("into","intb","maxo"))){
