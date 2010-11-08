@@ -1,4 +1,7 @@
 2010-08-11 ckuhl <ckuhl@ipb-halle.de>
+	* Change getPeaklist to S4 Methods.
+	* Add getPeaklist parameter intval, where the intensity value can be selected
+2010-08-11 ckuhl <ckuhl@ipb-halle.de>
 	* Additional bugfix for findIsotopes. Could occur with 1.7.1, that all isotopes will be deleted.
 2010-01-11 ckuhl <ckuhl@ipb-halle.de>
 	* Fix bug in findIsotopes. Occurs if the first isotope peak, could be assigned from two different monoisotopic peaks.
