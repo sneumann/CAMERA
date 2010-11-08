@@ -782,55 +782,70 @@ colnames(peaktable)<-colnames(peaks)
 return(invisible(data.frame(peaktable,isotopes,adduct,grp,stringsAsFactors=FALSE)));
 }
 
-getPeaklist<-function(object){
-    xs<-object@xcmsSet
-    peaklist<-object@groupInfo;
-    adduct<-vector("character",nrow(object@groupInfo));
-    isotopes<-vector("character",nrow(object@groupInfo));
-    pcgroup<-vector("character",nrow(object@groupInfo));
-    for(i in 1:length(isotopes)){
-        if(length(object@derivativeIons)>0 && !(is.null(object@derivativeIons[[i]]))){
-            if(length(object@derivativeIons[[i]])>1){
-                names<-paste(object@derivativeIons[[i]][[1]]$name,signif(object@derivativeIons[[i]][[1]]$mass,6));
-                for(ii in 2:length(object@derivativeIons[[i]]))
-                {
-                        names<-paste(names,object@derivativeIons[[i]][[ii]]$name,signif(object@derivativeIons[[i]][[ii]]$mass,6));
-                }
-                adduct[i]<-names;
-            }else{
-                adduct[i]<-paste(object@derivativeIons[[i]][[1]]$name,signif(object@derivativeIons[[i]][[1]]$mass,6));
+
+setGeneric("getPeaklist", function(object, ...) standardGeneric("getPeaklist"))
+setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
+  
+  if (!sum(intval == c("into","intb","maxo"))){
+       stop("unknown intensity value!")
+  }
+
+  #generate peaktable
+  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
+    ##one sample
+    peaktable <- object@groupInfo;
+  }else {
+    ##multiple sample
+    #use groupInfo information and replace intensity values
+    peaktable <- object@groupInfo;
+    grpval <- groupval(object@xcmsSet, value=intval);
+    grpval.ncol <- ncol(grpval)
+    start <- ncol(peaktable) - grpval.ncol +1;
+    ende  <- start + grpval.ncol - 1; 
+    peaktable[,start:ende] <- grpval;
+  }
+
+  #allocate variables
+  adduct   <- vector("character", nrow(object@groupInfo));
+  isotopes <- vector("character", nrow(object@groupInfo));
+  pcgroup  <- vector("character", nrow(object@groupInfo));
+
+  for(i in 1:length(isotopes)){
+    if(length(object@derivativeIons)>0 && !(is.null(object@derivativeIons[[i]]))){
+        if(length(object@derivativeIons[[i]])>1){
+            names<-paste(object@derivativeIons[[i]][[1]]$name,signif(object@derivativeIons[[i]][[1]]$mass,6));
+            for(ii in 2:length(object@derivativeIons[[i]]))
+            {
+                    names<-paste(names,object@derivativeIons[[i]][[ii]]$name,signif(object@derivativeIons[[i]][[ii]]$mass,6));
             }
-        }else { adduct[i]<-""; }
-        if(length(object@isotopes)>0 && !is.null(object@isotopes[[i]])){
-            num_iso<-object@isotopes[[i]]$iso;
-            if(num_iso==0){
-                str_iso <- "[M]";
-            }else { str_iso<-paste("[M+",num_iso,"]",sep="")}
-	    if(object@isotopes[[i]]$charge>1){
-	      isotopes[i] <- paste("[",object@isotopes[[i]]$y,"]",str_iso,object@isotopes[[i]]$charge,"+",sep="");
-	    }else{
-	      isotopes[i] <- paste("[",object@isotopes[[i]]$y,"]",str_iso,"+",sep="");
-	    }
-        }else { isotopes[i]<-""; }
+            adduct[i]<-names;
+        }else{
+            adduct[i]<-paste(object@derivativeIons[[i]][[1]]$name,signif(object@derivativeIons[[i]][[1]]$mass,6));
+        }
+    }else { adduct[i]<-""; }
+    if(length(object@isotopes)>0 && !is.null(object@isotopes[[i]])){
+        num_iso<-object@isotopes[[i]]$iso;
+        if(num_iso==0){
+            str_iso <- "[M]";
+        }else { str_iso<-paste("[M+",num_iso,"]",sep="")}
+    if(object@isotopes[[i]]$charge>1){
+      isotopes[i] <- paste("[",object@isotopes[[i]]$y,"]",str_iso,object@isotopes[[i]]$charge,"+",sep="");
+    }else{
+      isotopes[i] <- paste("[",object@isotopes[[i]]$y,"]",str_iso,"+",sep="");
     }
+      }else { isotopes[i]<-""; }
+  }
+  if(length(object@pspectra) < 1){
+      pcgroup <- 0;
+  }else{
     for(i in 1:length(object@pspectra)){
         index<-object@pspectra[[i]];
         pcgroup[index]<-i;
     }
-#     if(!is.null(object@grp_info)){
-#         isotopes_tmp<-vector("character",nrow(peaklist));adduct_tmp<-vector("character",nrow(peaklist));pcgroup_tmp<-vector("character",nrow(peaklist));
-#         for(i in 1:length(isotopes)){
-#             isotopes_tmp[object@grp_info[i]]<-isotopes[i];
-#             adduct_tmp[object@grp_info[i]]<-adduct[i];
-#             pcgroup_tmp[object@grp_info[i]]<-pcgroup[i];
-#         }
-#         isotopes<-isotopes_tmp;
-#         adduct<-adduct_tmp;
-#         pcgroup<-pcgroup_tmp;
-#     }
-    rownames(peaklist)<-NULL;#Bugfix for: In data.row.names(row.names, rowsi, i) :  some row.names duplicated:
-    return(invisible(data.frame(peaklist,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
-}
+  }
+  rownames(peaktable)<-NULL;#Bugfix for: In data.row.names(row.names, rowsi, i) :  some row.names duplicated:
+  return(invisible(data.frame(peaktable,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
+})
 
 annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.015, multiplier=3, sample=NA, quick=FALSE, psg_list=NULL, polarity="positive", nSlaves=1, max_peaks=100){
   if (!class(object)=="xcmsSet"){

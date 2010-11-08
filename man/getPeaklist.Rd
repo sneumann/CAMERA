@@ -1,14 +1,16 @@
-\name{getPeaklist}
+\name{getPeaklist-methods}
+\docType{methods}
 \alias{getPeaklist}
 \title{Retrieve the annotatad peaklist}
 \description{
  Extract all information from an xsAnnotate object. Returns a peaklist with annotated peaks.
 }
 \usage{
-  getPeaklist(object)
+  getPeaklist(object, intval="into")
 }
 \arguments{
   \item{object}{ xsAnnotate object}
+  \item{intval}{ Choose intensity values. Allowed values are into, maxo, intb }
 }
 \details{
   This function extract the peaktable from an xsAnnotate object, containing three additional columns (isotopes, adducts, pseudospectrum) with represents the annotation results. For a grouped xcmsSet it returns the grouped peaktable.
