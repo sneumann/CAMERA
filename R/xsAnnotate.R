@@ -256,7 +256,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
   }
   isotope   <- vector("list", length(imz));
   npspectra <- length(object@pspectra);
-  isomatrix <- matrix(NA, ncol=5, nrow=1);
+  isomatrix <- matrix(ncol=5, nrow=0);
 
   #wenn vorher nicht groupFWHM aufgerufen wurde, gruppiere alle Peaks in eine Gruppe
   if(npspectra < 1) { 
@@ -353,7 +353,6 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
     }
   }
   #clean isotopes
-  isomatrix <- isomatrix[-1, ];
   if(is.null(nrow(isomatrix))) {
     isomatrix = matrix(isomatrix, byrow=F, ncol=length(isomatrix)) 
   }
@@ -371,7 +370,7 @@ setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=
       }
       peak.mono <- isomatrix[peak.mono.idx,1]
       #which charges we have
-      charges.list   <- unique(isomatrix[peak.mono.idx, 4]);
+      charges.list   <- isomatrix[peak.mono.idx, 4];
       tmp <- cbind(peak.mono,charges.list);
       charges.length <- apply(tmp,1, function(x,isomatrix) { length(which(isomatrix[, 1] == x[1] & isomatrix[,4] == x[2])) },isomatrix);
       idx <- which(charges.length == max(charges.length));
