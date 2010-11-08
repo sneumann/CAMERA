@@ -7,12 +7,13 @@
   Group peaks of one xsAnnotate object after the FWHM of there retentiontimes into pseudospectra-groups. Returns a xsAnnotate object with group information.
 }
 \usage{
-  groupFWHM(object, sigma = 6 , perfwhm = 0.6)
+  groupFWHM(object, sigma = 6 , perfwhm = 0.6, intval = "maxo")
 }
 \arguments{
   \item{object}{the \code{xsAnnotate} object}
   \item{sigma}{the multiplier of the standard deviation}
   \item{perfwhm}{percentage of the width of the FWHM}
+  \item{intval}{choose intensity values. Allowed values are into, maxo, intb }
 }
 \details{
   Every peak who eluated at the same time as a selected peak, will be part of the group. Same time is defined about the Rt_med +/- FWHM * perfwhm.

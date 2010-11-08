@@ -9,7 +9,7 @@
 \section{Methods}{
 \describe{
 \item{object = "xsAnnotate"}{
-  \code{findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01)}
+  \code{findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01, intval="into")}
 }
 }}
 \arguments{
@@ -18,6 +18,7 @@
   \item{maxiso}{max. number of the isotope peaks}
   \item{ppm}{ppm error for the search}
   \item{mzabs}{allowed variance for the search}
+  \item{intval}{choose intensity values. Allowed values are into, maxo, intb }
 }
 \details{
   Isotope peaks are annotated for a xsAnnotate object according to given rules (maxcharge, maxiso). The algorithm benefits from a earlier grouping of the data, with groupFWHM. Generates a list of all possible isotopes, which is stored in object@isotopes. Those isotope information will be used in the groupCorr funtion. 
