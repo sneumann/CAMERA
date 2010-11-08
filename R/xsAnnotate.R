@@ -303,6 +303,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
 
 
   cat("Run isotope peak annotation\n % finished: ");
+  lp <- -1;
   #Suche Isotope in jeder Gruppe
   for(i in 1:npspectra){
     #indizes der peaks aus der gruppe in der peaktable
