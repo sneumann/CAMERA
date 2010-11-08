@@ -98,54 +98,68 @@ setMethod("show", "xsAnnotate", function(object){
 ###End Constructor###
 
 ###xsAnnotate generic Methods###
-setGeneric("groupFWHM", function(object,sigma=6,perfwhm=0.6) standardGeneric("groupFWHM"))
-setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
-  # Gruppierung nach fwhm
+setGeneric("groupFWHM", function(object, sigma=6, perfwhm=0.6, intval="maxo") standardGeneric("groupFWHM"))
+setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intval="maxo") {
+  # grouping after retentiontime 
   # sigma - number of standard deviation arround the mean (6 = 2 x 3 left and right)
   # perfwhm - 0.3;
-  if (!class(object) == "xsAnnotate") stop ("no xsAnnotate object")
-  sample <- object@sample;
-  pspectra <- list();
+
+  if (!class(object) == "xsAnnotate") {
+    stop ("no xsAnnotate object")
+  }
+
+  if (!sum(intval == c("into","intb","maxo"))){
+       stop("unknown intensity value!")
+  }
+
+  sample    <- object@sample;
+  pspectra  <- list();
   psSamples <- NA;
+
   if(object@groupInfo[1, "rt"] == -1) {
      warning("Warning: no retention times avaiable. Do nothing\n")
   }else{
     if(is.na(sample)) {
-      #Gruppierte Peaktable with automatic selection 
-      gvals <- groupval(object@xcmsSet);
-      peakmat <- object@xcmsSet@peaks;
+      # grouped peaktable within automatic selection
+      gvals    <- groupval(object@xcmsSet);
+      peakmat  <- object@xcmsSet@peaks;
       groupmat <- groups(object@xcmsSet);
-      #errechne höchsten Peaks
-      maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){max(peakmat[x, "maxo"],na.rm=TRUE)}, peakmat));
-      #index des höchsten peaks
-      max_int   <- as.numeric(apply(gvals, 1, function(x, peakmat){which.max(peakmat[x, "maxo"])}, peakmat));
-      peakrange <- matrix(apply(gvals, 1, function(x,peakmat) { peakmat[x[which.max(peakmat[x, "maxo"])], c("rtmin", "rtmax")]}, peakmat), ncol=2, byrow=TRUE); 
+
+      #calculate highest peaks
+      maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){max(peakmat[x, intval],na.rm=TRUE)}, peakmat));
+
+      #highest peak index 
+      int.max   <- as.numeric(apply(gvals, 1, function(x, peakmat){which.max(peakmat[x, intval])}, peakmat));
+
+      peakrange <- matrix(apply(gvals, 1, function(x,peakmat) { peakmat[x[which.max(peakmat[x, intval])], c("rtmin", "rtmax")]}, peakmat), ncol=2, byrow=TRUE); 
       colnames(peakrange) <- c("rtmin", "rtmax")
+
       while(!all(is.na(maxo) == TRUE)){
           iint   <- which.max(maxo);
           rtmed  <- groupmat[iint, "rtmed"]; #highest peak in whole spectra
-          rt_min <- peakrange[iint, "rtmin"];
-          rt_max <- peakrange[iint, "rtmax"]; #begin and end of the highest peak
-          hwhm   <- ((rt_max-rt_min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
+          rt.min <- peakrange[iint, "rtmin"];
+          rt.max <- peakrange[iint, "rtmax"]; #begin and end of the highest peak
+          hwhm   <- ((rt.max-rt.min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
           #all other peaks whose retensiontimes are in the fwhm of the highest peak
           irt    <- which(groupmat[, 'rtmed'] > (rtmed-hwhm) & groupmat[, 'rtmed'] < (rtmed + hwhm) & !is.na(maxo)) 
           if(length(irt) > 0){
               #if peaks are found
               pspectra[[length(pspectra)+1]] <- irt; #create groups
-              psSamples[length(pspectra)]  <- max_int[iint] # saves the sample of the peak which is in charge for this pspectrum
+              psSamples[length(pspectra)]  <- int.max[iint] # saves the sample of the peak which is in charge for this pspectrum
               maxo[irt] <- NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
     }else{
       #Group with specific sample, using all sample or only a one sample experiment
       peakmat <- getPeaks(object@xcmsSet, index=sample);
-      maxo    <- peakmat[, 'maxo']; #max intensities of all peaks
+      maxo    <- peakmat[, intval]; #max intensities of all peaks
+
       while(!all(is.na(maxo) == TRUE)){
           iint   <- which.max(maxo);
           rtmed  <- peakmat[iint, "rt"]; #highest peak in whole spectra
-          rt_min <- peakmat[iint, "rtmin"];
-          rt_max <- peakmat[iint, "rtmax"]; #begin and end of the highest peak
-          hwhm   <- ((rt_max - rt_min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
+          rt.min <- peakmat[iint, "rtmin"];
+          rt.max <- peakmat[iint, "rtmax"]; #begin and end of the highest peak
+          hwhm   <- ((rt.max - rt.min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
           #all other peaks whose retensiontimes are in the fwhm of the highest peak
           irt    <- which(peakmat[, 'rt'] > (rtmed - hwhm) & peakmat[, 'rt'] < (rtmed + hwhm) & !is.na(maxo)) 
           if(length(irt)>0){
@@ -156,6 +170,7 @@ setMethod("groupFWHM","xsAnnotate", function(object,sigma=6,perfwhm=0.6) {
       }
     psSamples <- rep(sample, length(pspectra))
     }
+
     object@pspectra  <- pspectra;
     object@psSamples <- psSamples;
     cat("Created", length(object@pspectra), "groups.\n")
@@ -222,52 +237,89 @@ setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NUL
 return(invisible(object));
 })
 
-setGeneric("findIsotopes", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01) standardGeneric("findIsotopes"));
-setMethod("findIsotopes","xsAnnotate", function(object,maxcharge=3,maxiso=4,ppm=5,mzabs=0.01){
+setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="into") standardGeneric("findIsotopes"));
+setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="into"){
+  #searches in every pseudospectrum after mass differences, which matches isotope distances
+
   if (!class(object) == "xsAnnotate"){
     stop ("no xsAnnotate object");
   }
-  # calculate Isotope_Matrix
-  IM <- calcIsotopes(maxiso=maxiso, maxcharge=maxcharge);
-  # Normierung
-  devppm <- ppm / 1000000;
-  # get mz,rt,into from peaktable
-  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
-    ##Ein Sample Fall
-    imz  <- object@xcmsSet@peaks[, "mz"];
-    irt  <- object@xcmsSet@peaks[, "rt"];
-    mint <- object@xcmsSet@peaks[, "into"];
-  }else {
-    ##Mehrsample Fall
-    #Gibt es Unterschiede
-    gvals    <- groupval(object@xcmsSet);
-    peakmat  <- object@xcmsSet@peaks;
-    groupmat <- groups(object@xcmsSet);
-    imz <- groupmat[, "mzmed"];
-    irt <- groupmat[, "rtmed"];
-    if(is.na(object@sample)){
-      mint <- as.numeric(apply(gvals, 1, function(x, peakmat) { max(peakmat[x, "into"]) }, peakmat)); #errechne höchsten Peaks
-    }else if(object@sample == -1){
-      ##TODO @ Joe: Was machen wir hier?
-    }else{
-      #Group mit vorgegebenen Sample
-      mint <- peakmat[gvals[, object@sample], "into"]; #errechne höchsten Peaks
-    }
-  }
-  isotope   <- vector("list", length(imz));
-  npspectra <- length(object@pspectra);
-  isomatrix <- matrix(ncol=5, nrow=0);
 
-  #wenn vorher nicht groupFWHM aufgerufen wurde, gruppiere alle Peaks in eine Gruppe
+  if (!sum(intval == c("into","intb","maxo"))){
+       stop("unknown intensity value!")
+  }
+
+  ncl <- sum(sapply(object@pspectra, length));
+  npeaks.global <- 0; #Counter for % bar
+  npspectra <- length(object@pspectra);
+
+  # calculate Isotope_Matrix
+  IM <- calcIsotopeMatrix(maxiso=maxiso, maxcharge=maxcharge);
+  # scaling
+  devppm <- ppm / 1000000;
+
+  #Check if object have been preprocessed with groupFWHM
   if(npspectra < 1) { 
     npspectra <- 1;
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
+    object@psSamples  <- 1;
   }
-  cat("Run isotope peak annotation\n");
+
+  # get mz,rt,into from peaktable
+  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
+    ##one sample case
+    imz  <- object@groupInfo[, "mz"];
+    irt  <- object@groupInfo[, "rt"];
+    mint <- object@groupInfo[, intval];
+  }else {
+    ##multiple sample
+    gvals    <- groupval(object@xcmsSet);
+    peakmat  <- object@xcmsSet@peaks;
+    groupmat <- groups(object@xcmsSet);
+
+    imz <- groupmat[, "mzmed"];
+    irt <- groupmat[, "rtmed"];
+
+    #get intensity values, according groupFWHM sample selection
+    if(is.na(object@sample)){
+      psspec <- 1:npspectra
+      mint <- vector(mode="numeric",length=nrow(gvals));
+      #get for every psspec its corresponding intensities
+      invisible(sapply(psspec, function(x) {
+          pi <- object@pspectra[[x]]
+          index <- object@psSamples[[x]]
+          mint <<- peakmat[gvals[pi,index],intval]
+      }));
+    }else if(object@sample == -1){
+      ##TODO @ Joe: Shot never occur!
+    }else{
+      mint <- peakmat[gvals[, object@sample], intval]; #errechne höchsten Peaks
+    }
+  }
+
+  isotope   <- vector("list", length(imz));
+  npspectra <- length(object@pspectra);
+  isomatrix <- matrix(NA, ncol=5, nrow=1);
+
+
+  cat("Run isotope peak annotation\n % finished: ");
   #Suche Isotope in jeder Gruppe
   for(i in 1:npspectra){
     #indizes der peaks aus der gruppe in der peaktable
     ipeak <- object@pspectra[[i]];
+
+    #percent output
+    npeaks.global <- npeaks.global + length(ipeak);
+    perc   <- round((npeaks.global) / ncl * 100)
+    if ((perc %% 10 == 0) && (perc != lp)) { 
+      cat(perc,' '); 
+      lp <- perc;
+    }
+    if (.Platform$OS.type == "windows"){ 
+      flush.console();
+    }
+    #end percent output
+
     #hat gruppe mehr als einen Peak, sonst mach nichts
     if(length(ipeak) > 1){
       #masse und intensität der Peaks
@@ -442,7 +494,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
     imz <- object@xcmsSet@peaks[,"mz"];
   }else {
     ##Mehrsample Fall
-      imz <- object@groupInfo[,"mz"];
+    imz <- object@groupInfo[,"mz"];
   }
 
   # anzahl peaks in gruppen für % Anzeige
