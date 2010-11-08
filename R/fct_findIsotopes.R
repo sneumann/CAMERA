@@ -1,5 +1,5 @@
 ##Functions for findIsotopes
-calcIsotopes <- function(maxiso,maxcharge){
+calcIsotopeMatrix <- function(maxiso,maxcharge){
         M_C12_C13 = 1.0033
 
         ## Calculate ISO/CHARGE - Matrix
