@@ -1,6 +1,7 @@
 \name{getPeaklist-methods}
 \docType{methods}
 \alias{getPeaklist}
+\alias{getPeaklist,xsAnnotate-method}
 \title{Retrieve the annotatad peaklist}
 \description{
  Extract all information from an xsAnnotate object. Returns a peaklist with annotated peaks.
