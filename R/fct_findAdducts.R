@@ -5,7 +5,7 @@ annotateGrpMPI <- function(params){
 library(CAMERA);
 result<-list();
   for(ii in 1:length(params$i)){
-    result[[ii]]<-CAMERA:::annotateGrp(params$pspectra,params$i[[ii]],params$imz,params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
+    result[[ii]]<-CAMERA:::annotateGrp(params$pspectra[[params$i[[ii]]]],params$imz,params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
   }
 return(result);
 }
