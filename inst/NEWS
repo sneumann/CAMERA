@@ -1,3 +1,5 @@
+2010-23-11 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findAdducts. Function failed, if run in parallel mode.
 2010-08-11 ckuhl <ckuhl@ipb-halle.de>
 	* Add intval parameter to groupFWHM and findIsotopes
 2010-08-11 ckuhl <ckuhl@ipb-halle.de>
