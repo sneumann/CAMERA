@@ -14,7 +14,7 @@ annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
   mz     <- imz[ipeak];
   na_ini <- which(!is.na(mz))
 
-  if(length(na.omit(mz[na_ini]])) < 1){
+  if(length(na.omit(mz[na_ini])) < 1){
     return(NULL);
   }
 
