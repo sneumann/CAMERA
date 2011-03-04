@@ -1,3 +1,5 @@
+2011-04-04 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findAdducts, if pseudospectrum mass list has only NA values
 2010-23-11 ckuhl <ckuhl@ipb-halle.de>
 	* Fix bug in findAdducts. Function failed, if run in parallel mode.
 2010-08-11 ckuhl <ckuhl@ipb-halle.de>

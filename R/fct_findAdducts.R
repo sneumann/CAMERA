@@ -14,6 +14,10 @@ annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
   mz     <- imz[ipeak];
   na_ini <- which(!is.na(mz))
 
+  if(length(na.omit(mz[na_ini]])) < 1){
+    return(NULL);
+  }
+
   ML     <- massDiffMatrix(mz[na_ini],rules);
   hypothese <- createHypothese(ML,rules,devppm,mzabs,na_ini);
   
