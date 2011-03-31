@@ -335,14 +335,15 @@ calcRules2 <- function (maxcharge=3, mol=3, nion=1, nnloss=1, nnadd=1, nh=2, pol
     for(k in 1:mol){
 
       if(k == 1){
+        #For M+H
         str    <- "";
         tmpips <- 0.5;
-        quasi  <- 1 #For M+H
-
+        quasi  <- 1 
       }else{
+        #For xM+H
         str    <-  k;
         tmpips <- 0;
-        quasi  <- 0 #For xM+H
+        quasi  <- 0 
       };
 
       #(kM+H)
@@ -359,6 +360,7 @@ calcRules2 <- function (maxcharge=3, mol=3, nion=1, nnloss=1, nnadd=1, nh=2, pol
           next;
         }
 
+        #Add Rule to Ruleset
         if(ionlist[i,2] == 1){
           ruleset <- rbind(ruleset,cbind(paste("[",str,"M+H+",ionlist[i,1],"]2+",sep=""),k,ionlist[i,2]+1,ionlist[i,3]+1.007276,"A",0,0.25,tmpionparent));
         }else{
