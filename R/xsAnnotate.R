@@ -272,8 +272,13 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
         scantimes <- tmp$scantimes
         rm(tmp);
         #new calcCL function with rcorr from Hmisc
-        res[[i]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
+        if(i == 1){
+          res[[1]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
+        }else{
+          res[[1]] <- combineCalc(res[[1]],calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list),method="sum")
+        }
       }
+      res[[1]][,3] <- res[[1]][,3] / length(object@sample)
     }
   } else if(calcCiS && object@xcmsSet@peaks[1,"rt"] == -1){
     cat("Object contains no retention time data!\n");
@@ -375,7 +380,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
       invisible(sapply(psspec, function(x) {
           pi <- object@pspectra[[x]]
           index <- object@psSamples[[x]]
-          mint <<- peakmat[gvals[pi,index],intval]
+          mint[pi] <<- peakmat[gvals[pi,index],intval]
       }));
     }else if(object@sample == -1){
       ##TODO @ Joe: Shot never occur!
