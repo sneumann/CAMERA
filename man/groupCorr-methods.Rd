@@ -7,7 +7,7 @@
  Grouping the peaks after the correlation of the EICs into pseudospectragroups for a xsAnnotate object. Return a xsAnnotate object with group information.
 }
 \usage{
-  groupCorr(object,cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = TRUE, calcCiS = TRUE, calcCaS = TRUE, psg_list=NULL, polarity=NA, ...)
+  groupCorr(object,cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, polarity=NA, ...)
 }
 \arguments{
   \item{object}{The \code{xsAnnotate} object}
