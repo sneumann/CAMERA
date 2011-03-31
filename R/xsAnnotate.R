@@ -170,7 +170,6 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
       maxo[which(is.na(maxo))] <- -1;
       maxo      <- cbind(1:length(maxo),maxo);
       
-
       #highest peak index 
       int.max   <- as.numeric(apply(gvals, 1, function(x, peakmat){which.max(peakmat[x, intval])}, peakmat));
 
@@ -184,8 +183,6 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
       }, peakmat), ncol=2, byrow=TRUE); 
 
       colnames(peakrange) <- c("rtmin", "rtmax")
-
-
 
       while(length(maxo) > 0){
           iint   <- which.max(maxo[,2]);
