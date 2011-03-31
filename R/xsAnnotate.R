@@ -1004,41 +1004,59 @@ findFragment <- function (object,ppm=20){
   invisible(cbind(getPeaklist(object),fragment))
 }
 
-getpspectra <- function(object,grp){
-peaks<-object@groupInfo
-index<-object@pspectra[[grp]];
-peaktable<-peaks[index,]
-adduct<-vector("character",length(index));
-isotopes<-vector("character",length(index));
-ions<-object@derivativeIons;
-iso<-object@isotopes;
-lions <- ions[index];
-liso  <- iso[index];
+getpspectra <- function(object, grp=NULL){
+  #Generate Peaktable for specific pseudospectrum
+  
+  if(is.null(grp)){
+    cat("Error: No grp number!\n");
+  }else if(!(is.numeric(grp)) | any(grp > length(object@pspectra))){
+    cat("Error: Grp is not numeric or contains number greater than maximum number of pseudospectra!\n");
+  }else{
+    index     <- unlist(object@pspectra[grp]);
+    if(length(index) == 0){
+      cat("Error: Pseudospectra selection contains no peaks.\n")
+      return(NULL);
+    }
+    grpvec <- unlist(sapply(grp,function(x) {rep(x,length(object@pspectra[[x]]))}))
+    peaktable <- object@groupInfo[index,]
 
-for(i in 1:length(lions)){
-    if(!is.null(lions[[i]])){
-        if(length(lions[[i]])>1){
-            names<-c();
-            for(ii in 1:length(lions[[i]])){
-                names<-paste(names,lions[[i]][[ii]]$name,lions[[i]][[ii]]$mass);
-            }
-            adduct[i]<-names;
-        }else{
-            adduct[i]<-paste(lions[[i]][[1]]$name,lions[[i]][[1]]$mass);
+    adduct    <- vector("character",length(index));
+    isotopes  <- vector("character",length(index));
+    ions      <- object@derivativeIons;
+    iso       <- object@isotopes;
+
+    lions <- ions[index];
+    liso  <- iso[index];
+
+    for(i in 1:length(lions)){
+      if(!is.null(lions[[i]])){
+        if(length(lions[[i]]) > 1){
+          names <- c();
+          for(ii in 1:length(lions[[i]])){
+            names <- paste(names,lions[[i]][[ii]]$name,lions[[i]][[ii]]$mass);
+          }
+          adduct[i] <- names;
+        } else {
+          adduct[i] <- paste(lions[[i]][[1]]$name,lions[[i]][[1]]$mass);
         }
+      }
+      if(!is.null(liso[[i]])){
+        if(liso[[i]]$charge > 1){
+          isotopes[i] <- paste("[",liso[[i]]$y,"] ",liso[[i]]$iso," ",liso[[i]]$charge,"+",sep="");
+        }else{
+          isotopes[i] <- paste("[",liso[[i]]$y,"] ",liso[[i]]$iso," ","+",sep="");
+        }
+      }
     }
-    if(!is.null(liso[[i]])){
-	if(liso[[i]]$charge>1){
-	  isotopes[i]<-paste("[",liso[[i]]$y,"] ",liso[[i]]$iso," ",liso[[i]]$charge,"+",sep="");
-	}else{
-	  isotopes[i]<-paste("[",liso[[i]]$y,"] ",liso[[i]]$iso," ","+",sep="");
-	}
-    }
-}
-if(is.null(nrow(peaktable))) peaktable = matrix(peaktable,byrow=F,ncol=length(peaktable))
-colnames(peaktable)<-colnames(peaks)
 
-return(invisible(data.frame(peaktable,isotopes,adduct,grp,stringsAsFactors=FALSE)));
+    #Check if peaktable has only one row
+    if(is.null(nrow(peaktable))){ 
+      peaktable <- matrix(peaktable, byrow=F, ncol=length(peaktable));
+    }
+    colnames(peaktable) <- colnames(object@groupInfo)
+    
+    return(invisible(data.frame(peaktable,isotopes,adduct,psg=grpvec,stringsAsFactors=FALSE)));
+  }
 }
 
 
