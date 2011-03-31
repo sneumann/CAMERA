@@ -341,7 +341,6 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
        stop("unknown intensity value!")
   }
 
-  ncl <- sum(sapply(object@pspectra, length));
   npeaks.global <- 0; #Counter for % bar
   npspectra <- length(object@pspectra);
 
@@ -356,6 +355,8 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
     object@psSamples  <- 1;
   }
+
+  ncl <- sum(sapply(object@pspectra, length));
 
   # get mz,rt,into from peaktable
   if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
@@ -588,16 +589,18 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
 setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=100,psg_list=NULL) standardGeneric("findAdducts"));
 setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=100,psg_list=NULL){
   # norming
-  devppm = ppm / 1000000;
+  devppm <- ppm / 1000000;
+  # counter for % bar
   npeaks.global <- 0;
+
   # get mz values from peaklist
  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
-    ##Ein Sample Fall
+    ##One Sample
     imz <- object@xcmsSet@peaks[,"mz"];
-  }else {
+ }else {
     ##Mehrsample Fall
     imz <- object@groupInfo[,"mz"];
-  }
+ }
 
   # anzahl peaks in gruppen für % Anzeige
 #   sum_peaks <- sum(sapply(object@pspectra, length));
@@ -646,119 +649,141 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
     #save ruleset
     object@ruleset<-rules;
   }
+
   runParallel <- 0;
+
   if(object@runParallel == 1){
-      if(mpi.comm.size() > 0){
-        runParallel <- 1;
-      }else{
-        warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
-        runParallel <- 0;
-        }
+    if(mpi.comm.size() > 0){
+      runParallel <- 1;
     }else{
+      warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
       runParallel <- 0;
     }
+  }else{
+    runParallel <- 0;
+  }
 
   quasimolion <- which(rules[, "quasi"]== 1)
-  #Entferne Isotope aus dem Intensitätsvector, sollen nicht mit annotiert werden
+
+  #Remove recognized isotopes from annotation m/z vector
   if(length(isotopes) > 0){
-      for(x in 1:length(isotopes)){
-          if(!is.null(isotopes[[x]])){
-              if(isotopes[[x]]$iso != 0){
-                imz[x] <- NA;
-              }
-          }
+    for(x in 1:length(isotopes)){
+      if(!is.null(isotopes[[x]])){
+        if(isotopes[[x]]$iso != 0){
+          imz[x] <- NA;
+        }
       }
+    }
   }
-  #Anzahl Gruppen
+
+  #number of pseudo-spectra
   npspectra <- length(object@pspectra);
 
-  #Wenn vorher nicht gruppiert wurde, alle Peaks in eine Gruppe stecken
+  #If groupCorr or groupFHWM have not been invoke, select all peaks in one sample
   if(npspectra < 1){ 
     npspectra <- 1;
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo)); 
   }
   
-  #zähler für % Anzeige
-  npeaks<-0;massgrp<-0;
-  #für alle Gruppen
+  #counter for % bar
+  npeaks    <- 0; 
+  massgrp   <- 0;
 
   if (runParallel == 1) { ## ... we use MPI
     if(is.null(psg_list)){
-        cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: '); lp <- -1;
-        pspectra_list<-1:npspectra;
-      }else{
-        cat('\nCalculating possible adducts in',length(psg_list),'Groups... \n % finished: '); lp <- -1;
-        pspectra_list<-psg_list;
-      }
-        argList <- list();
-        cnt_peak<-0;if(is.null(max_peaks)) {max_peaks==100;};
-        params <- list();
-        for(j in 1:length(pspectra_list)){
-          i<-pspectra_list[j];
-          params$i[[length(params$i)+1]] <- i;
-          cnt_peak<-cnt_peak+length(object@pspectra[[i]]);
-          if(cnt_peak>max_peaks || j == length(pspectra_list)){
-            params$pspectra <-object@pspectra;
-            params$imz <- imz;
-            params$rules <- rules;
-            params$mzabs <- mzabs;
-            params$devppm <- devppm;
-            params$isotopes <- isotopes;
-            params$quasimolion <- quasimolion;
-            argList[[length(argList)+1]]<-params
-            cnt_peak<-0;params<-list();
-          }
-        }
-        result <- xcmsPapply(argList, annotateGrpMPI)
-    for(ii in 1:length(result)){
-        if(length(result[[ii]])==0)next;
-        for(iii in 1:length(result[[ii]])){
-          hypothese<-result[[ii]][[iii]];
-          if(is.null(hypothese)){next;}
-          charge=0;old_massgrp=0;
-          index <- argList[[ii]]$i[[iii]];
-          ipeak <- object@pspectra[[index]];
-          for(hyp in 1:nrow(hypothese)){
-            peakid<-ipeak[hypothese[hyp,"massID"]];
-            if(old_massgrp != hypothese[hyp,"massgrp"]) {
-              massgrp<-massgrp+1;old_massgrp<-hypothese[hyp,"massgrp"];
-              annoGrp<-rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"]),i) ) 
-            }
-            annoID<-rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
-          }
-        }
-    }
-    derivativeIons<-getderivativeIons(annoID,annoGrp,rules,length(imz));
-    cat("\n");
-    object@derivativeIons <- derivativeIons;
-    object@annoID<-annoID;
-    object@annoGrp<-annoGrp;
-    return(object)
-  } else {
-    if(is.null(psg_list)){
-      cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: '); lp <- -1;
+      cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: ');
+      lp <- -1;
       pspectra_list <- 1:npspectra;
     }else{
-      cat('\nCalculating possible adducts in',length(psg_list),'Groups... \n % finished: '); lp <- -1;
+      cat('\nCalculating possible adducts in',length(psg_list),'Groups... \n % finished: '); 
+      lp <- -1;
       pspectra_list <- psg_list;
-      sum_peaks <- sum(sapply(object@pspectra[psg_list],length));
-      }
+    }
+    argList <- list();
+    cnt_peak <- 0;
+    if(is.null(max_peaks)){
+      max_peaks==100;
+    }
+    params <- list();
+    
     for(j in 1:length(pspectra_list)){
       i <- pspectra_list[j];
-      #Indizes der Peaks in einer Gruppe
+      params$i[[length(params$i)+1]] <- i;
+      cnt_peak <- cnt_peak+length(object@pspectra[[i]]);
+      if(cnt_peak>max_peaks || j == length(pspectra_list)){
+        params$pspectra <-object@pspectra;
+        params$imz <- imz;
+        params$rules <- rules;
+        params$mzabs <- mzabs;
+        params$devppm <- devppm;
+        params$isotopes <- isotopes;
+        params$quasimolion <- quasimolion;
+        argList[[length(argList)+1]] <- params
+        cnt_peak <- 0;
+        params <- list();
+      }
+    }
+    result <- xcmsPapply(argList, annotateGrpMPI)
+    for(ii in 1:length(result)){
+      if(length(result[[ii]]) == 0){
+        next;
+      }
+      for(iii in 1:length(result[[ii]])){
+        hypothese <- result[[ii]][[iii]];
+        if(is.null(hypothese)){
+          next;
+        }
+        charge <- 0;
+        old_massgrp <- 0;
+        index <- argList[[ii]]$i[[iii]];
+        ipeak <- object@pspectra[[index]];
+        for(hyp in 1:nrow(hypothese)){
+          peakid<-ipeak[hypothese[hyp,"massID"]];
+          if(old_massgrp != hypothese[hyp,"massgrp"]) {
+            massgrp <- massgrp+1;
+            old_massgrp <- hypothese[hyp,"massgrp"];
+            annoGrp <- rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"]),i) ) 
+          }
+          annoID <- rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
+        }
+      }
+    }
+
+    derivativeIons <- getderivativeIons(annoID,annoGrp,rules,length(imz));
+    cat("\n");
+    object@derivativeIons <- derivativeIons;
+    object@annoID  <- annoID;
+    object@annoGrp <- annoGrp;
+    return(object)
+  } else {
+    ##Single Core Mode
+    if(is.null(psg_list)){
+      cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: '); 
+      lp <- -1;
+      pspectra_list <- 1:npspectra;
+    }else{
+      cat('\nCalculating possible adducts in',length(psg_list),'Groups... \n % finished: '); 
+      lp <- -1;
+      pspectra_list <- psg_list;
+      sum_peaks <- sum(sapply(object@pspectra[psg_list],length));
+    }
+    for(j in 1:length(pspectra_list)){
+      i <- pspectra_list[j];
+      #peak index for those in pseudospectrum i
       ipeak <- object@pspectra[[i]];
-    #percent output
-    npeaks.global <- npeaks.global + length(ipeak);
-    perc   <- round((npeaks.global) / ncl * 100)
-    perc   <- perc %/% 10 * 10;
-    if (perc != lp && perc != 0) { 
-      cat(perc,' '); 
-      lp <- perc;
-    }
-    if (.Platform$OS.type == "windows"){ 
-      flush.console();
-    }
-    #end percent output
+
+      #percent output
+      npeaks.global <- npeaks.global + length(ipeak);
+      perc   <- round((npeaks.global) / ncl * 100)
+      perc   <- perc %/% 10 * 10;
+      if (perc != lp && perc != 0) { 
+        cat(perc,' '); 
+        lp <- perc;
+      }
+      if (.Platform$OS.type == "windows"){ 
+        flush.console();
+      }
+      #end percent output
 
       #check if the pspec contains more than one peak 
       if(length(ipeak) > 1){
@@ -767,18 +792,26 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
         if(is.null(hypothese)){
           next;
         }
-        charge <- 0;old_massgrp <- 0;
+        charge <- 0;
+        old_massgrp <- 0;
+        
+        #combine annotation hypotheses to annotation groups for one compound mass
         for(hyp in 1:nrow(hypothese)){
-            peakid<-ipeak[hypothese[hyp,"massID"]];
-            if(old_massgrp != hypothese[hyp,"massgrp"]) {
-            massgrp<-massgrp+1;old_massgrp<-hypothese[hyp,"massgrp"];
-            annoGrp<-rbind( annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"]),i) ) }
-            annoID<-rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
+          peakid <- ipeak[hypothese[hyp,"massID"]];
+          if(old_massgrp != hypothese[hyp,"massgrp"]) {
+            massgrp <- massgrp + 1;
+            old_massgrp <- hypothese[hyp, "massgrp"];
+            annoGrp <- rbind( annoGrp,c(massgrp,hypothese[hyp,"mass"], sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"]),i) ) 
+          }
+          annoID <- rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
         }
       }
     }
-    derivativeIons<-getderivativeIons(annoID,annoGrp,rules,length(imz));
+
+    derivativeIons <- getderivativeIons(annoID,annoGrp,rules,length(imz));
+
     cat("\n");
+
     object@derivativeIons <- derivativeIons;
     object@annoID<-annoID;
     object@annoGrp<-annoGrp;
