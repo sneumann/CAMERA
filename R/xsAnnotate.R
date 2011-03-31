@@ -195,22 +195,33 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
       #Group with specific sample, using all sample or only a one sample experiment
       peakmat <- getPeaks(object@xcmsSet, index=sample);
       maxo    <- peakmat[, intval]; #max intensities of all peaks
+      maxo      <- cbind(1:length(maxo),maxo);
 
-      while(!all(is.na(maxo) == TRUE)){
-          iint   <- which.max(maxo);
+      while(length(maxo)> 0){
+          iint   <- which.max(maxo[,2]);
           rtmed  <- peakmat[iint, "rt"]; #highest peak in whole spectra
           rt.min <- peakmat[iint, "rtmin"];
           rt.max <- peakmat[iint, "rtmax"]; #begin and end of the highest peak
           hwhm   <- ((rt.max - rt.min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
           #all other peaks whose retensiontimes are in the fwhm of the highest peak
-          irt    <- which(peakmat[, 'rt'] > (rtmed - hwhm) & peakmat[, 'rt'] < (rtmed + hwhm) & !is.na(maxo)) 
+          irt    <- which(peakmat[, 'rt'] > (rtmed - hwhm) & peakmat[, 'rt'] < (rtmed + hwhm)) 
           if(length(irt)>0){
               #if peaks are found
-              pspectra[[length(pspectra)+1]] <- irt; #create groups
-              maxo[irt] <- NA; #set itensities of peaks to NA, due to not to be found in the next cycle
+              idx <- maxo[irt,1];
+              pspectra[[length(pspectra)+1]] <- idx; #create groups
+              maxo <- maxo[-irt, ,drop=FALSE]; #set itensities of peaks to NA, due to not to be found in the next cycle
+              peakmat <- peakmat[-irt,,drop=FALSE];
+          }else{
+              idx <- maxo[iint,1];
+              cat("Warning: Feature ",idx," looks odd for at least one peak. Please check afterwards.\n");
+              pspectra[[length(pspectra)+1]] <- idx; #create groups
+              maxo       <- maxo[-iint, ,drop=FALSE]; #set itensities of peaks to NA, due to not to be found in the next cycle
+              groupmat   <- groupmat[-iint, ,drop=FALSE];
+              peakrange  <- peakrange[-iint, ,drop=FALSE];
           }
+
       }
-    psSamples <- rep(sample, length(pspectra))
+      psSamples <- rep(sample, length(pspectra))
     }
 
     object@pspectra  <- pspectra;
