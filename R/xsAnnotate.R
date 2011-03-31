@@ -157,6 +157,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
 
       #calculate highest peaks
       maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){max(peakmat[x, intval],na.rm=TRUE)}, peakmat));
+      maxo      <- cbind(1:length(maxo),maxo);
 
       #highest peak index 
       int.max   <- as.numeric(apply(gvals, 1, function(x, peakmat){which.max(peakmat[x, intval])}, peakmat));
@@ -165,7 +166,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
       colnames(peakrange) <- c("rtmin", "rtmax")
 
       while(length(maxo) > 0){
-          iint   <- which.max(maxo);
+          iint   <- which.max(maxo[,2]);
           rtmed  <- groupmat[iint, "rtmed"]; #highest peak in whole spectra
           rt.min <- peakrange[iint, "rtmin"];
           rt.max <- peakrange[iint, "rtmax"]; #begin and end of the highest peak
@@ -174,11 +175,20 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
           irt    <- which(groupmat[, 'rtmed'] > (rtmed-hwhm) & groupmat[, 'rtmed'] < (rtmed + hwhm)) 
           if(length(irt) > 0){
               #if peaks are found
-              pspectra[[length(pspectra)+1]] <- irt; #create groups
-              psSamples[length(pspectra)]  <- index[int.max[iint]] # saves the sample of the peak which is in charge for this pspectrum
-              maxo[-irt] <- maxo[-irt]; #set itensities of peaks to NA, due to not to be found in the next cycle
-              groupmat   <- groupmat[-irt,];
-              peakrange  <- peakrange[-irt,];
+              idx <- maxo[irt,1];
+              pspectra[[length(pspectra)+1]] <- idx; #create groups
+              psSamples[length(pspectra)]  <- index[int.max[maxo[iint,1]]] # saves the sample of the peak which is in charge for this pspectrum
+              maxo <- maxo[-irt, ,drop=FALSE]; #set itensities of peaks to NA, due to not to be found in the next cycle
+              groupmat   <- groupmat[-irt, ,drop=FALSE];
+              peakrange  <- peakrange[-irt, ,drop=FALSE];
+          }else{              
+              idx <- maxo[iint,1];
+              cat("Warning: Feature ",idx," looks odd for at least one peak. Please check afterwards.\n");
+              pspectra[[length(pspectra)+1]] <- idx; #create groups
+              psSamples[length(pspectra)]  <- index[int.max[maxo[iint,1]]] # saves the sample of the peak which is in charge for this pspectrum
+              maxo <- maxo[-iint, ,drop=FALSE]; #set itensities of peaks to NA, due to not to be found in the next cycle
+              groupmat   <- groupmat[-iint, ,drop=FALSE];
+              peakrange  <- peakrange[-iint, ,drop=FALSE];
           }
       }
     }else{
