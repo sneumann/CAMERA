@@ -1,8 +1,8 @@
-\name{getPeaklist-methods}
+\name{getPeaklist}
 \docType{methods}
 \alias{getPeaklist}
 \alias{getPeaklist,xsAnnotate-method}
-\title{Retrieve the annotatad peaklist}
+\title{Generate the annotatad peaklist}
 \description{
  Extract all information from an xsAnnotate object. Returns a peaklist with annotated peaks.
 }
@@ -18,13 +18,13 @@
 }
 \examples{
 library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
-  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
-  an   <- xsAnnotate(xs)
-  an   <- groupFWHM(an)
-  an   <- findIsotopes(an)
-  an   <- findAdducts(an,polarity="positive")
-  peaklist <- getPeaklist(an)
+file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
+an   <- xsAnnotate(xs)
+an   <- groupFWHM(an)
+an   <- findIsotopes(an)
+an   <- findAdducts(an,polarity="positive")
+peaklist <- getPeaklist(an)
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
 \keyword{methods}

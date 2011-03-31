@@ -2,17 +2,15 @@
 \docType{class}
 \alias{xsAnnotate-class}
 \alias{show,xsAnnotate-method}
-\title{Class xsAnnotate, a class for annotate peak data}
+\title{Class xsAnnotate, a class for annotated peak data}
 \description{
-  This class transforms a set of peaks from multiple LC/MS or GC/MS
-  samples into a matrix of preprocessed data. It groups the peaks
-  and does nonlinear retention time correction without internal
-  standards. It fills in missing peak values from raw data. Lastly,
-  it generates extracted ion chromatograms for ions of interest.
+  This class transforms a \code{\link{xcmsSet}} object with peaks from multiple LC/MS or GC/MS
+  samples into a set of annotation results. It contains searching algorihms for isotopes and adducts,
+  peak grouping algorithms to find connected peak, which originate from the same molecule.
 }
 \section{Objects from the Class}{
   Objects can be created with the \code{\link{xsAnnotate}} constructor
-  which gathers peaks from a set NetCDF files. Objects can also be
+  which include the peaktable from a provided \code{\link{xcmsSet}}. Objects can also be
   created by calls of the form \code{new("xsAnnotate", ...)}.
 }
 

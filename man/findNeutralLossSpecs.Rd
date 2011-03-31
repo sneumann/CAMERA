@@ -23,7 +23,8 @@
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   an   <- xsAnnotate(xs)
   an   <- groupFWHM(an)
-  hits <- findNeutralLossSpecs(an,mzdiff=18.01,mzabs=0.01) #Searches for Pseudspecta with water loss
+  #Searches for Pseudspecta with water loss
+  hits <- findNeutralLossSpecs(an, mzdiff=18.01, mzabs=0.01) 
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
 \keyword{methods}

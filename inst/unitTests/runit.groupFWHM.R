@@ -29,13 +29,9 @@ test.anno_single <- function() {
     anIC <- groupCorr(anI)
     checkEqualsNumeric(length(anIC@pspectra),48)
 
-    ## groupCorr with polarity = "negative"
-    anCN <- groupCorr(anF,polarity="negative")
-    checkEqualsNumeric(length(anCN@pspectra),48)
-
-    ## findIsotopes without group before
+        ## findIsotopes without group before
     anI2 <- findIsotopes(an)
-    checkEqualsNumeric(nrow(anI2@isoID),37)
+    checkEqualsNumeric(nrow(anI2@isoID),34)
 
     ## findAdducts without anything before
     file  <- system.file('rules/primary_adducts_pos.csv', package = "CAMERA")
@@ -45,7 +41,7 @@ test.anno_single <- function() {
 
     ## findIsotopes and findAdducts 
     anFI <- findIsotopes(anFC)
-    checkEqualsNumeric(nrow(anFI@isoID),26)
+    checkEqualsNumeric(nrow(anFI@isoID),24)
     anFA <- findAdducts(anFI, polarity="positive")
     checkEqualsNumeric(length(unique(anFA@annoID[,1])),40)
 
@@ -64,7 +60,7 @@ test.anno_multi <- function() {
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
     #Change from 171 to 159 due to applying correlation accross samples
-    checkEqualsNumeric(length(xsaC@pspectra),223)
+    checkEqualsNumeric(length(xsaC@pspectra),333)
     #checkEqualsNumeric(length(xsaC@pspectra),171)
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
@@ -95,6 +91,5 @@ test.anno_multi <- function() {
     rules <- read.csv(file)
     xsaFA <- findAdducts(xsaFI, polarity="positive",rules=rules)
     #Change from 41 to 154 due to applying correlation accros samples
-    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),22)
-    #checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),41)
+    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),20)
     }

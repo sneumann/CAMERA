@@ -1,4 +1,4 @@
-\name{groupFWHM-methods}
+\name{groupFWHM}
 \docType{methods}
 \alias{groupFWHM}
 \alias{groupFWHM,xsAnnotate-method}
@@ -19,8 +19,8 @@
 intb }
 }
 \details{
-  Every peak who eluate at the same time as a selected peak, will be part of the
-  group. Same time is defined about the Rt_med +/- FWHM * perfwhm.
+  Every peak who eluate at the same time-point as a selected peak, will be part of the
+  group. Same time-point is defined about the Rt_med +/- FWHM * perfwhm.
   For a single sample \code{xcmsSet} the selection of peaks starts at the
   most abundant and goes down to the smaller ones. With a multiple sample set
   the automatic selection uses the most abundant peak as an representative for

@@ -11,7 +11,8 @@
 	\describe{
 	\item{object1 = "xsAnnotate"}{
 		\code{
-		specDist(object1, object2, pspectrum1, pspectrum2,method,...)
+		specDist(object1, object2, pspectrum1, pspectrum2, 
+        method,...)
 		}
 		}
 	}
@@ -35,8 +36,8 @@
   passed through to the function implementing
   the \code{method}. 
   
-  A character vector of \emph{nicknames} for the 
-  algorithms available is returned by 
+  A character vector of \emph{nicknames} for all the 
+  algorithms which are available is returned by 
   \code{getOption("BioC")$xcms$specDist.methods}.
   If the nickname of a method is called "meanMZmatch",
   the help page for that specific method can

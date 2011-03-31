@@ -22,7 +22,8 @@
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   an   <- xsAnnotate(xs)
   an   <- groupFWHM(an)
-  xs.pseudo <- findNeutralLoss(an,mzdiff=18.01,mzabs=0.01) #Searches for Peaks with water loss
+  #Searches for Peaks with water loss
+  xs.pseudo <- findNeutralLoss(an,mzdiff=18.01,mzabs=0.01) 
   xs.pseudo@peaks #show Hits
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}

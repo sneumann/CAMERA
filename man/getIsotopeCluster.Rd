@@ -14,7 +14,7 @@
   \item{value}{ Which intensity values should be extracted. Allowed values are: maxo, into, intb}
 }
 \details{
-  This method extract the isotope annotation from a xsAnnotate object. The order of the resulting list is the same as the one in the peaklist.
+  This method extract the isotope annotation from a xsAnnotate object. The order of the resulting list is the same as the one in the peaklist, see \code{\link{getPeaklist}}.
   In the case of a multiple sample the intensity value for a peak is retrieved from the sample, which has been choosen for the pseudospectra in the grouping step. 
 }
 \examples{

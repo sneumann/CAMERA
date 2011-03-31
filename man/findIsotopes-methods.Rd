@@ -1,4 +1,4 @@
-\name{findIsotopes-methods}
+\name{findIsotopes}
 \docType{methods}
 \alias{findIsotopes}
 \alias{findIsotopes,xsAnnotate-method}
