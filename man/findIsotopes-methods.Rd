@@ -7,7 +7,7 @@
  Annotate isotope peaks for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes.
 }
 \usage{
-  findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01, intval="into", minfrac=0.5)
+  findIsotopes(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo", minfrac=0.5)
 }
 
 \arguments{
