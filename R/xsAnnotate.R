@@ -172,7 +172,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
           if(length(iint) == 0){
             # Can be caused if maxo inherits NA values.
             # Those peaks will be ignored
-            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.")
+            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.\n")
             break;
           }
           rtmed  <- groupmat[iint, "rtmed"]; #highest peak in whole spectra
@@ -210,7 +210,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
           if(length(iint) == 0){
             # Can be caused if maxo inherits NA values.
             # Those peaks will be ignored
-            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.")
+            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.\n")
             break;
           }
           rtmed  <- peakmat[iint, "rt"]; #highest peak in whole spectra
@@ -244,9 +244,9 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   return(invisible(object)); #return object
 })
 
-setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = TRUE, calcCiS = TRUE, calcCaS = TRUE, psg_list=NULL, polarity=NA, ...) standardGeneric("groupCorr"));
+setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, polarity=NA, ...) standardGeneric("groupCorr"));
 
-setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = TRUE, calcCiS = TRUE, calcCaS = TRUE, psg_list=NULL, polarity=NA) {
+setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, polarity=NA) {
   
   if (!class(object) == "xsAnnotate"){
     stop ("no xsAnnotate object");
@@ -627,13 +627,14 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
 
 setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=100,psg_list=NULL) standardGeneric("findAdducts"));
 setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=100,psg_list=NULL){
-  # norming
+  
+  # Scaling ppm factor
   devppm <- ppm / 1000000;
   # counter for % bar
   npeaks.global <- 0;
 
   # get mz values from peaklist
-  imz <- object@groupInfo[,"mz"];
+  imz    <- object@groupInfo[,"mz"];
   intval <- "maxo"; #max. intensity
 
   #number of pseudo-spectra
@@ -661,7 +662,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
       #get for every psspec its corresponding intensities
       invisible(sapply(psspec, function(x) {
         pi <- object@pspectra[[x]]
-        if(nsample > 1){
+        if(nsample > 1 & !is.na(object@sample[1])){
           index <- object@sample;
           mint[pi] <<- apply(matrix(peakmat[gvals[pi,index],intval],ncol=nsample),1,max,na.rm=TRUE)
         }else{
@@ -1219,16 +1220,8 @@ findNeutralLoss <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
 
 ###End xsAnnotate exported Methods###
 
+
 ###xsAnnotate intern Function###
-
-# resolve_Adducts <- function(peakgrp){
-#     neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
-#     if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
-#     neutralloss <- read.table(neutralloss, header=TRUE, dec=".",sep=",",
-#                               as.is=TRUE, stringsAsFactors = FALSE);
-# }
-
-
 
 combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
   # two xsAnnotate objects (pos,neg)
@@ -1527,6 +1520,7 @@ combineHypothese <- function(mass.pos,mass.neg,ruleset,ini1,ini2,tol=0.02){
 #     return(results);
 }
 
+##Speed-up function for ignoring NA values
 naOmit <- function(x) {
     return (x[!is.na(x)]);
 }

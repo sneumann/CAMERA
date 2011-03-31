@@ -27,7 +27,7 @@ test.anno_single <- function() {
     ## groupCorr with findIsotopes before
     anI <- findIsotopes(anF)
     anIC <- groupCorr(anI)
-    checkEqualsNumeric(length(anIC@pspectra),45)
+    checkEqualsNumeric(length(anIC@pspectra),48)
 
     ## groupCorr with polarity = "negative"
     anCN <- groupCorr(anF,polarity="negative")
@@ -35,11 +35,13 @@ test.anno_single <- function() {
 
     ## findIsotopes without group before
     anI2 <- findIsotopes(an)
-    checkEqualsNumeric(nrow(anFI@isoID),26)
+    checkEqualsNumeric(nrow(anI2@isoID),37)
 
     ## findAdducts without anything before
-    anA <- findAdducts(an, polarity="positive")
-    checkEqualsNumeric(length(unique(anA@annoID[,1])),77)
+    file  <- system.file('rules/primary_adducts_pos.csv', package = "CAMERA")
+    rules <- read.csv(file)
+    anA <- findAdducts(an, polarity="positive",rules=rules)
+    checkEqualsNumeric(length(unique(anA@annoID[,1])),55)
 
     ## findIsotopes and findAdducts 
     anFI <- findIsotopes(anFC)
@@ -62,27 +64,27 @@ test.anno_multi <- function() {
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
     #Change from 171 to 159 due to applying correlation accross samples
-    checkEqualsNumeric(length(xsaC@pspectra),159)
+    checkEqualsNumeric(length(xsaC@pspectra),223)
     #checkEqualsNumeric(length(xsaC@pspectra),171)
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
     xsaC <- groupCorr(xsaF)
     #Change from 211 to 236 due to applying correlation accross samples
-    checkEqualsNumeric(length(xsaC@pspectra),236)
+    checkEqualsNumeric(length(xsaC@pspectra),329)
     #checkEqualsNumeric(length(xsaC@pspectra),211)
   ##  groupCorr without groupFWHM
     ## manual selection
     xsa <- xsAnnotate(xsg, sample=1)
     xsaC <- groupCorr(xsa)
     #Change from 316 to 8 due to applying correlation accros samples
-    checkEqualsNumeric(length(xsaC@pspectra),8)
+    checkEqualsNumeric(length(xsaC@pspectra),48)
 #    checkEqualsNumeric(length(xsaC@pspectra),316)
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaC <- groupCorr(xsa)
     #Change from 211 to 236 due to applying correlation accros samples
-    checkEqualsNumeric(length(xsaC@pspectra),8)
+    checkEqualsNumeric(length(xsaC@pspectra),48)
     #checkEqualsNumeric(length(xsaC@pspectra),316)
  ## findIsotopes and findAdducts
     xsaFI <- findIsotopes(xsaC)
@@ -93,6 +95,6 @@ test.anno_multi <- function() {
     rules <- read.csv(file)
     xsaFA <- findAdducts(xsaFI, polarity="positive",rules=rules)
     #Change from 41 to 154 due to applying correlation accros samples
-    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),151)
+    checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),22)
     #checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),41)
     }
