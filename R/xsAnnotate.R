@@ -29,14 +29,19 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1){
   }else{
     if(is.null(sample) || is.na(sample)) {
       #automatic sample selection, sample = NA
-      object@sample   <-  as.numeric(NA);
+      if(length(xs@filepaths) == 1){
+          #If samplesize == 1 than set sample to 1
+          object@sample <- 1;
+      }else{
+          object@sample   <-  as.numeric(NA);
+      }
     }else{
       if(sample == -1){
         #Joes Way
         object@sample <-  sample;
       }else if(length(xs@filepaths) < sample | sample < 1) {
         stop("Parameter sample must be lower equal than number of samples and greater than 0.\n")
-      }else{
+      }else{       
         object@sample <-  sample;
       }
     }
@@ -84,27 +89,35 @@ setMethod("show", "xsAnnotate", function(object){
   cat("With",length(object@pspectra),"groups (pseudospectra)\n");
   cat("With",length(sampnames(object@xcmsSet)),"samples and",nrow(object@groupInfo),"peaks\n");
  
-  if(is.na(object@sample)){
+  #Show samples selection
+  if(is.na(object@sample[1])){
     cat(paste("Using automatic sample selection\n"));
-  } else if(object@sample>-1){
-    cat(paste("Using sample:",object@sample,"\n"));
-  } else { cat(paste("Using complete measurement\n"));}
-  if(length(object@isotopes)>0){
-  #Isotopes Vorhanden
-    cnt<-nrow(object@isoID)
-    cat("Annotated isotopes:",cnt,"\n");
+  } else if(all(object@sample > -1)){
+    cat("Using sample(s): ",paste(object@sample),"\n");
+  } else { 
+    cat(paste("Using complete measurement\n"));
   }
-  if(length(object@derivativeIons)>0){
-    #Annotations availible
-    cnt<-length(unique(object@annoID[,1]));
-    cat("Annotated adducts & fragments:",cnt,"\n");
+
+  #Show isotope information
+  if(length(object@isotopes) > 0){
+    cnt <- nrow(object@isoID)
+    cat("Annotated isotopes:", cnt, "\n");
   }
+
+  #Show annotation information
+  if(length(object@derivativeIons) > 0){
+    cnt <- length(unique(object@annoID[, 1]));
+    cat("Annotated adducts & fragments:", cnt, "\n");
+  }
+
+  #Show memory information
   memsize <- object.size(object)
   cat("Memory usage:", signif(memsize/2^20, 3), "MB\n");
-  if(object@runParallel==1){
+  if(object@runParallel == 1){
     cat("CAMERA runs in parallel mode!\n");
   }
 })
+
 ###End Constructor###
 
 ###xsAnnotate generic Methods###
@@ -131,9 +144,14 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
      warning("Warning: no retention times avaiable. Do nothing\n");
      return(invisible(object));
   }else{
-    if(is.na(sample)) {
-      # grouped peaktable within automatic selection
-      gvals    <- groupval(object@xcmsSet);
+    if(is.na(sample[1]) || length(sample) > 1) {
+      # grouped peaktable within automatic selection or sub selection
+      if(is.na(sample[1])){
+        index <- 1:length(object@xcmsSet@filepaths);
+      }else{
+        index <- sample;
+      }
+      gvals    <- groupval(object@xcmsSet)[,index];
       peakmat  <- object@xcmsSet@peaks;
       groupmat <- groups(object@xcmsSet);
 
@@ -157,7 +175,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
           if(length(irt) > 0){
               #if peaks are found
               pspectra[[length(pspectra)+1]] <- irt; #create groups
-              psSamples[length(pspectra)]  <- int.max[iint] # saves the sample of the peak which is in charge for this pspectrum
+              psSamples[length(pspectra)]  <- index[int.max[iint]] # saves the sample of the peak which is in charge for this pspectrum
               maxo[irt] <- NA; #set itensities of peaks to NA, due to not to be found in the next cycle
           }
       }
@@ -228,7 +246,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   # Check LC information and calcCorr was selected
   if(calcCiS && object@xcmsSet@peaks[1,"rt"] != -1){
     
-    if(is.na(object@sample)){
+    if(is.na(object@sample[1])){
       #Autoselect sample path for EIC correlation    
       index <- rep(0, nrow(object@groupInfo));
       
@@ -347,7 +365,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
     irt <- groupmat[, "rtmed"];
 
     #get intensity values, according groupFWHM sample selection
-    if(is.na(object@sample)){
+    if(is.na(object@sample[1]) || length(object@sample) > 1){
       psspec <- 1:npspectra
       mint <- vector(mode="numeric",length=nrow(gvals));
       #get for every psspec its corresponding intensities
@@ -378,7 +396,8 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
     #percent output
     npeaks.global <- npeaks.global + length(ipeak);
     perc   <- round((npeaks.global) / ncl * 100)
-    if ((perc %% 10 == 0) && (perc != lp)) { 
+    perc   <- perc %/% 10 * 10;
+    if (perc != lp && perc != 0) { 
       cat(perc,' '); 
       lp <- perc;
     }

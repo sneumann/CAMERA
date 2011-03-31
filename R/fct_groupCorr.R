@@ -209,6 +209,8 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
 setGeneric("calcIsotopes", function(object) standardGeneric("calcIsotopes"))
 setMethod("calcIsotopes", "xsAnnotate", function(object){
 
+  ncl <- sum(sapply(object@pspectra, length));
+  npeaks.global <- 0; #Counter for % bar
   npspectra <- length(object@pspectra);
   #Columns Peak 1, Peak 2, correlation coefficienct, Pseudospectrum Index
   resMat <- matrix(nrow=0,ncol=4)
@@ -219,9 +221,23 @@ setMethod("calcIsotopes", "xsAnnotate", function(object){
     return(NULL);
   }else{
     if(nrow(object@isoID) > 0){
+      cat('\nCalculating isotope assignments in',npspectra,'Groups... \n % finished: '); 
+      lp <- -1;
       for(i in 1:npspectra){
           pi <- object@pspectra[[i]]
           npi <- length(pi)
+          #percent output
+          npeaks.global <- npeaks.global + length(pi);
+          perc   <- round((npeaks.global) / ncl * 100)
+          if ((perc %% 10 == 0) && (perc != lp)) { 
+            cat(perc,' '); 
+            lp <- perc;
+          }
+          if (.Platform$OS.type == "windows"){ 
+            flush.console();
+          }
+          #end percent output
+
           if(npi <2){
             next;
           }
