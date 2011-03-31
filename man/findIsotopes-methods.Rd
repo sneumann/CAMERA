@@ -7,7 +7,7 @@
  Annotate isotope peaks for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes.
 }
 \usage{
-  findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01, intval="into")
+  findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01, intval="into", minfrac=0.5)
 }
 
 \arguments{
@@ -16,10 +16,15 @@
   \item{maxiso}{max. number of the isotope peaks}
   \item{ppm}{ppm error for the search}
   \item{mzabs}{allowed variance for the search}
-  \item{intval}{choose intensity values. Allowed values are into, maxo, intb }
+  \item{intval}{choose intensity values for C12/C13 check. Allowed values are into, maxo, intb }
+  \item{minfrac}{in case of multiple samples, percentaged value of samples, which have to contain the correct C12/C13 ratio}
 }
 \details{
-  Isotope peaks are annotated for a xsAnnotate object according to given rules (maxcharge, maxiso). The algorithm benefits from a earlier grouping of the data, with groupFWHM. Generates a list of all possible isotopes, which is stored in object@isotopes. Those isotope information will be used in the groupCorr funtion. 
+  Isotope peaks are annotated for a xsAnnotate object according to given rules (maxcharge, maxiso). The algorithm benefits from a earlier grouping of the data, with groupFWHM. 
+  Generates a list of all possible isotopes, which is stored in object@isotopes. Those isotope information will be used in the groupCorr funtion.
+  The itensity of the C13 isotope peak is checked against the C12 of proper ratio. In the case of mulitiple sample, all samples will be tested. Minfrac describe the minimal percentaged
+  of samples, which must passed the test. If peaks are NA, then this sample is skipped and the ratio is (found correct C12/C13 ratio) / (samples containing C12 and C13 peak).
+  
 }
 \examples{
  library(CAMERA)
