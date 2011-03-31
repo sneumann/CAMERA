@@ -369,8 +369,9 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   return(invisible(object));
 })
 
-setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="into") standardGeneric("findIsotopes"));
-setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="into"){
+
+setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo",minfrac=0.5) standardGeneric("findIsotopes"));
+setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo",minfrac=0.5){
   #searches in every pseudospectrum after mass differences, which matches isotope distances
 
   if (!class(object) == "xsAnnotate"){
@@ -383,6 +384,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
 
   npeaks.global <- 0; #Counter for % bar
   npspectra <- length(object@pspectra);
+  minfrac <- 0.5;
 
   # calculate Isotope_Matrix
   IM <- calcIsotopeMatrix(maxiso=maxiso, maxcharge=maxcharge);
@@ -404,40 +406,23 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
     cat("Generating peak matrix!\n");
     imz  <- object@groupInfo[, "mz"];
     irt  <- object@groupInfo[, "rt"];
-    mint <- object@groupInfo[, intval];
-
-  }else {
+    mint <- object@groupInfo[, intval,drop=FALSE];
+  }else{
     ##multiple sample
+    if(is.na(object@sample[1])){
+      index <- 1:length(object@xcmsSet@filepaths);
+    }else{
+      index <- object@sample;
+    }
     cat("Generating peak matrix!\n");
-    gvals    <- groupval(object@xcmsSet);
+    mint     <- groupval(object@xcmsSet,value=intval)[,index,drop=FALSE];
     peakmat  <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
-
+    
     imz <- groupmat[, "mzmed"];
     irt <- groupmat[, "rtmed"];
     int.val <- c();
     nsample <- length(object@sample);
-
-    #get intensity values, according groupFWHM sample selection
-    if(is.na(object@sample[1]) || nsample > 1){
-      psspec <- 1:npspectra
-      mint <- vector(mode="numeric",length=nrow(gvals));
-      #get for every psspec its corresponding intensities
-      invisible(sapply(psspec, function(x) {
-          pi <- object@pspectra[[x]]
-          if(nsample > 1){
-            index <- object@sample;
-            mint[pi] <<- apply(matrix(peakmat[gvals[pi,index],intval],ncol=nsample),1,max,na.rm=TRUE)
-          }else{
-            index <- object@psSamples[[x]]
-            mint[pi] <<- peakmat[gvals[pi,index],intval]
-          }     
-      }));
-    }else if(object@sample == -1){
-      ##TODO @ Joe: Should never occur!
-    }else{
-      mint <- peakmat[gvals[, object@sample], intval]; #errechne höchsten Peaks
-    }
   }
 
   isotope   <- vector("list", length(imz));
@@ -464,91 +449,127 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
       flush.console();
     }
     #end percent output
-
-    #hat gruppe mehr als einen Peak, sonst mach nichts
+    
+    #Have pseudospectrum more than one peak
     if(length(ipeak) > 1){
-      #masse und intensität der Peaks
+      #peak mass and intensity for pseudospectrum
       mz  <- imz[ipeak];
-      int <- mint[ipeak];
-      #matrix der peaks mit allen wichtigen Informationen
-      spectra <- matrix(c(mz, int, ipeak), ncol=3)
-      spectra <- spectra[order(spectra[, 1]), ];
+      int <- mint[ipeak,,drop=FALSE];
+
+      #matrix with all important informationen
+      spectra <- matrix(c(mz, ipeak), ncol=2)
+      int     <- int[order(spectra[, 1]),,drop=FALSE]
+      spectra <- spectra[order(spectra[, 1]), ];    
       cnt <- nrow(spectra);
-      #für jeden Peak
+
+      #for every peak in pseudospectrum
       for ( j in 1:(length(mz) - 1)){
-        #erzeuge Differenzmatrix
+        
+        #create distance matrix
         MI <- spectra[j:cnt, 1] - spectra[j, 1];
-        #für alle erlaubte Ladungen
+        max.index <- max(which(MI< IM[maxiso,1]+max(2*devppm*mz)+ mzabs))
+
+        #for every charge
         for(charge in maxcharge:1){
-          #Suche Übereinstimmungen der Isotopenabständen mit der Differenzmatrix
-          m <- fastMatch(MI,IM[,charge],tol= max(2*devppm*mz)+ mzabs)
-          #Für jeden Match, teste welches Isotope gefunden wurde
+          
+          #find matches with the distance matrix
+          m <- fastMatch(MI[1:max.index],IM[,charge],tol= max(2*devppm*mz)+ mzabs)
+          #for every match, test of isotopes existing
           if(any(!sapply(m,is.null))){
-            #für alle erlaubten Isotopenpeaks
+            #for every isotope mz match
             for( iso in 1:maxiso){
-              #wurde der iso-Isotopenpeak gefunden?
+              #checking if M+x Isotopepeak had been found
               pos <- which(sapply(m, function(x){ 
-		if(is.null(x)){
-		  return(FALSE);
-		} else { 
-		  x == iso;
-		  }
-		}));
+                        if(is.null(x)){
+                          return(FALSE);
+                        } else { 
+                          x == iso;
+                        }
+                      }));
+
               if (length(pos) > 0){
-                # Isotop Nr. iso scheint zu existieren
+                # isotope number iso seems to exist
                 dev <- (devppm * spectra[pos+j-1,1]) + (devppm + spectra[j,1])
+
                 if (isTRUE(all.equal(spectra[pos+j-1,1],spectra[j,1] + IM[iso,charge] ,tolerance=(dev + mzabs),scale=1))){
-                  # Isotop Nr. iso existiert
-                  int.available <- all(!is.na(c(spectra[pos+j-1,2],spectra[j,2])))
+                  isovalue <- c(0.0,0.0);
+                  # isotope number iso exists
                   if (iso == 1){
-                    #wenn der erste Isotopenpeak gefunden wurde
-                    if (int.available){
-                      ISO_RULE1 <- (spectra[pos+j-1, 2] < spectra[j, 2] ) ## isotopic rule
-                      theo.mass <- spectra[j, 1] * charge; #theoretical mass
-                      numC      <- round(theo.mass / 12); #max. number of C in molecule
-                      inten.max <- spectra[j, 2] * numC * 0.011; #highest possible intensity
-                      inten.min <- spectra[j, 2] * 1    * 0.011; #lowest possible intensity
-                      ## here C12/C13 rule, isotopic rule now obsolete?
-                      ISO_RULE  <- (spectra[pos+j-1, 2] < inten.max && spectra[pos+j-1, 2] > inten.min)
-                    } else {
-                      ISO_RULE1 <- TRUE
-                      ISO_RULE  <- TRUE
+                    # first isotopic peak had been found
+                    for(sample.index in c(1:ncol(mint))){
+                      int.available <- all(!is.na(c(int[pos+j-1,sample.index],int[j,sample.index])))
+                      if (int.available){
+#                         ISO_RULE1 <- (spectra[pos+j-1, 2] < spectra[j, 2] ) ## isotopic rule
+                        theo.mass <- spectra[j, 1] * charge; #theoretical mass
+                        numC      <- round(theo.mass / 12); #max. number of C in molecule
+                        inten.max <- int[j, sample.index] * numC * 0.011; #highest possible intensity
+                        inten.min <- int[j, sample.index] * 1    * 0.011; #lowest possible intensity
+                        ## here C12/C13 rule, isotopic rule now obsolete?
+                        if(int[pos+j-1, sample.index] < inten.max && int[pos+j-1, sample.index] > inten.min){
+                            isovalue[1] <- isovalue[1] + 1;
+                            isovalue[2] <- isovalue[2] + 1;
+                        }else{
+                            isovalue[2] <- isovalue[2] + 1;
+                        }
+                      } else {
+#                         isovalue[2] <- isovalue[2]+1;
+#                         ISO_RULE1 <- TRUE
+#                         ISO_RULE  <- TRUE
+                      }
                     }
-                  }else{
-                    # Sind alle anderen isotopen Peaks da?
-		    test <- match(apply(isomatrix[, c(1, 3, 4),drop=FALSE], 1, function(x) {paste(x,collapse=" ")}),apply(matrix(cbind(spectra[j,3],1:(iso-1),charge),ncol=3),1, function(x) {paste(x,collapse=" ")}))
+
+                  } else {
+                    # For iso higher 1, check if lower iso peaks are present
+                    test <- match(apply(isomatrix[, c(1, 3, 4), drop=FALSE], 1, function(x) {
+                                    paste(x, collapse=" ")
+                                  }),
+                                  apply(matrix(cbind(spectra[j,2],1:(iso-1),charge),ncol=3),1, function(x) {
+                                    paste(x,collapse=" ")
+                                  }));
+                    
                     if(length(naOmit(test))==(iso-1)){
-                      ISO_RULE1 <- TRUE
-                      if (int.available) ISO_RULE <- (spectra[pos+j-1,2] < spectra[j,2])
-                      else ISO_RULE <- TRUE
-                    }else{
-                      ISO_RULE1 <- FALSE
+                      for(sample.index in c(1:ncol(mint))){
+                        int.available <- all(!is.na(c(int[pos+j-1,sample.index],int[j,sample.index])))
+                        if (int.available) { 
+                          if(int[pos+j-1,sample.index] < int[j,sample.index]){
+                              isovalue[1] <- isovalue[1] + 1;
+                              isovalue[2] <- isovalue[2] + 1;
+                          }else{
+                              isovalue[2] <- isovalue[2] + 1;
+                          }
+                        }
+                      }
+                    } else {
+                      #lower isotopes are not present
+                      break;
                     }
                   }
-                  if (!ISO_RULE1) { 
-                    break;
-                  }
-                  if (ISO_RULE1 && ISO_RULE){
+
+                  if (isovalue[2] > 0 & isovalue[1]/isovalue[2] >= minfrac){
                     #Neues Isotope gefunden
                     #TODO: Intrinsische Ladungen betrachten
-                    if(!length(which(isomatrix[,1]==spectra[j,3] & isomatrix[,2]==spectra[pos+j-1,3]))>0){
-                      if(!length(which(isomatrix[,2]==spectra[j,3])>0)){
-                        isomatrix<-rbind(isomatrix,c(spectra[j,3],spectra[pos+j-1,3],iso,charge,0))
+                    if(!length(which(isomatrix[,1]==spectra[j,2] & isomatrix[,2]==spectra[pos+j-1,2]))>0){
+                      if(!length(which(isomatrix[,2]==spectra[j,2])>0)){
+                        isomatrix<-rbind(isomatrix,c(spectra[j,2],spectra[pos+j-1,2],iso,charge,0))
                       }
                     }
                   }
+
                 } else { 
                   break;
                 }
+
               } else { 
                 break;
               }
-            }
-          }
-        }
-      }
-    }
-  }
+
+            } #End for iso
+          } # End If
+        } # End for charge
+      } # End for j
+    } #end if
+  } # end for nspectra
+
   #clean isotopes
   if(is.null(nrow(isomatrix))) {
     isomatrix = matrix(isomatrix, byrow=F, ncol=length(isomatrix)) 
