@@ -48,9 +48,10 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1){
   }
 
   object@groupInfo <- getPeaks_selection(xs);
+
   runParallel   <-  0;
+
   if (nSlaves > 1) {
-#     cat("Parallel mode is currently not avaible.\nWill be re-enabled with the next CAMERA version!\n");
     ## If MPI is available ...
     rmpi = "Rmpi"
     if (require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
@@ -68,6 +69,7 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1){
         }
       }else {
           #And now??
+          warning("DLL mpi_initialize is not loaded. Run single core mode!\n");
       }
     }
   }
