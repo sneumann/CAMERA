@@ -1,11 +1,11 @@
 \name{getpspectra}
 \alias{getpspectra}
-\title{Retrieve a spectra-group peaklist}
+\title{Retrieve a peaklist of one or more pseudospectra}
 \description{
  Extract group(s) from a xsAnnotate object. Returns a peaklist as matrix with annotated peaks.
 }
 \usage{
-  getpspectra(object,grp)
+  getpspectra(object, grp)
 }
 \arguments{
   \item{object}{xsAnnotate object}
@@ -13,7 +13,7 @@
 }
 \details{
   xsAnnotate groups LC/MS Peaklist after there EIC correlation and FWHM. These function extract one or more of these so called "pseudo spectra groups" with include the peaklist with there annotations. The annotation depends on a before called findAdducts() ( and findIsotopes() ).
-Attention: The indices for the isotopes, are those from the whole peaklist. See \code{getPeaklist()}.
+  Important: The indices for the isotopes, are those from the whole peaklist. See \code{getPeaklist()}.
 }
 \examples{
   library(CAMERA)

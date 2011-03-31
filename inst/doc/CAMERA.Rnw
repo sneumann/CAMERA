@@ -165,12 +165,9 @@ an   <- xsAnnotate(xs)
 an   <- groupFWHM(an)
 an  <- findIsotopes(an)
 anC <- groupCorr(an, cor_eic_th = 0.75)
-anCp<- groupCorr(an, cor_eic_th = 0.75, polarity="positive")
 an1   <- findAdducts(anC, polarity="positive")
-an2   <- findAdducts(anCp, polarity="positive")
 par(mfrow=c(2,1))
 plotEICs(an1, pspec=8, maxlabel=5)
-plotEICs(an2, pspec=8, maxlabel=5)
 @
 
 \begin{figure}

@@ -248,21 +248,12 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   return(invisible(object)); #return object
 })
 
-setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, polarity=NA, ...) standardGeneric("groupCorr"));
+setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, ...) standardGeneric("groupCorr"));
 
-setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, polarity=NA) {
+setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL) {
   
   if (!class(object) == "xsAnnotate"){
     stop ("no xsAnnotate object");
-  }
-
-  #Check polarity parameter
-  if(!is.na(polarity)){
-    if(polarity %in% c("positive", "negative")){
-      object@polarity <- polarity;
-    } else {  
-      cat("Unknown polarity parameter.\n"); 
-    }
   }
 
   npspectra <- length(object@pspectra);
@@ -543,7 +534,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
             #evaluate if candiates are real isotopic peaks
             #First C13 - find best candidate - best candidate = best hit / occurence rate
             index <- which.max(res <- candidate.matrix[1,seq(1,ncol(candidate.matrix),by=2)]/candidate.matrix[1,seq(1,ncol(candidate.matrix),by=2)+1])
-            if (res[index] >= minfrac){
+            if (length(index) > 0 && res[index] >= minfrac){
               #C13 Peak over minfrac threshold
               isomatrix<-rbind(isomatrix,c(spectra[j,2],spectra[m[[1]][index]+j-1,2],1,charge,0))
               maxhits <- candidate.matrix[1,index*2]
@@ -627,6 +618,17 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
       }
     }
   }
+
+  #Combine isotope cluster, if they overlap
+  if(length(idx.duplicated <- which(isomatrix[,1] %in% isomatrix[,2]))>0){
+    for(i in 1:length(idx.duplicated)){
+      index <- which(isomatrix[,2] == isomatrix[idx.duplicated[i],1] & isomatrix[,3] == 1)
+      max.index <- which.max(isomatrix[index,4]);
+      isomatrix[idx.duplicated[i],1] <- isomatrix[index[max.index],1];
+      isomatrix[idx.duplicated[i],3] <- isomatrix[index[max.index],3]+1;
+    }
+  }
+
   object@isoID <- matrix(nrow=0, ncol=4);
   colnames(object@isoID)  <-  c("mpeak","isopeak","iso","charge");
   object@isoID <- rbind(object@isoID, isomatrix[, 1:4]);
@@ -649,8 +651,8 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
   return(object);
 })
 
-setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=100,psg_list=NULL) standardGeneric("findAdducts"));
-setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=100,psg_list=NULL){
+setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
+setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL){
   
   # Scaling ppm factor
   devppm <- ppm / 1000000;
@@ -902,10 +904,15 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
   }
 })
 
-annotateDiffreport <- function(object, sample=NA,sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, multiplier=3, polarity="positive", nSlaves=1, psg_list=NULL, pval_th=NULL, fc_th=NULL, quick=FALSE,rules=NULL, class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], filebase = character(), eicmax = 0, eicwidth = 200, sortpval = TRUE, classeic = c(class1,class2), value=c("into", "maxo", "intb"), metlin = FALSE, h=480,w=640, ...) {
+annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6,
+  cor_eic_th=0.75, graphMethod="hcs", pval=0.05, calcCiS=TRUE,
+  calcIso=FALSE, calcCaS=FALSE, maxcharge=3, maxiso=4, minfrac=0.5,
+  ppm=5, mzabs=0.015, quick=FALSE, psg_list=NULL, rules=NULL,
+  polarity="positive", multiplier=3, max_peaks=100, intval="into",
+  pval_th = NULL, fc_th = NULL,sortpval=TRUE, ...) {
 
   if (!class(object)=="xcmsSet") stop ("no xcmsSet object");
-  diffrep <- diffreport(object, class1 = class1, class2 = class2, filebase = filebase, eicmax = eicmax, eicwidth = eicwidth, sortpval = FALSE, classeic = classeic, value=value, metlin = metlin, h=h,w=w, ...);
+  diffrep <- diffreport(object, ...);
   if(quick){
     #Quick run, no groupCorr and findAdducts
     xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
@@ -959,7 +966,7 @@ annotateDiffreport <- function(object, sample=NA,sigma=6, perfwhm=0.6, cor_eic_t
     }
     #Add to psg_list all groups, with has been created after groupCorr
     cnt <- length(xa@pspectra);
-    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list, polarity=polarity)
+    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list)
     if(!is.null(psg_list)){
       psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
     }
@@ -1138,32 +1145,46 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
   return(invisible(data.frame(peaktable,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
 })
 
-annotate<-function(object, sigma=6, perfwhm=0.6, cor_eic_th=0.75, maxcharge=3, maxiso=4, ppm=5, mzabs=0.015, multiplier=3, sample=NA, quick=FALSE, psg_list=NULL, polarity="positive", nSlaves=1, max_peaks=100){
-  if (!class(object)=="xcmsSet"){
-    stop ("Object is not an xcmsSet object")
+setGeneric("annotate", function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6, cor_eic_th=0.75, graphMethod="hcs",
+  pval=0.05, calcCiS=TRUE, calcIso=FALSE, calcCaS=FALSE, maxcharge=3, maxiso=4, minfrac=0.5, ppm=5, mzabs=0.015, 
+  quick=FALSE, psg_list=NULL,  rules=NULL, polarity="positive", multiplier=3, max_peaks=100 ,intval="into") standardGeneric("annotate"))
+
+setMethod("annotate", "xcmsSet", function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6, cor_eic_th=0.75, graphMethod="hcs",
+  pval=0.05, calcCiS=TRUE, calcIso=FALSE, calcCaS=FALSE, maxcharge=3, maxiso=4, minfrac=0.5, ppm=5, mzabs=0.015, 
+  quick=FALSE, psg_list=NULL,  rules=NULL, polarity="positive", multiplier=3, max_peaks=100 ,intval="into") {
+
+  #check intval
+  if (!sum(intval == c("into","intb","maxo"))){
+       stop("unknown intensity value!\n")
   }
+
+  #check graphMethod
+  if(!sum(graphMethod == c("hcs","lpc"))){
+      stop("Unknown graphMethod value!\n")
+  }
+
   if(quick){
     #Quick run, no groupCorr and findAdducts
     xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
-    xa <- groupFWHM(xa,perfwhm=perfwhm, sigma=sigma);
-    xa <- findIsotopes(xa,maxcharge=maxcharge, maxiso=maxiso, ppm=ppm,mzabs=mzabs)
-#     xa.result<-getPeaklist(xa);
+    xa <- groupFWHM(xa, perfwhm=perfwhm, sigma=sigma, intval=intval);
+    xa <- findIsotopes(xa, maxcharge=maxcharge, maxiso=maxiso, ppm=ppm, mzabs=mzabs, intval=intval, minfrac=minfrac)
+
   }else{
-    xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
-    xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
-    xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
+
+    xa  <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
+    xa  <- groupFWHM(xa, perfwhm=perfwhm, sigma=sigma, intval=intval);
+    xa  <- findIsotopes(xa, maxcharge=maxcharge, maxiso=maxiso, ppm=ppm, mzabs=mzabs, intval=intval, minfrac=minfrac)
     cnt <- length(xa@pspectra);
-    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list, polarity=polarity)
+    xa  <- groupCorr(xa, cor_eic_th=cor_eic_th, graphMethod=graphMethod, calcIso=calcIso, calcCiS=calcCiS, calcCaS=calcCaS, psg_list=psg_list)
     if(!is.null(psg_list)){
       psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
     }
-    xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,psg_list=psg_list);
-#     xa.result<-getPeaklist(xa);
+    xa <- findAdducts(xa, multiplier=multiplier, ppm=ppm, rules=rules, max_peaks=max_peaks, mzabs=mzabs, polarity=polarity, psg_list=psg_list);
   }
   #Kombiniere Resultate
 
   return(xa);
-}
+})
 
 findNeutralLossSpecs <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
 

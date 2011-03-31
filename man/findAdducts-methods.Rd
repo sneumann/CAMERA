@@ -7,7 +7,8 @@
  Annotate adducts (and fragments) for a xsAnnotate object. Returns a xsAnnotate object with annotated pseudospectra.
 }
 \usage{
- findAdducts(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL)
+ findAdducts(object, ppm=5, mzabs=0.015, multiplier=3, 
+ polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL)
 }
 
 \arguments{
@@ -30,7 +31,7 @@
  an   <- xsAnnotate(xs)
  an   <- groupFWHM(an)
  an <- findIsotopes(an)  # optional but recommended.
-# an <- groupCorr(an) # optional but very recommended step
+#an <- groupCorr(an) # optional but very recommended step
  an <- findAdducts(an,polarity="positive")
  peaklist <- getPeaklist(an) # get the annotated peak list
 }
