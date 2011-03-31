@@ -675,30 +675,20 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
     mint <- object@groupInfo[, intval];
   }else{
     ##multiple sample
-    gvals    <- groupval(object@xcmsSet);
+    if(is.na(object@sample[1])){
+      index <- 1:length(object@xcmsSet@filepaths);
+    }else{
+      index <- object@sample;
+    }
+    cat("Generating peak matrix!\n");
+    mint     <- groupval(object@xcmsSet,value=intval)[,index,drop=FALSE];
     peakmat  <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
-    nsample <- length(sampnames(object@xcmsSet))
-    #get intensity values, according groupFWHM sample selection
-    if(is.na(object@sample[1]) || nsample > 1){
-      psspec <- 1:npspectra;
-      mint <- vector(mode="numeric",length=nrow(gvals));
-      #get for every psspec its corresponding intensities
-      invisible(sapply(psspec, function(x) {
-        pi <- object@pspectra[[x]]
-        if(nsample > 1 & !is.na(object@sample[1])){
-          index <- object@sample;
-          mint[pi] <<- apply(matrix(peakmat[gvals[pi,index],intval],ncol=nsample),1,max,na.rm=TRUE)
-        }else{
-          index <- object@psSamples[[x]]
-          mint[pi] <<- peakmat[gvals[pi,index],intval]
-        }     
-      }));
-    }else if(object@sample == -1){
-      ##TODO @ Joe: Should never occur!
-    }else{
-      mint <- peakmat[gvals[, object@sample], intval]; #errechne höchsten Peaks
-    }
+    
+    imz <- groupmat[, "mzmed"];
+    irt <- groupmat[, "rtmed"];
+    int.val <- c();
+    nsample <- length(object@sample);
   }
 
 
@@ -776,8 +766,6 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
     }
   }
 
-
-
   #counter for % bar
   npeaks    <- 0; 
   massgrp   <- 0;
@@ -807,6 +795,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
       if(cnt_peak>max_peaks || j == length(pspectra_list)){
         params$pspectra <-object@pspectra;
         params$imz <- imz;
+#         params$mint <- mint;
         params$rules <- rules;
         params$mzabs <- mzabs;
         params$devppm <- devppm;
@@ -881,7 +870,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
 
       #check if the pspec contains more than one peak 
       if(length(ipeak) > 1){
-        hypothese <- annotateGrp(ipeak,imz,mint,rules,mzabs,devppm,isotopes,quasimolion);
+        hypothese <- annotateGrp(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion);
         #save results
         if(is.null(hypothese)){
           next;
