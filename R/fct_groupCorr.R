@@ -53,7 +53,7 @@ setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75,
         stop(paste("Wrong dimension of EIC. It has ",dim(EIC)[1]," Rows for ",npeaks,"peaks",sep=""));
       }
   }
-  
+  lp <- -1;
   #Iterate over all PS-spectra
   for(j in 1:length(pspectra_list)){
     i  <- pspectra_list[j];
@@ -68,10 +68,12 @@ setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75,
     #percent output
     npeaks.global <- npeaks.global + length(pi);
     perc   <- round((npeaks.global) / ncl * 100)
-    if ((perc %% 10 == 0) && (perc != lp)) { 
+    perc   <- perc %/% 10 * 10;
+    if (perc != lp && perc != 0) { 
       cat(perc,' '); 
       lp <- perc;
     }
+
     if (.Platform$OS.type == "windows"){ 
       flush.console();
     }
@@ -125,8 +127,9 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
        stop("unknown intensity value!")
   }
   npspectra <- length(object@pspectra);
-  npeaks.global <- nrow(object@groupInfo);
-
+  npeaks.global <- 0;
+  ncl <- sum(sapply(object@pspectra, length));
+  lp <- -1;
   #Columns Peak 1, Peak 2, correlation coefficienct, Pseudospectrum Index
   resMat <- create.matrix(100000,4);
   colnames(resMat) <- c("x","y","cor","ps")
@@ -145,7 +148,7 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
       cat('Calculating peak correlations across samples.\n % finished: '); 
       object@psSamples  <- 1;
     }else{
-      cat('\nCalculating peak correlations across samples.\n'); 
+      cat('\nCalculating peak correlations across samples.\n % finished: '); 
     }
     npeaks <- 0;
     
@@ -155,17 +158,22 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
       npi <- length(pi);
       if( ((npi^2)/2 + cnt)  >= nrow(resMat)){
         #resize resMat
-        resMat <- rbind(resMat,create.matrix(100000,4));
+        size <- max(100000, ((npi^2)/2 + 10000))
+        resMat <- rbind(resMat,create.matrix(as.integer(size),4));
       }
 
-      ## % output
-      npeaks <- npeaks + length(pi); 
-      perc <- round(npeaks / npeaks.global * 100)
-      line <- sprintf("Done: %3i", perc)
-      cat("\r",line,"%")
-      if (.Platform$OS.type == "windows"){
+      #percent output
+      npeaks.global <- npeaks.global + length(pi);
+      perc   <- round((npeaks.global) / ncl * 100)
+      perc   <- perc %/% 10 * 10;
+      if (perc != lp && perc != 0) { 
+        cat(perc,' '); 
+        lp <- perc;
+      }
+      if (.Platform$OS.type == "windows"){ 
         flush.console();
-      } 
+      }
+      #end percent output
 
       if(npi <2) {
         next;
@@ -226,13 +234,16 @@ setMethod("calcIsotopes", "xsAnnotate", function(object){
       for(i in 1:npspectra){
           pi <- object@pspectra[[i]]
           npi <- length(pi)
+
           #percent output
           npeaks.global <- npeaks.global + length(pi);
           perc   <- round((npeaks.global) / ncl * 100)
-          if ((perc %% 10 == 0) && (perc != lp)) { 
+          perc   <- perc %/% 10 * 10;
+          if (perc != lp && perc != 0) { 
             cat(perc,' '); 
             lp <- perc;
           }
+
           if (.Platform$OS.type == "windows"){ 
             flush.console();
           }
@@ -342,7 +353,9 @@ setMethod("calcPC.lpc", "xsAnnotate", function(object, ajc=NULL,
   npspectra <- length(object@pspectra);
   pspectra  <- object@pspectra
   psSamples <- object@psSamples;
-  
+  npeaks.global <- 0
+  ncl <- sum(sapply(object@pspectra, length));
+
   colnames(ajc)[3] <- c("weight") ##todo: Change to generell ajc interface
 
   #Information for % output
@@ -363,20 +376,24 @@ setMethod("calcPC.lpc", "xsAnnotate", function(object, ajc=NULL,
 
   #peak counter
   npeaks <- 0;
+  lp <- -1;
   for(j in 1:length(pspectra_list)){
     i  <- pspectra_list[j];#index of pseudospectrum
     pi <- object@pspectra[[i]]; #peak_id in pseudospectrum
     
-    ## % output
-    npeaks <- npeaks + length(pi); 
-    perc <- round(npeaks / ncl * 100)
-    if ((perc %% 10 == 0) && (perc != lperc)) { 
-      cat(perc, ' ');
-      lperc <- perc; 
-    }
-    if (.Platform$OS.type == "windows"){
-      flush.console();
-    }
+          #percent output
+          npeaks.global <- npeaks.global + length(pi);
+          perc   <- round((npeaks.global) / ncl * 100)
+          perc   <- perc %/% 10 * 10;
+          if (perc != lp && perc != 0) { 
+            cat(perc,' '); 
+            lp <- perc;
+          }
+
+          if (.Platform$OS.type == "windows"){ 
+            flush.console();
+          }
+          #end percent output
 
     index <- which(ajc[,4] == i)
     if(length(index) < 1){
@@ -410,7 +427,8 @@ setMethod("calcPC.hcs", "xsAnnotate", function(object, ajc=NULL,
   npspectra <- length(object@pspectra);
   pspectra  <- object@pspectra
   psSamples <- object@psSamples;
-  
+  npeaks.global <- 0;
+  ncl <- sum(sapply(object@pspectra, length));
   colnames(ajc)[3] <- c("weight") ##todo: Change to generell ajc interface
 
   #Information for % output
@@ -428,21 +446,24 @@ setMethod("calcPC.hcs", "xsAnnotate", function(object, ajc=NULL,
 
   #peak counter
   npeaks <- 0;
-
+  lp <- -1;
   for(j in 1:length(pspectra_list)){
     i  <- pspectra_list[j];#index of pseudospectrum
     pi <- object@pspectra[[i]]; #peak_id in pseudospectrum
     
-    ## % output
-    npeaks <- npeaks + length(pi); 
-    perc <- round(npeaks / ncl * 100)
-    if ((perc %% 10 == 0) && (perc != lperc)) { 
-      cat(perc, ' ');
-      lperc <- perc; 
-    }
-    if (.Platform$OS.type == "windows"){
-      flush.console();
-    }
+#percent output
+          npeaks.global <- npeaks.global + length(pi);
+          perc   <- round((npeaks.global) / ncl * 100)
+          perc   <- perc %/% 10 * 10;
+          if (perc != lp && perc != 0) { 
+            cat(perc,' '); 
+            lp <- perc;
+          }
+
+          if (.Platform$OS.type == "windows"){ 
+            flush.console();
+          }
+          #end percent output
 
     index <- which(ajc[,4] == i)
     if(length(index) < 1){
@@ -682,13 +703,45 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   return(invisible(list(CL=CL,CI=CI)))
 }
 
-setGeneric("getAllPeakEICs", function(object, ...) standardGeneric("getAllPeakEICs"))
+getMaxScans <- function(object){
 
-setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
+ if (!class(object) == "xsAnnotate"){
+    stop ("no xsAnnotate object");
+  }
 
   nfiles <- length(filepaths(object@xcmsSet))
-  scantimes <- list()
   maxscans <- 0
+  if(nfiles == 1){
+    if (file.exists(filepaths(object@xcmsSet)[1])) { 
+      xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
+      maxscans <- length(xraw@scantime)     
+    }else {
+      stop('Raw data file:',filepaths(xs)[1],' not found ! \n');
+    }
+  }else {
+    #Get scantime length for every xraw
+    for (f in 1:nfiles){
+      if(file.exists(filepaths(object@xcmsSet)[f])) { 
+      xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
+      maxscans <- max(maxscans, length(xraw@scantime));
+      } else {
+        stop('Raw data file:',filepaths(xs)[f],' not found ! \n');
+      }
+    }
+  }
+  return(maxscans)
+}
+
+setGeneric("getAllPeakEICs", function(object, index, maxscans) standardGeneric("getAllPeakEICs"))
+
+setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL, maxscans=NULL){
+
+  if(is.null(maxscans)){
+    stop("maxscans is not set. Use getMaxScans beforehand.\n")
+  }
+  nfiles <- length(filepaths(object@xcmsSet))
+  scantimes <- list()
+#   maxscans <- maxscans;
   if(nfiles == 1){
     #Single File
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
@@ -713,11 +766,11 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
     cat('Generating EIC\'s .. \n')
   
     #Get scantime length for every xraw
-    for (f in 1:nfiles){
-      xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
-      maxscans <- max(maxscans, length(xraw@scantime));
-      scantimes[[f]] <- xraw@scantime;
-    }
+#     for (f in 1:nfiles){
+#       xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
+#       maxscans <- max(maxscans, length(xraw@scantime));
+#       scantimes[[f]] <- xraw@scantime;
+#     }
 
     #generate EIC Matrix
     EIC <- create.matrix(nrow(gval),maxscans)

@@ -224,15 +224,15 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
       cat("Unknown polarity parameter.\n"); 
     }
   }
+
   npspectra <- length(object@pspectra);
 
   #Data is not preprocessed with groupFWHM 
   if(npspectra < 1){
-
     #Group all peaks into one group
     npspectra <- 1;
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
-    if(is.na(object@sample)){
+    if(is.na(object@sample[1])){
       object@psSamples <- rep(1,nrow(object@groupInfo)); ##TODO: Change if sample=NA or sample=number
     }else{
       object@psSamples <- rep(object@sample,nrow(object@groupInfo));
@@ -253,9 +253,9 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
       for(i in 1:npspectra){
         index[object@pspectra[[i]]] <- object@psSamples[[i]];
       }
-
+      maxscans <- getMaxScans(object)
       #Generate EIC data
-      tmp <- getAllPeakEICs(object, index=index);
+      tmp <- getAllPeakEICs(object, index=index,maxscans=maxscans);
       EIC <- tmp$EIC
       scantimes <- tmp$scantimes
       rm(tmp);
@@ -264,10 +264,10 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
 
     } else {
       #Calculate EIC-Correlation for selected sample(s)
-
+      maxscans <- getMaxScans(object);
       for(i in object@sample){
         index <- rep(i, nrow(object@groupInfo));
-        tmp <- getAllPeakEICs(object, index=index);
+        tmp <- getAllPeakEICs(object, index=index,maxscans=maxscans);
         EIC <- tmp$EIC
         scantimes <- tmp$scantimes
         rm(tmp);
@@ -294,7 +294,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   }
 
   #Check if we have at least 2 result matrixes
-  if(length(res)>2){
+  if(length(res) > 2){
     #combine the first two to create the result Table
     resMat <- combineCalc(res[[1]],res[[2]],method="sum");
     for( i in 3:length(res)){
@@ -314,10 +314,13 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
     cat("No group was seperated.\n")
     return(invisible(object));
   }
+
   #Perform graph seperation to seperate co-eluting pseudospectra
   object <- calcPC(object, method=graphMethod, ajc=resMat);                                   
+
   #Create pc groups based on correlation results
   cat("xsAnnotate has now", length(object@pspectra), "groups, instead of", cnt, "\n"); 
+
   return(invisible(object));
 })
 
@@ -574,6 +577,7 @@ setGeneric("findAdducts",function(object,ppm=5,mzabs=0.015,multiplier=3,polarity
 setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multiplier=3,polarity=NULL,rules=NULL,max_peaks=100,psg_list=NULL){
   # norming
   devppm = ppm / 1000000;
+  npeaks.global <- 0;
   # get mz values from peaklist
  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
     ##Ein Sample Fall
@@ -584,7 +588,8 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
   }
 
   # anzahl peaks in gruppen für % Anzeige
-  sum_peaks <- sum(sapply(object@pspectra, length));
+#   sum_peaks <- sum(sapply(object@pspectra, length));
+  ncl <- sum(sapply(object@pspectra, length));
   # Isotopen
   isotopes  <- object@isotopes;
   # Adduktliste
@@ -726,21 +731,23 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
       pspectra_list <- psg_list;
       sum_peaks <- sum(sapply(object@pspectra[psg_list],length));
       }
-
     for(j in 1:length(pspectra_list)){
       i <- pspectra_list[j];
       #Indizes der Peaks in einer Gruppe
       ipeak <- object@pspectra[[i]];
-      #Zähler hochzählen und % ausgeben
-      npeaks <- npeaks + length(ipeak);
-      perc   <- round((npeaks) / sum_peaks * 100)
-      if ((perc %% 10 == 0) && (perc != lp)) { 
-        cat(perc,' '); 
-        lp <- perc; 
-      }
-      if (.Platform$OS.type == "windows"){
-        flush.console();
-      }
+    #percent output
+    npeaks.global <- npeaks.global + length(ipeak);
+    perc   <- round((npeaks.global) / ncl * 100)
+    perc   <- perc %/% 10 * 10;
+    if (perc != lp && perc != 0) { 
+      cat(perc,' '); 
+      lp <- perc;
+    }
+    if (.Platform$OS.type == "windows"){ 
+      flush.console();
+    }
+    #end percent output
+
       #check if the pspec contains more than one peak 
       if(length(ipeak) > 1){
         hypothese <- annotateGrp(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion);
