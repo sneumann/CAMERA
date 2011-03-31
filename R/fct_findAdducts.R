@@ -10,9 +10,9 @@ result<-list();
 return(result);
 }
 
-annotateGrp <- function(ipeak,imz,mint,rules,mzabs,devppm,isotopes,quasimolion) {
+annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
   mz     <- imz[ipeak];
-  int   <- mint[ipeak];
+#   int   <- mint[ipeak];
   na_ini <- which(!is.na(mz))
 
   if(length(na.omit(mz[na_ini])) < 1){
