@@ -361,11 +361,14 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
   # get mz,rt,into from peaktable
   if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
     ##one sample case
+    cat("Generating peak matrix!\n");
     imz  <- object@groupInfo[, "mz"];
     irt  <- object@groupInfo[, "rt"];
     mint <- object@groupInfo[, intval];
+
   }else {
     ##multiple sample
+    cat("Generating peak matrix!\n");
     gvals    <- groupval(object@xcmsSet);
     peakmat  <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
@@ -597,6 +600,15 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
   imz <- object@groupInfo[,"mz"];
   intval <- "maxo"; #max. intensity
 
+  #number of pseudo-spectra
+  npspectra <- length(object@pspectra);
+
+  #If groupCorr or groupFHWM have not been invoke, select all peaks in one sample
+  if(npspectra < 1){ 
+    npspectra <- 1;
+    object@pspectra[[1]] <- seq(1:nrow(object@groupInfo)); 
+  }
+
   if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
     ##one sample case
     mint <- object@groupInfo[, intval];
@@ -605,6 +617,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
     gvals    <- groupval(object@xcmsSet);
     peakmat  <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
+    nsample <- length(sampnames(object@xcmsSet))
     #get intensity values, according groupFWHM sample selection
     if(is.na(object@sample[1]) || nsample > 1){
       psspec <- 1:npspectra;
@@ -626,9 +639,6 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
       mint <- peakmat[gvals[, object@sample], intval]; #errechne höchsten Peaks
     }
   }
-
-
-
 
 
   # isotopes
@@ -703,15 +713,6 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
         }
       }
     }
-  }
-
-  #number of pseudo-spectra
-  npspectra <- length(object@pspectra);
-
-  #If groupCorr or groupFHWM have not been invoke, select all peaks in one sample
-  if(npspectra < 1){ 
-    npspectra <- 1;
-    object@pspectra[[1]] <- seq(1:nrow(object@groupInfo)); 
   }
 
 
