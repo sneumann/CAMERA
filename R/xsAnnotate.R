@@ -9,31 +9,41 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1){
   
   object  <- new("xsAnnotate");
   
-  if(length(sampnames(xs)) > 1){  ## more than one sample
-    if (!nrow(xs@groups) > 0) {
-      stop ('First argument must be a xcmsSet with group information or contain only one sample.') #checking alignment
-    }
+  if(length(sampnames(xs)) > 1 && !nrow(xs@groups) > 0) {  
+      # more than one sample
+      # checking alignment
+      stop ('First argument must be a xcmsSet with group information or contain only one sample.') 
+  }
+
+  # check multiple sample selection
+  if(length(sample) > 1){
+    #example sample <- c(1,2,3,4,5)
+  
+    if(all(sample < length(xs@filepaths) && sample > 0)){
+      #all sample values are in allowed range
+      object@sample <- sample;
+    }else{
+        #one or more sample values are lower 0 or higher than number of samples (length(xs@filepaths))
+        stop("All values in parameter sample must be lower equal the number of samples and greater than 0.\n")
+      }
+  }else{
     if(is.null(sample) || is.na(sample)) {
-      object@sample<-as.numeric(NA);
+      #automatic sample selection, sample = NA
+      object@sample   <-  as.numeric(NA);
     }else{
       if(sample == -1){
         #Joes Way
-        object@sample=sample;
+        object@sample <-  sample;
       }else if(length(xs@filepaths) < sample | sample < 1) {
-        stop("Paramete sample must be lower equal than number of samples and greater than 0.\n")
+        stop("Parameter sample must be lower equal than number of samples and greater than 0.\n")
       }else{
-        object@sample<-sample;
+        object@sample <-  sample;
       }
     }
-    object@groupInfo <- getPeaks_selection(xs);
-  } else if(length(sampnames(xs)) == 1){ ##only one sample was machen wir denn hiermit? wo ist denn das sample=-1 wichtig?
-      object@sample= 1;
-      object@groupInfo <- getPeaks_selection(xs)
-#       object@groupVal <- matrix(ncol=1,nrow=nrow(peaks(xs)),data=seq(1:nrow(peaks(xs))));
-#       rownames(object@groupVal) = sapply(1:nrow(peaks(xs)),function(x){paste(round(peaks(xs)[x,"mz"],2),"/",round(peaks(xs)[x,"rt"]),sep="")});
-  }else { stop("Unknown error with a grouped xcmsSet"); }
+  }
 
-  runParallel<-0;
+  object@groupInfo <- getPeaks_selection(xs);
+  runParallel   <-  0;
   if (nSlaves > 1) {
 #     cat("Parallel mode is currently not avaible.\nWill be re-enabled with the next CAMERA version!\n");
     ## If MPI is available ...
@@ -117,7 +127,9 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   psSamples <- NA;
 
   if(object@groupInfo[1, "rt"] == -1) {
-     warning("Warning: no retention times avaiable. Do nothing\n")
+     # Like FTICR Data
+     warning("Warning: no retention times avaiable. Do nothing\n");
+     return(invisible(object));
   }else{
     if(is.na(sample)) {
       # grouped peaktable within automatic selection
@@ -178,63 +190,117 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   return(invisible(object)); #return object
 })
 
-setGeneric("groupCorr",function(object,cor_eic_th=0.75,psg_list=NULL,polarity=NA) standardGeneric("groupCorr"));
-setMethod("groupCorr","xsAnnotate", function(object,cor_eic_th=0.75,psg_list=NULL,polarity=NA) {
-  if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
-  #Is LC data is available?
-  if(object@xcmsSet@peaks[1,"rt"] == -1) {
-     warning("Warning: no retention times avaiable. Do nothing\n")
-  }else {
-    npspectra <- length(object@pspectra);
-    #Wenn groupFWHM nicht vorher aufgerufen wurde!
-    if(npspectra<1){
-      npspectra<-1;
-      object@pspectra[[1]]<-seq(1:nrow(object@groupInfo));
-      if(is.na(object@sample)){
-        object@psSamples <- 1;
-      }else{
-        object@psSamples <- object@sample;
-      }
-      cat("Calculating peak correlations for all peaks in one big group on sample ",object@psSamples,".\nUse groupFWHM before, to reduce runtime.\n");
-    }
-    if(is.na(object@sample)){
-        index <- rep(0,nrow(object@groupInfo));
-        for(i in 1:npspectra){
-          index[object@pspectra[[i]]] <- object@psSamples[[i]];
-        }
-    }else if(object@sample > 0){
-        index <- rep(object@sample,nrow(object@groupInfo));
-    }else{
-      #sample:-1 way, @joe fix pls
-      stop("NYI");
-    }
-#     tmp <- getAllEICs(object@xcmsSet,index=index);
-    tmp <- getAllPeakEICs(object@xcmsSet,index=index);
-    EIC <- tmp$EIC
-    scantimes <- tmp$scantimes
-    cnt<-length(object@pspectra);
-    rm(tmp);
-    if(nrow(object@isoID)>0){
-      cat("Isotope annotation found, used as grouping information.\n")
-    }
-    #new calcCL function with rcorr from Hmisc
-    tmp <- calcCL3(object, EIC=t(EIC), scantimes=scantimes, cor_eic_th=cor_eic_th,psg_list=psg_list);
-    if(is.null(tmp)){
-      #found no subgroups
-      cat("No group was seperated.\n")
-      return(invisible(object));
-    }
-    CL<-tmp$CL;
-    rm(tmp);
-    if(!is.na(polarity)){
-        if(polarity %in% c("positive","negative")){
-          object@polarity<-polarity
-        }else{cat("Unknown polarity parameter.\n"); }
-    }
-    object <- calc_pc(object, CL, psg_list=psg_list, psSamples=object@psSamples)
-    cat("xsAnnotate has now", length(object@pspectra), "groups, instead of", cnt, "\n"); 
+setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = TRUE, calcCiS = TRUE, calcCaS = TRUE, psg_list=NULL, polarity=NA, ...) standardGeneric("groupCorr"));
+
+setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = TRUE, calcCiS = TRUE, calcCaS = TRUE, psg_list=NULL, polarity=NA) {
+  
+  if (!class(object) == "xsAnnotate"){
+    stop ("no xsAnnotate object");
   }
-return(invisible(object));
+
+  #Check polarity parameter
+  if(!is.na(polarity)){
+    if(polarity %in% c("positive", "negative")){
+      object@polarity <- polarity;
+    } else {  
+      cat("Unknown polarity parameter.\n"); 
+    }
+  }
+  npspectra <- length(object@pspectra);
+
+  #Data is not preprocessed with groupFWHM 
+  if(npspectra < 1){
+
+    #Group all peaks into one group
+    npspectra <- 1;
+    object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
+    if(is.na(object@sample)){
+      object@psSamples <- rep(1,nrow(object@groupInfo)); ##TODO: Change if sample=NA or sample=number
+    }else{
+      object@psSamples <- rep(object@sample,nrow(object@groupInfo));
+    }
+  }
+
+  #save number of pspectra before groupCorr
+  cnt <- length(object@pspectra);
+  res <- list();
+
+  # Check LC information and calcCorr was selected
+  if(calcCiS && object@xcmsSet@peaks[1,"rt"] != -1){
+    
+    if(is.na(object@sample)){
+      #Autoselect sample path for EIC correlation    
+      index <- rep(0, nrow(object@groupInfo));
+      
+      for(i in 1:npspectra){
+        index[object@pspectra[[i]]] <- object@psSamples[[i]];
+      }
+
+      #Generate EIC data
+      tmp <- getAllPeakEICs(object, index=index);
+      EIC <- tmp$EIC
+      scantimes <- tmp$scantimes
+      rm(tmp);
+
+      res[[1]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
+
+    } else {
+      #Calculate EIC-Correlation for selected sample(s)
+
+      for(i in object@sample){
+        index <- rep(i, nrow(object@groupInfo));
+        tmp <- getAllPeakEICs(object, index=index);
+        EIC <- tmp$EIC
+        scantimes <- tmp$scantimes
+        rm(tmp);
+        #new calcCL function with rcorr from Hmisc
+        res[[i]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
+      }
+    }
+  } else if(calcCiS && object@xcmsSet@peaks[1,"rt"] == -1){
+    cat("Object contains no retention time data!\n");
+  }
+  
+  # Check if sample size > 3 and calcCaS was selected
+  if( length(object@xcmsSet@filepaths) > 3 && calcCaS){
+    res[[length(res)+1]] <- calcCaS(object);
+  }else if(length(object@xcmsSet@filepaths) <= 3 && calcCaS){
+    cat("Object must contain more than 3 samples to calculate correlation accros samples!\n");
+  }
+  
+  #If object has isotope information and calcIso was selected
+  if( nrow(object@isoID) > 0 && calcIso){
+    res[[length(res)+1]] <- calcIsotopes(object);
+  }else if(nrow(object@isoID) == 0 && calcIso){
+    cat("Object contains no isotope or isotope annotation!\n");
+  }
+
+  #Check if we have at least 2 result matrixes
+  if(length(res)>2){
+    #combine the first two to create the result Table
+    resMat <- combineCalc(res[[1]],res[[2]],method="sum");
+    for( i in 3:length(res)){
+      resMat <- combineCalc(resMat,res[[i]],method="sum");
+    }         
+  }else if(length(res) == 2){
+    #combine one time
+    resMat <- combineCalc(res[[1]],res[[2]],method="sum")
+  } else {
+    #Only one matrix
+    resMat <- res[[1]];
+  }
+
+  if(nrow(resMat) < 1){
+    #Matrix contains no edge
+    #Do nothing!
+    cat("No group was seperated.\n")
+    return(invisible(object));
+  }
+  #Perform graph seperation to seperate co-eluting pseudospectra
+  object <- calcPC(object, method=graphMethod, ajc=resMat);                                   
+  #Create pc groups based on correlation results
+  cat("xsAnnotate has now", length(object@pspectra), "groups, instead of", cnt, "\n"); 
+  return(invisible(object));
 })
 
 setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="into") standardGeneric("findIsotopes"));
@@ -480,7 +546,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
     }
   }
   cnt<-nrow(object@isoID);
-  cat("Found isotopes:",cnt,"\n");
+  cat("\nFound isotopes:",cnt,"\n");
   object@isotopes <- isotope;
   return(object);
 })

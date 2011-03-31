@@ -10,6 +10,7 @@ importFrom("graphics", "legend", "plot", "points", "strheight", "text")
 importFrom("grDevices", "rgb")
 importFrom("stats", "cor.test")
 importFrom("utils", "flush.console", "object.size", "read.table")
+importFrom("igraph","graph.data.frame","label.propagation.community")
 
 export("annotate","xsAnnotate","getpspectra","annotateDiffreport","getIsotopeCluster","findNeutralLossSpecs","findNeutralLoss")
 exportClasses("xsAnnotate")
@@ -21,3 +22,10 @@ exportMethods("show")
 exportMethods("plotEICs")
 exportMethods("plotPsSpectrum")
 exportMethods("getPeaklist")
+exportMethods("getAllPeakEICs")
+exportMethods("calcPC",
+	      "calcPC.lpc",
+	      "calcPC.hcs")
+exportMethods("calcCiS",
+	      "calcCaS",
+	      "calcIsotopes")
