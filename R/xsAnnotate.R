@@ -164,19 +164,21 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
       peakrange <- matrix(apply(gvals, 1, function(x,peakmat) { peakmat[x[which.max(peakmat[x, intval])], c("rtmin", "rtmax")]}, peakmat), ncol=2, byrow=TRUE); 
       colnames(peakrange) <- c("rtmin", "rtmax")
 
-      while(!all(is.na(maxo) == TRUE)){
+      while(length(maxo) > 0){
           iint   <- which.max(maxo);
           rtmed  <- groupmat[iint, "rtmed"]; #highest peak in whole spectra
           rt.min <- peakrange[iint, "rtmin"];
           rt.max <- peakrange[iint, "rtmax"]; #begin and end of the highest peak
           hwhm   <- ((rt.max-rt.min) / sigma * 2.35 * perfwhm) / 2; #fwhm of the highest peak
           #all other peaks whose retensiontimes are in the fwhm of the highest peak
-          irt    <- which(groupmat[, 'rtmed'] > (rtmed-hwhm) & groupmat[, 'rtmed'] < (rtmed + hwhm) & !is.na(maxo)) 
+          irt    <- which(groupmat[, 'rtmed'] > (rtmed-hwhm) & groupmat[, 'rtmed'] < (rtmed + hwhm)) 
           if(length(irt) > 0){
               #if peaks are found
               pspectra[[length(pspectra)+1]] <- irt; #create groups
               psSamples[length(pspectra)]  <- index[int.max[iint]] # saves the sample of the peak which is in charge for this pspectrum
-              maxo[irt] <- NA; #set itensities of peaks to NA, due to not to be found in the next cycle
+              maxo[-irt] <- maxo[-irt]; #set itensities of peaks to NA, due to not to be found in the next cycle
+              groupmat   <- groupmat[-irt,];
+              peakrange  <- peakrange[-irt,];
           }
       }
     }else{
