@@ -10,7 +10,8 @@ create.matrix <- function(dim1,dim2) {
 
 ##Calculate Correlation in Samples
 ##Needs: xsa object, EIC correlation matrix (from getAllPeakEICs), parameters
-setGeneric("calcCiS", function(object, ...) standardGeneric("calcCiS"))
+setGeneric("calcCiS", function(object, EIC=EIC, corval=0.75, 
+                                              pval=0.05, psg_list=NULL) standardGeneric("calcCiS"))
 setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75, 
                                               pval=0.05, psg_list=NULL ){
 
@@ -119,16 +120,17 @@ setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75,
 })
 
 
-setGeneric("calcCaS", function(object, ...) standardGeneric("calcCaS"))
+setGeneric("calcCaS", function(object, corval=0.75, pval=0.05,
+                                           intval="into") standardGeneric("calcCaS"))
 setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
                                            intval="into") {
   #Calculate correlation across samples for a given xsAnnotate
   if (!sum(intval == c("into","intb","maxo"))){
        stop("unknown intensity value!")
   }
+
   npspectra <- length(object@pspectra);
   npeaks.global <- 0;
-  ncl <- sum(sapply(object@pspectra, length));
   lp <- -1;
   #Columns Peak 1, Peak 2, correlation coefficienct, Pseudospectrum Index
   resMat <- create.matrix(100000,4);
@@ -150,8 +152,9 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
     }else{
       cat('\nCalculating peak correlations across samples.\n % finished: '); 
     }
+
     npeaks <- 0;
-    
+    ncl <- sum(sapply(object@pspectra, length));
     peaktable <- t(groupval(object@xcmsSet, value=intval));
     for(i in 1:npspectra){
       pi  <- object@pspectra[[i]];

@@ -167,6 +167,12 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
 
       while(length(maxo) > 0){
           iint   <- which.max(maxo[,2]);
+          if(length(iint) == 0){
+            # Can be caused if maxo inherits NA values.
+            # Those peaks will be ignored
+            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.")
+            break;
+          }
           rtmed  <- groupmat[iint, "rtmed"]; #highest peak in whole spectra
           rt.min <- peakrange[iint, "rtmin"];
           rt.max <- peakrange[iint, "rtmax"]; #begin and end of the highest peak
@@ -199,6 +205,12 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
 
       while(length(maxo)> 0){
           iint   <- which.max(maxo[,2]);
+          if(length(iint) == 0){
+            # Can be caused if maxo inherits NA values.
+            # Those peaks will be ignored
+            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.")
+            break;
+          }
           rtmed  <- peakmat[iint, "rt"]; #highest peak in whole spectra
           rt.min <- peakmat[iint, "rtmin"];
           rt.max <- peakmat[iint, "rtmax"]; #begin and end of the highest peak
@@ -216,8 +228,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
               cat("Warning: Feature ",idx," looks odd for at least one peak. Please check afterwards.\n");
               pspectra[[length(pspectra)+1]] <- idx; #create groups
               maxo       <- maxo[-iint, ,drop=FALSE]; #set itensities of peaks to NA, due to not to be found in the next cycle
-              groupmat   <- groupmat[-iint, ,drop=FALSE];
-              peakrange  <- peakrange[-iint, ,drop=FALSE];
+              peakmat  <- peakmat[-iint, ,drop=FALSE];
           }
 
       }
