@@ -371,16 +371,23 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
 
     imz <- groupmat[, "mzmed"];
     irt <- groupmat[, "rtmed"];
+    int.val <- c();
+    nsample <- length(object@sample);
 
     #get intensity values, according groupFWHM sample selection
-    if(is.na(object@sample[1]) || length(object@sample) > 1){
+    if(is.na(object@sample[1]) || nsample > 1){
       psspec <- 1:npspectra
       mint <- vector(mode="numeric",length=nrow(gvals));
       #get for every psspec its corresponding intensities
       invisible(sapply(psspec, function(x) {
           pi <- object@pspectra[[x]]
-          index <- object@psSamples[[x]]
-          mint[pi] <<- peakmat[gvals[pi,index],intval]
+          if(nsample > 1){
+            index <- object@sample;
+            mint[pi] <<- apply(matrix(peakmat[gvals[pi,index],intval],ncol=nsample),1,max,na.rm=TRUE)
+          }else{
+            index <- object@psSamples[[x]]
+            mint[pi] <<- peakmat[gvals[pi,index],intval]
+          }     
       }));
     }else if(object@sample == -1){
       ##TODO @ Joe: Shot never occur!
