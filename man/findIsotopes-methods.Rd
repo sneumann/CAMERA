@@ -6,12 +6,10 @@
 \description{
  Annotate isotope peaks for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes.
 }
-\section{Methods}{
-\describe{
-\item{object = "xsAnnotate"}{
-  \code{findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01, intval="into")}
+\usage{
+  findIsotopes(object, maxcharge=3, maxiso=3, ppm=5, mzabs=0.01, intval="into")
 }
-}}
+
 \arguments{
   \item{object}{the \code{xsAnnotate} object}
   \item{maxcharge}{max. number of the isotope charge}
