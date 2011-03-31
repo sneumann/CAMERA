@@ -146,35 +146,49 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
      warning("Warning: no retention times avaiable. Do nothing\n");
      return(invisible(object));
   }else{
-    if(is.na(sample[1]) || length(sample) > 1) {
+    if(is.na(sample[1]) || length(object@xcmsSet@filepaths) > 1) {
       # grouped peaktable within automatic selection or sub selection
       if(is.na(sample[1])){
         index <- 1:length(object@xcmsSet@filepaths);
       }else{
         index <- sample;
       }
-      gvals    <- groupval(object@xcmsSet)[,index];
+      gvals    <- groupval(object@xcmsSet)[,index,drop=FALSE];
       peakmat  <- object@xcmsSet@peaks;
       groupmat <- groups(object@xcmsSet);
 
       #calculate highest peaks
-      maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){max(peakmat[x, intval],na.rm=TRUE)}, peakmat));
+      maxo      <- as.numeric(apply(gvals, 1, function(x, peakmat){
+        val <- na.omit(peakmat[x, intval]);
+        if(length(val) == 0){
+          return(NA);
+        }else{
+          return(max(val))
+        }
+      }, peakmat));
+      
+      maxo[which(is.na(maxo))] <- -1;
       maxo      <- cbind(1:length(maxo),maxo);
+      
 
       #highest peak index 
       int.max   <- as.numeric(apply(gvals, 1, function(x, peakmat){which.max(peakmat[x, intval])}, peakmat));
 
-      peakrange <- matrix(apply(gvals, 1, function(x,peakmat) { peakmat[x[which.max(peakmat[x, intval])], c("rtmin", "rtmax")]}, peakmat), ncol=2, byrow=TRUE); 
+      peakrange <- matrix(apply(gvals, 1, function(x, peakmat) { 
+        val <- peakmat[x, intval];
+        if(length(na.omit(val)) == 0){
+          return(c(0,1));
+        } else {
+          return(peakmat[x[which.max(val)], c("rtmin", "rtmax")]);
+        }
+      }, peakmat), ncol=2, byrow=TRUE); 
+
       colnames(peakrange) <- c("rtmin", "rtmax")
+
+
 
       while(length(maxo) > 0){
           iint   <- which.max(maxo[,2]);
-          if(length(iint) == 0){
-            # Can be caused if maxo inherits NA values.
-            # Those peaks will be ignored
-            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.\n")
-            break;
-          }
           rtmed  <- groupmat[iint, "rtmed"]; #highest peak in whole spectra
           rt.min <- peakrange[iint, "rtmin"];
           rt.max <- peakrange[iint, "rtmax"]; #begin and end of the highest peak
@@ -200,19 +214,13 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
           }
       }
     }else{
-      #Group with specific sample, using all sample or only a one sample experiment
-      peakmat <- getPeaks(object@xcmsSet, index=sample);
+      #One sample experiment
+      peakmat <- object@xcmsSet@peaks;
       maxo    <- peakmat[, intval]; #max intensities of all peaks
-      maxo      <- cbind(1:length(maxo),maxo);
+      maxo    <- cbind(1:length(maxo),maxo);
 
       while(length(maxo)> 0){
           iint   <- which.max(maxo[,2]);
-          if(length(iint) == 0){
-            # Can be caused if maxo inherits NA values.
-            # Those peaks will be ignored
-            cat("Warning: Due to NA values and sample sub selection some features can't be handled and will be ignored!\n Fillpeaks your data or increase your sample selection.\n")
-            break;
-          }
           rtmed  <- peakmat[iint, "rt"]; #highest peak in whole spectra
           rt.min <- peakmat[iint, "rtmin"];
           rt.max <- peakmat[iint, "rtmax"]; #begin and end of the highest peak
@@ -224,7 +232,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
               idx <- maxo[irt,1];
               pspectra[[length(pspectra)+1]] <- idx; #create groups
               maxo <- maxo[-irt, ,drop=FALSE]; #set itensities of peaks to NA, due to not to be found in the next cycle
-              peakmat <- peakmat[-irt,,drop=FALSE];
+              peakmat <- peakmat[-irt, ,drop=FALSE];
           }else{
               idx <- maxo[iint,1];
               cat("Warning: Feature ",idx," looks odd for at least one peak. Please check afterwards.\n");
@@ -232,7 +240,6 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
               maxo       <- maxo[-iint, ,drop=FALSE]; #set itensities of peaks to NA, due to not to be found in the next cycle
               peakmat  <- peakmat[-iint, ,drop=FALSE];
           }
-
       }
       psSamples <- rep(sample, length(pspectra))
     }
