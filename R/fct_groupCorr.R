@@ -716,7 +716,7 @@ getMaxScans <- function(object){
       xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
       maxscans <- length(xraw@scantime)     
     }else {
-      stop('Raw data file:',filepaths(xs)[1],' not found ! \n');
+      stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
     }
   }else {
     #Get scantime length for every xraw
@@ -725,7 +725,7 @@ getMaxScans <- function(object){
       xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
       maxscans <- max(maxscans, length(xraw@scantime));
       } else {
-        stop('Raw data file:',filepaths(xs)[f],' not found ! \n');
+        stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n');
       }
     }
   }
@@ -752,7 +752,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL, maxscans=
      EIC <- create.matrix(nrow(pdata),maxscans)
      EIC[,] <- getEIC4Peaks(xraw,pdata,maxscans)
     } else {
-      stop('Raw data file:',filepaths(xs)[f],' not found ! \n');
+      stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n');
     }
   } else {
     gval <- groupval(object@xcmsSet);
@@ -793,7 +793,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL, maxscans=
           EIC[idx.peaks,] <- getEIC4Peaks(xraw,pdata,maxscans)
         }
       } else {
-        stop('Raw data file:',filepaths(xs)[f],' not found ! \n')
+        stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n')
       }
     }
     if(na.flag ==1){
