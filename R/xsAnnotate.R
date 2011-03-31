@@ -391,7 +391,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
           }     
       }));
     }else if(object@sample == -1){
-      ##TODO @ Joe: Shot never occur!
+      ##TODO @ Joe: Should never occur!
     }else{
       mint <- peakmat[gvals[, object@sample], intval]; #errechne höchsten Peaks
     }
@@ -595,15 +595,48 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
 
   # get mz values from peaklist
   imz <- object@groupInfo[,"mz"];
+  intval <- "maxo"; #max. intensity
 
-  # anzahl peaks in gruppen für % Anzeige
-#   sum_peaks <- sum(sapply(object@pspectra, length));
-  ncl <- sum(sapply(object@pspectra, length));
-  # Isotopen
+  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
+    ##one sample case
+    mint <- object@groupInfo[, intval];
+  }else{
+    ##multiple sample
+    gvals    <- groupval(object@xcmsSet);
+    peakmat  <- object@xcmsSet@peaks;
+    groupmat <- groups(object@xcmsSet);
+    #get intensity values, according groupFWHM sample selection
+    if(is.na(object@sample[1]) || nsample > 1){
+      psspec <- 1:npspectra;
+      mint <- vector(mode="numeric",length=nrow(gvals));
+      #get for every psspec its corresponding intensities
+      invisible(sapply(psspec, function(x) {
+        pi <- object@pspectra[[x]]
+        if(nsample > 1){
+          index <- object@sample;
+          mint[pi] <<- apply(matrix(peakmat[gvals[pi,index],intval],ncol=nsample),1,max,na.rm=TRUE)
+        }else{
+          index <- object@psSamples[[x]]
+          mint[pi] <<- peakmat[gvals[pi,index],intval]
+        }     
+      }));
+    }else if(object@sample == -1){
+      ##TODO @ Joe: Should never occur!
+    }else{
+      mint <- peakmat[gvals[, object@sample], intval]; #errechne höchsten Peaks
+    }
+  }
+
+
+
+
+
+  # isotopes
   isotopes  <- object@isotopes;
-  # Adduktliste
+  # adductlist
   derivativeIons <- vector("list", length(imz));
-  # Sonstige Variablen
+  
+  # other variables
   oidscore <- c();
   index    <- c();
   annoID   <- matrix(ncol=3, nrow=0)
@@ -611,6 +644,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
   colnames(annoID) <-  c("id", "grp_id", "rule_id");
   colnames(annoGrp)<-  c("id", "mass", "ips", "psgrp");
 
+  ##Examine polarity and rule set
   if(!(object@polarity == "")){
     cat(paste("Polarity is set in xsAnnotate:", object@polarity, "\n"));
     if(is.null(rules)){
@@ -644,6 +678,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
     object@ruleset<-rules;
   }
 
+  ##Run as single or parallel mode
   runParallel <- 0;
 
   if(object@runParallel == 1){
@@ -678,10 +713,13 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
     npspectra <- 1;
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo)); 
   }
-  
+
+
+
   #counter for % bar
   npeaks    <- 0; 
   massgrp   <- 0;
+  ncl <- sum(sapply(object@pspectra, length));  
 
   if (runParallel == 1) { ## ... we use MPI
     if(is.null(psg_list)){
@@ -781,7 +819,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
 
       #check if the pspec contains more than one peak 
       if(length(ipeak) > 1){
-        hypothese <- annotateGrp(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion);
+        hypothese <- annotateGrp(ipeak,imz,mint,rules,mzabs,devppm,isotopes,quasimolion);
         #save results
         if(is.null(hypothese)){
           next;

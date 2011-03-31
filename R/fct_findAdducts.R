@@ -10,8 +10,9 @@ result<-list();
 return(result);
 }
 
-annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
+annotateGrp <- function(ipeak,imz,mint,rules,mzabs,devppm,isotopes,quasimolion) {
   mz     <- imz[ipeak];
+  int   <- mint[ipeak];
   na_ini <- which(!is.na(mz))
 
   if(length(na.omit(mz[na_ini])) < 1){
@@ -19,6 +20,7 @@ annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
   }
 
   ML     <- massDiffMatrix(mz[na_ini],rules);
+  
   hypothese <- createHypothese(ML,rules,devppm,mzabs,na_ini);
   
   #Erstelle Hypothesen
@@ -300,6 +302,160 @@ hypothese<-hypothese[which(hypothese[,"check"]==TRUE),];
 if(is.null(nrow(hypothese))) hypothese = matrix(hypothese,byrow=F,ncol=9)
 colnames(hypothese)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp","check")
 return(hypothese)
+}
+
+calcRules2 <- function (maxcharge=3, mol=3, nion=1, nnloss=1, nnadd=1, nh=2, polarity=NULL){
+
+  ##Read Tabellen
+  ionlist <- system.file('lists/ions.csv', package = "CAMERA")[1]
+  if (!file.exists(ionlist)) stop('ionlist.csv not found.')
+  ionlist<-read.table(ionlist, header=TRUE, dec=".", sep=",", as.is=TRUE, stringsAsFactors = FALSE);
+
+  neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
+  if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
+  neutralloss <- read.table(neutralloss, header=TRUE, dec=".", sep=",", as.is=TRUE, stringsAsFactors = FALSE);
+
+  neutraladdition <- system.file('lists/neutraladdition.csv', package = "CAMERA")[1]
+  if (!file.exists(neutraladdition)) stop('neutraladdition.csv not found.')
+  neutraladdition <- read.table(neutraladdition, header=TRUE, dec=".", sep=",", as.is=TRUE, stringsAsFactors = FALSE);
+  ##End Read Tabellen
+
+  ##Create Rules
+  ruleset     <- matrix(nrow=0,ncol=8);
+  colnames(ruleset) <- c("name","nmol","charge","massdiff","typ","mandatory","score","parent")
+
+  tmpname   <- c();
+  tmpcharge <- 0;
+  tmpmass   <- 0;
+  tmpionparent<- NA;
+
+  ##Positive Rule set
+  if(polarity == "positive"){
+    #Hydrogen hard coded
+    for(k in 1:mol){
+
+      if(k == 1){
+        str    <- "";
+        tmpips <- 0.5;
+        quasi  <- 1 #For M+H
+
+      }else{
+        str    <-  k;
+        tmpips <- 0;
+        quasi  <- 0 #For xM+H
+      };
+
+      #(kM+H)
+      ruleset <- rbind(ruleset,cbind(paste("[", str, "M+H]+", sep=""),k,1,1.007276,"A",quasi,tmpips+0.5,tmpionparent));
+      #(kM+2H)
+      ruleset <- rbind(ruleset,cbind(paste("[", str, "M+H]2+", sep=""),k,2,2.014552,"A",0,0.5,tmpionparent+1));
+      #(kM+3H)
+      ruleset <- rbind(ruleset,cbind(paste("[", str, "M+H]3+", sep=""),k,3,3.021828,"A",0,0.5,tmpionparent+2));
+
+      for(i in 1:nrow(ionlist)){
+        #xM+H + additional Kation like Na or K
+        if(ionlist[i,2] <= 0) {
+          #Ions for negative charge
+          next;
+        }
+
+        if(ionlist[i,2] == 1){
+          ruleset <- rbind(ruleset,cbind(paste("[",str,"M+H+",ionlist[i,1],"]2+",sep=""),k,ionlist[i,2]+1,ionlist[i,3]+1.007276,"A",0,0.25,tmpionparent));
+        }else{
+          ruleset <- rbind(ruleset,cbind(paste("[",str,"M+H+",ionlist[i,1],"]",ionlist[i,2]+1,"+",sep=""),k,ionlist[i,2]+1,ionlist[i,3]+1.007276,"A",0,0.25,tmpionparent));
+        }
+      }
+      
+      ##Coeff - coefficient Matrix, for generating Rules with exchange ions like [M-2H+Na] (M-H and change of H against Na)
+
+      coeff <- expand.grid(rep(list(0:nion), nrow(ionlist)))
+      if(length(list <- which(ionlist[,2] <= 0)) > 0){
+          coeff[,list] <- 0;
+      }
+
+      coeff <- unique(coeff);
+      coeff <- cbind(coeff,rep(0,nrow(coeff)));
+      coeff <- coeff[-1,] #Remove 0,0,0....,0
+      tmp   <- NULL;
+
+      for(i in 1:nrow(ionlist)){
+        if(ionlist[i,2] <= 0) next;
+        #so fare only one change per ion
+        tmp <- rbind(tmp,t(apply(coeff,1,function(x) {x[i]<-x[i]+1;x[nrow(ionlist)+1]<-1;x})));
+      }
+
+      coeff <- unique(rbind(coeff,tmp));
+
+      for(i in 1:nrow(coeff)){
+        if(sum(coeff[i,1:nrow(ionlist)]>3) | any(coeff[i,1:nrow(ionlist)]>1)){
+          next;
+        }
+        tmpname   <- paste("[",str,"M",sep="");
+        tmpcharge <- 0;
+        tmpmass   <- 0;
+
+        for(ii in 1:(ncol(coeff)-1)){
+          if(coeff[i,ii] > 0){
+            if(coeff[i,ii] > 1){
+              tmpname <- paste(tmpname,"+",coeff[i,ii],ionlist[ii,1],sep="");
+            }else{
+              tmpname <- paste(tmpname,"+",ionlist[ii,1],sep="");
+            }
+            tmpcharge <- tmpcharge + coeff[i,ii] * ionlist[ii,2];
+            tmpmass   <- tmpmass + coeff[i,ii] * ionlist[ii,3];
+          }
+        }
+
+        if(coeff[i,ncol(coeff)] > 0){
+          #Change of H against Kation has occured, minus mass of H
+          tmpname   <- paste(tmpname,"-H",sep="");
+          tmpcharge <- tmpcharge-1;
+          tmpmass   <- tmpmass-1.007276;
+        }
+
+        if(tmpcharge > 1){
+          tmpname <- paste(tmpname,"]",tmpcharge,"+",sep="")
+        }else{
+          tmpname<-paste(tmpname,"]+",sep="")
+        }
+
+        if(tmpcharge > maxcharge){
+          next;
+        }
+
+        if(sum(coeff[i,])==1&& k==1){
+          ruleset <- rbind(ruleset,cbind(tmpname,k,tmpcharge,tmpmass,"A",1,0.75,tmpionparent));
+        }else{
+          ruleset <- rbind(ruleset,cbind(tmpname,k,tmpcharge,tmpmass,"A",0,0.25,tmpionparent));
+        }
+      }
+    }
+
+    ## Create neutral addition to M+H from list
+    for(i in 1:nrow(neutraladdition)){
+      #Neutraladdition to M+H
+      ruleset <- rbind(ruleset,cbind(paste("[M+H+",neutraladdition[i,1],"]+",sep=""),1,1,neutraladdition[i,2]+1.007276,"A",0,0.25,1));
+
+    }
+
+    ## Create neutral addition to M+Ion from list
+    for(i in 1:nrow(neutralloss)){
+      ruleset <- rbind(ruleset,cbind(paste("[M+H-",neutralloss[i,1],"]+",sep=""),1,1,-neutralloss[i,2]+1.007276*ii,"F",0,0.25,1));
+      for(ii in 2:maxcharge){
+        ruleset <- rbind(ruleset,cbind(paste("[M+",ii,"H-",neutralloss[i,1],"]",ii,"+",sep=""),1,ii,-neutralloss[i,2]+1.007276*ii,"F",0,0.25,ii));
+      }
+    }
+
+    #Eleminate Rules with charge > maxcharge
+    if(length(index<-which(ruleset[,"charge"]>maxcharge))>0){
+        ruleset<- ruleset[-index,];
+    }
+  }else if(polarity=="negative"){
+    ##negative Rule set
+  }else{
+    stop("Unknown polarity mode in rule set creating! Debug!\n")
+  }
+  return(ruleset);
 }
 
 
