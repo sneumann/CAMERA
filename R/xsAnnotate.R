@@ -594,13 +594,7 @@ setMethod("findAdducts", "xsAnnotate", function(object,ppm=5,mzabs=0.015,multipl
   npeaks.global <- 0;
 
   # get mz values from peaklist
- if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
-    ##One Sample
-    imz <- object@xcmsSet@peaks[,"mz"];
- }else {
-    ##Mehrsample Fall
-    imz <- object@groupInfo[,"mz"];
- }
+  imz <- object@groupInfo[,"mz"];
 
   # anzahl peaks in gruppen für % Anzeige
 #   sum_peaks <- sum(sapply(object@pspectra, length));
