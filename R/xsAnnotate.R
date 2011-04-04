@@ -1062,10 +1062,15 @@ getpspectra <- function(object, grp=NULL){
         }
       }
       if(!is.null(liso[[i]])){
-        if(liso[[i]]$charge > 1){
-          isotopes[i] <- paste("[",liso[[i]]$y,"] ",liso[[i]]$iso," ",liso[[i]]$charge,"+",sep="");
+        if(liso[[i]]$iso == 0){
+          iso.name <- "[M]";
         }else{
-          isotopes[i] <- paste("[",liso[[i]]$y,"] ",liso[[i]]$iso," ","+",sep="");
+          iso.name <- paste("[M+",liso[[i]]$iso+1,"]",sep="");
+        }
+        if(liso[[i]]$charge > 1){
+          isotopes[i] <- paste("[",liso[[i]]$y,"] ",iso.name," ",liso[[i]]$charge,"+",sep="");
+        }else{
+          isotopes[i] <- paste("[",liso[[i]]$y,"] ",iso.name," ","+",sep="");
         }
       }
     }
