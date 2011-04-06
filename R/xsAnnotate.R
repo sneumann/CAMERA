@@ -620,13 +620,22 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
   }
 
   #Combine isotope cluster, if they overlap
+  index2remove <-c();
   if(length(idx.duplicated <- which(isomatrix[,1] %in% isomatrix[,2]))>0){
     for(i in 1:length(idx.duplicated)){
-      index <- which(isomatrix[,2] == isomatrix[idx.duplicated[i],1] & isomatrix[,3] == 1)
+      index <-  which(isomatrix[,2] == isomatrix[idx.duplicated[i],1])
+      index2 <- sapply(index,function(x,isomatrix) which(isomatrix[,1] == isomatrix[x,1] & isomatrix[,3] == 1),isomatrix)
+      if(length(index2) == 0){
+        index2remove <- c(index2remove,idx.duplicated[i])
+      }
       max.index <- which.max(isomatrix[index,4]);
       isomatrix[idx.duplicated[i],1] <- isomatrix[index[max.index],1];
       isomatrix[idx.duplicated[i],3] <- isomatrix[index[max.index],3]+1;
     }
+  }
+
+  if(length(index2remove) > 0){
+    isomatrix <- isomatrix[-index2remove,];
   }
 
   object@isoID <- matrix(nrow=0, ncol=4);
