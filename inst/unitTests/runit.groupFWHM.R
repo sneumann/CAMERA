@@ -74,13 +74,13 @@ test.anno_multi <- function() {
     xsa <- xsAnnotate(xsg, sample=1)
     xsaC <- groupCorr(xsa)
     #Change from 316 to 8 due to applying correlation accros samples
-    checkEqualsNumeric(length(xsaC@pspectra),48)
+    checkEqualsNumeric(length(xsaC@pspectra),316)
 #    checkEqualsNumeric(length(xsaC@pspectra),316)
     ## highestPeak-selection
     xsa <- xsAnnotate(xsg, sample=NA)
     xsaC <- groupCorr(xsa)
     #Change from 211 to 236 due to applying correlation accros samples
-    checkEqualsNumeric(length(xsaC@pspectra),48)
+    checkEqualsNumeric(length(xsaC@pspectra),316)
     #checkEqualsNumeric(length(xsaC@pspectra),316)
  ## findIsotopes and findAdducts
     xsaFI <- findIsotopes(xsaC)

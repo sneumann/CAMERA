@@ -453,7 +453,7 @@ setMethod("calcPC.hcs", "xsAnnotate", function(object, ajc=NULL,
   for(j in 1:length(pspectra_list)){
     i  <- pspectra_list[j];#index of pseudospectrum
     pi <- object@pspectra[[i]]; #peak_id in pseudospectrum
-    
+    names(pi) <- as.character(pi);
 #percent output
           npeaks.global <- npeaks.global + length(pi);
           perc   <- round((npeaks.global) / ncl * 100)
@@ -485,13 +485,25 @@ setMethod("calcPC.hcs", "xsAnnotate", function(object, ajc=NULL,
       if(ii==1){
         #save old pspectra number
         pspectra[[i]] <- as.integer(hcs$cluster[[grps[ii]]])
+        pi[hcs$cluster[[grps[ii]]]] <- NA
       } else {
         npspectra <- npspectra +1
         pspectra[[npspectra]] <- as.integer(hcs$cluster[[grps[ii]]])
+        pi[hcs$cluster[[grps[ii]]]] <- NA
         psSamples[npspectra] <- psSamples[i]
       }
     }
+    index <- which(!is.na(pi));
+    if(length(index)>0){
+      for(ii in 1:length(index)){
+        npspectra <- npspectra +1
+        pspectra[[npspectra]] <- pi[index[ii]]
+        psSamples[npspectra] <- psSamples[i]
+      }
+    }
+
   }
+ 
   object@pspectra  <- pspectra;
   object@psSamples <- psSamples;
   cat("\n");
