@@ -735,67 +735,92 @@ getMaxScans <- function(object){
   return(maxscans)
 }
 
-setGeneric("getAllPeakEICs", function(object, index, maxscans) standardGeneric("getAllPeakEICs"))
+setGeneric("getAllPeakEICs", function(object, index) standardGeneric("getAllPeakEICs"))
 
-setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL, maxscans=NULL){
+setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
 
-  if(is.null(maxscans)){
-    stop("maxscans is not set. Use getMaxScans beforehand.\n")
+  #Checking parameter index
+  if(is.null(index)){
+    stop("Parameter index is not set.\n")
+  }else if(length(index) != nrow(gval)){
+    stop("Index length must equals number of peaks.\n")
   }
 
   nfiles <- length(filepaths(object@xcmsSet))
   scantimes <- list()
 
   if(nfiles == 1){
-    #Single File
+    #Single sample experiment
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
+
      xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
      maxscans <- length(xraw@scantime)
      scantimes[[1]] <- xraw@scantime
      pdata <- as.data.frame(object@xcmsSet@peaks) 
+
      EIC <- create.matrix(nrow(pdata),maxscans)
      EIC[,] <- getEIC4Peaks(xraw,pdata,maxscans)
+
     } else {
       stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
     }
   } else {
+    #Multiple sample experiment
     gval <- groupval(object@xcmsSet);
-    if(is.null(index)){
-      cat("Missing Index, generate all EICs from sample 1.\n");
-      index <- rep(1, nrow(gval));
-    }else if(length(index) != nrow(gval)){
-      stop("Index length must equals number of peaks.\n");
-    }
 
     cat('Generating EIC\'s .. \n')
-  
-    #Get scantime length for every xraw
-#     for (f in 1:nfiles){
-#       xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
-#       maxscans <- max(maxscans, length(xraw@scantime));
-#       scantimes[[f]] <- xraw@scantime;
-#     }
+
+    #na flag, stores if sample contains NA peaks
+    na.flag <- 0;
+    maxscans <- 0;
+
+    if (file.exists(filepaths(object@xcmsSet)[1])) { 
+      xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
+      maxscans <- length(xraw@scantime)
+    } else {
+      stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
+    }
 
     #generate EIC Matrix
     EIC <- create.matrix(nrow(gval),maxscans)
 
-    #na flag, stores if sample contains NA peaks
-    na.flag <- 0;
-
+    #loop over all samples
     for (f in 1:nfiles){
-      if (file.exists(filepaths(object@xcmsSet)[f])) { 
+  
+      #which peaks should read from this sample    
+      idx.peaks <- which(index == f);
+  
+      #check if we need data from sample f
+      if(length(idx.peaks) == 0){
+        next;
+      }
+
+      #check if raw data file of sample f exists
+      if (file.exists(filepaths(object@xcmsSet)[f])) {
+        #read sample
         xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
-        idx.peaks <- which(index == f);
-        if(length(idx.peaks) > 0){
-          pdata <- as.data.frame(object@xcmsSet@peaks[gval[idx.peaks,f],]) # data for peaks from file f
-          if(length(which(is.na(pdata[,1]))) >0){
-            na.flag <- 1;
-          }
-          if(length(idx.peaks)==1){
-            pdata <- t(pdata);
-          }
-          EIC[idx.peaks,] <- getEIC4Peaks(xraw,pdata,maxscans)
+        maxscans.tmp <- length(xraw@scantime);
+        scantimes[[f]] <- xraw@scantime
+        if(maxscans.tmp > maxscans){
+          #increase columns of EIC matrix
+          EIC <- cbind(EIC,create.matrix(nrow(gval),maxscans.tmp - maxscans));
+          maxscans <- maxscans.tmp;
         }
+
+        pdata <- as.data.frame(object@xcmsSet@peaks[gval[idx.peaks,f],,drop=FALSE]) # data for peaks from file f
+
+        #Check if peak data include NA values
+        if(length(which(is.na(pdata[,1]))) > 0){
+            na.flag <- 1;
+        }
+
+        if(length(idx.peaks)==1){
+            pdata <- t(pdata);
+        }
+
+        #Generate raw data according to peak data
+        EIC[idx.peaks,] <- getEIC4Peaks(xraw,pdata,maxscans)
+
       } else {
         stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n')
       }
