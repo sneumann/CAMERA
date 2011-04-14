@@ -742,7 +742,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
   #Checking parameter index
   if(is.null(index)){
     stop("Parameter index is not set.\n")
-  }else if(length(index) != nrow(gval)){
+  }else if(length(index) != nrow(object@groupInfo)){
     stop("Index length must equals number of peaks.\n")
   }
 
