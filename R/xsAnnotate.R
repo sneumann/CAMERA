@@ -284,9 +284,9 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
       for(i in 1:npspectra){
         index[object@pspectra[[i]]] <- object@psSamples[[i]];
       }
-      maxscans <- getMaxScans(object)
+
       #Generate EIC data
-      tmp <- getAllPeakEICs(object, index=index,maxscans=maxscans);
+      tmp <- getAllPeakEICs(object, index=index);
       EIC <- tmp$EIC
       scantimes <- tmp$scantimes
       rm(tmp);
@@ -295,10 +295,10 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
 
     } else {
       #Calculate EIC-Correlation for selected sample(s)
-      maxscans <- getMaxScans(object);
+
       for(i in object@sample){
         index <- rep(i, nrow(object@groupInfo));
-        tmp <- getAllPeakEICs(object, index=index,maxscans=maxscans);
+        tmp <- getAllPeakEICs(object, index=index);
         EIC <- tmp$EIC
         scantimes <- tmp$scantimes
         rm(tmp);

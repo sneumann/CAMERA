@@ -7,14 +7,13 @@
  Generate EIC data out of the raw data, according to the peak peaker information.
 }
 \usage{
-  getAllPeakEICs(object, index, maxscans)
+  getAllPeakEICs(object, index)
 }
 \arguments{
   \item{object}{The \code{xsAnnotate} object}
   \item{index}{Sample index vector, with the same length as the number of peaks. 
   Encoding from with sample the peak should be extracted. If all peaks should be generated from the
   same sample set index = rep(sample index, peak count)}
-  \item{maxscans}{Maximum number of scantime of all samples. If not available, it can be determined with CAMERA:::getMaxScans(object).}
 }
 \details{
   The function extract from the raw data the EIC curves. Therefore all .netcdf, .mzdata etc. files must be acessable.
@@ -30,10 +29,9 @@
  xsa          <- xsAnnotate(xs.grp)
  #generate pseudospectra
  xsa.group    <- groupFWHM(xsa)
- #get maxScans
- maxscans <- CAMERA:::getMaxScans(xsa.group)
+
  #calculate correlation
- tmp <- getAllPeakEICs(xsa.group,index=rep(1,nrow(xsa.group@groupInfo)),maxscans=maxscans)
+ tmp <- getAllPeakEICs(xsa.group,index=rep(1,nrow(xsa.group@groupInfo)))
  #extract EIC matrix
  EIC.matrix <- tmp$EIC;
 }
@@ -45,7 +43,7 @@
   a peak had been found, the intensity information.
   }
   \item{scantimes}{
-    Not used anymore, ignore!
+    Scantimes of each sample
   }
 }
 
