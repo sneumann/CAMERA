@@ -742,9 +742,10 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL, maxscans=
   if(is.null(maxscans)){
     stop("maxscans is not set. Use getMaxScans beforehand.\n")
   }
+
   nfiles <- length(filepaths(object@xcmsSet))
   scantimes <- list()
-#   maxscans <- maxscans;
+
   if(nfiles == 1){
     #Single File
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
@@ -755,7 +756,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL, maxscans=
      EIC <- create.matrix(nrow(pdata),maxscans)
      EIC[,] <- getEIC4Peaks(xraw,pdata,maxscans)
     } else {
-      stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n');
+      stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
     }
   } else {
     gval <- groupval(object@xcmsSet);
