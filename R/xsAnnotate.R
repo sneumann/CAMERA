@@ -141,6 +141,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   pspectra  <- list();
   psSamples <- NA;
 
+  cat("Start grouping after retention time.\n")
   if(object@groupInfo[1, "rt"] == -1) {
      # Like FTICR Data
      warning("Warning: no retention times avaiable. Do nothing\n");
@@ -243,7 +244,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
 
     object@pspectra  <- pspectra;
     object@psSamples <- psSamples;
-    cat("Created", length(object@pspectra), "groups.\n")
+    cat("Created", length(object@pspectra), "pseudospectra.\n")
   }
   return(invisible(object)); #return object
 })
@@ -258,8 +259,10 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
 
   npspectra <- length(object@pspectra);
 
+  cat("Start grouping after correlation.\n")
   #Data is not preprocessed with groupFWHM 
   if(npspectra < 1){
+    cat("Data was not preprocessed with groupFWHM, creating one pseudospectrum with all peaks.\n")
     #Group all peaks into one group
     npspectra <- 1;
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
@@ -352,7 +355,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   }
 
   #Perform graph seperation to seperate co-eluting pseudospectra
-  object <- calcPC(object, method=graphMethod, ajc=resMat);                                   
+  object <- calcPC(object, method=graphMethod, ajc=resMat, psg_list=psg_list);                                   
 
   #Create pc groups based on correlation results
   cat("xsAnnotate has now", length(object@pspectra), "groups, instead of", cnt, "\n"); 
@@ -691,7 +694,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     }else{
       index <- object@sample;
     }
-    cat("Generating peak matrix!\n");
+    cat("Generating peak matrix for peak annotation!\n");
     mint     <- groupval(object@xcmsSet,value=intval)[,index,drop=FALSE];
     peakmat  <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
