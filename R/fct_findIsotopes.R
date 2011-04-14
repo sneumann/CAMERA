@@ -39,9 +39,9 @@ getIsotopeCluster <- function(object, number=NULL, value="maxo"){
  
  #check values
   if(is.null(object)) { 
-    stop("No xsa argument was given"); 
+    stop("No xsa argument was given.\n"); 
   }else if(!class(object)=="xsAnnotate"){
-    stop("xsa is no xsAnnotate object");
+    stop("Object parameter is no xsAnnotate object.\n");
   }
   value <- match.arg(value, c("maxo", "into", "intb"), several.ok=FALSE)
 

@@ -814,10 +814,6 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
             na.flag <- 1;
         }
 
-        if(length(idx.peaks)==1){
-            pdata <- t(pdata);
-        }
-
         #Generate raw data according to peak data
         EIC[idx.peaks,] <- getEIC4Peaks(xraw,pdata,maxscans)
 
