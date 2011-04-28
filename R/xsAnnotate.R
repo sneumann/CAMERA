@@ -1077,7 +1077,7 @@ getpspectra <- function(object, grp=NULL){
         if(liso[[i]]$iso == 0){
           iso.name <- "[M]";
         }else{
-          iso.name <- paste("[M+",liso[[i]]$iso+1,"]",sep="");
+          iso.name <- paste("[M+",liso[[i]]$iso,"]",sep="");
         }
         if(liso[[i]]$charge > 1){
           isotopes[i] <- paste("[",liso[[i]]$y,"] ",iso.name," ",liso[[i]]$charge,"+",sep="");
