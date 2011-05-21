@@ -465,7 +465,7 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
     name<-c();nmol<-c();charge<-c();massdiff<-c();oidscore<-c();quasi<-c();ips<-c();
     ##Read Tabellen
     ionlist <- system.file('lists/ions.csv', package = "CAMERA")[1]
-    if (!file.exists(ionlist)) stop('ionlist.csv not found.')
+    if (!file.exists(ionlist)) stop('ions.csv not found.')
     ionlist<-read.table(ionlist, header=TRUE, dec=".", sep=",",
                         as.is=TRUE, stringsAsFactors = FALSE);
 
