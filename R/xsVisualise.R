@@ -161,10 +161,10 @@ setMethod("plotEICs", "xsAnnotate", function(object,
 
 setGeneric("plotPsSpectrum", function(object, pspec=1:length(object@pspectra), log=FALSE,
                        value="into", maxlabel=0, title=NULL,mzrange = numeric(),
-                                              sleep=0,...) standardGeneric("plotPsSpectrum"))
+                                              sleep=0, cexMulti=1, ...) standardGeneric("plotPsSpectrum"))
 setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object@pspectra), log=FALSE,
                        value="into", maxlabel=0, title=NULL,mzrange = numeric(),
-                                              sleep=0,...){
+                                              sleep=0, cexMulti=1, ...){
 ##
 ## Loop through all requested pspectra
 ##
@@ -259,10 +259,10 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
           text(mz[index[1:lmaxlabel]],
                intensity[index[1:lmaxlabel]],
                labels=format(mz[index[1:lmaxlabel]], digits=5),
-               cex=0.66)
+               cex=0.66*cexMulti)
           sapply(1:lmaxlabel, function (x) { text(mz[index[x]],
                     intensity[index[x]] + strheight("0123456789"),
-                    labels=test[[index[x]]],cex=0.66)});
+                    labels=test[[index[x]]],cex=0.66*cexMulti)});
           legend("topleft",legend=leg,cex=0.8,bty="n");
         }else{
           plot(mz, intensity, type="h",
@@ -271,7 +271,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
           text(mz[index[1:lmaxlabel]],
                intensity[index[1:lmaxlabel]],
                labels=format(mz[index[1:lmaxlabel]], digits=5),
-               cex=0.66)
+               cex=0.66*cexMulti)
         }
       }else{
           plot(mz, intensity, type="h",
@@ -280,7 +280,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
           if(lmaxlabel > 0){
             text(mz[index[1:lmaxlabel]],
                intensity[index[1:lmaxlabel]],
-               labels=format(mz[index[1:lmaxlabel]], digits=5),cex=0.66)
+               labels=format(mz[index[1:lmaxlabel]], digits=5),cex=0.66*cexMulti)
           }
       }
     }else{ 

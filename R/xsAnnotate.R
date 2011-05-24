@@ -613,11 +613,11 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
       idx <- which(charges.length == max(charges.length));
       if(length(idx) == 1){
         #max is unique
-        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] == charges.list[-idx]),]
+        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] %in% charges.list[-idx]),]
       }else{
         #select this one, which lower charge
         idx <- which.min(charges.list[idx]);
-        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] == charges.list[-idx]),]
+        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] %in% charges.list[-idx]),]
       }
     }
   }
