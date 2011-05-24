@@ -1,3 +1,5 @@
+2011-24-05 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findIsotopes, which could cause a crash, if maxiso was higher than 3 
 2011-12-05 ckuhl <ckuhl@ipb-halle.de>
 	* plotPsSpectrum now accepts additional parameters for plot
 2011-28-04 ckuhl <ckuhl@ipb-halle.de>
