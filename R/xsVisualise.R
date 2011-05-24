@@ -161,10 +161,10 @@ setMethod("plotEICs", "xsAnnotate", function(object,
 
 setGeneric("plotPsSpectrum", function(object, pspec=1:length(object@pspectra), log=FALSE,
                        value="into", maxlabel=0, title=NULL,mzrange = numeric(),
-                                              sleep=0) standardGeneric("plotPsSpectrum"))
+                                              sleep=0,...) standardGeneric("plotPsSpectrum"))
 setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object@pspectra), log=FALSE,
                        value="into", maxlabel=0, title=NULL,mzrange = numeric(),
-                                              sleep=0){
+                                              sleep=0,...){
 ##
 ## Loop through all requested pspectra
 ##
@@ -255,7 +255,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
           leg <- as.expression(legend.txt);
           plot(mz, intensity, type="h",
             xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
-            main=title.plot, col="darkgrey",ylim=intrange)        
+            main=title.plot, col="darkgrey",ylim=intrange,...)        
           text(mz[index[1:lmaxlabel]],
                intensity[index[1:lmaxlabel]],
                labels=format(mz[index[1:lmaxlabel]], digits=5),
@@ -267,7 +267,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
         }else{
           plot(mz, intensity, type="h",
             xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
-            main=title.plot, col="darkgrey",ylim=intrange)        
+            main=title.plot, col="darkgrey",ylim=intrange,...)        
           text(mz[index[1:lmaxlabel]],
                intensity[index[1:lmaxlabel]],
                labels=format(mz[index[1:lmaxlabel]], digits=5),
@@ -276,7 +276,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
       }else{
           plot(mz, intensity, type="h",
             xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
-            main=title.plot, col="darkgrey",ylim=intrange)
+            main=title.plot, col="darkgrey",ylim=intrange,...)
           if(lmaxlabel > 0){
             text(mz[index[1:lmaxlabel]],
                intensity[index[1:lmaxlabel]],
@@ -286,7 +286,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
     }else{ 
       plot(mz, intensity, type="h",
         xlim=c(max(0,mzrange[1]-mzborder), mzrange[2]+mzborder),
-        main=title.plot, col="darkgrey",ylim=intrange)        
+        main=title.plot, col="darkgrey",ylim=intrange,...)        
     }
      
     if (sleep > 0) {
