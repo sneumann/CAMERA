@@ -8,7 +8,7 @@
 }
 \usage{
   groupCorr(object,cor_eic_th=0.75, pval=0.05, graphMethod="hcs",
-  calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, ...)
+  calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, xraw=NULL, ...)
 }
 \arguments{
   \item{object}{The \code{xsAnnotate} object}
@@ -19,6 +19,7 @@
   \item{calcCiS}{Calculate correlation inside samples}
   \item{calcCaS}{Calculate correlation accross samples}
   \item{psg_list}{Vector of pseudospectra indices. The correlation analysis will be only done for those groups}
+  \item{xraw}{Optional xcmsRaw object, which should be used for raw data extraction}
   \item{...}{Additional parameter}
 }
 \details{

@@ -257,6 +257,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   return(invisible(object)); #return object
 })
 
+
 setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", 
                                 calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, 
                                 xraw=NULL, ...) standardGeneric("groupCorr"));
@@ -292,7 +293,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   }
   
   if (!is.null(psg_list) && (!is.numeric(psg_list) || any(psg_list > length(object@pspectra)) || any(psg_list < 0)) ) {
-    stop ("If parameter psg_list is used, it must be numeric and contains only indices lower equal maximum number
+    stop ("If parameter psg_list is used, it must be numeric and contains only indices lower or equal maximum number
           of pseudospectra.\n");
   }
   
@@ -322,8 +323,16 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
 
   # Check LC information and calcCorr was selected
   if(calcCiS && object@xcmsSet@peaks[1,"rt"] != -1){
-    
-    if(is.na(object@sample[1])){
+    if(!is.null(xraw)) {
+      #Use provided xcmsRaw
+      maxscans <- length(xraw@scantime)
+      scantimes<-list();
+      scantimes[[1]] <- xraw@scantime
+      pdata <- peaks(xa@xcmsSet)
+      EIC <- CAMERA:::getEICs(xraw,pdata,maxscans)
+      
+      res[[1]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
+    }else if(is.na(object@sample[1])){
       #Autoselect sample path for EIC correlation    
       index <- rep(0, nrow(object@groupInfo));
       
@@ -365,7 +374,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   if( length(object@xcmsSet@filepaths) > 3 && calcCaS){
     res[[length(res)+1]] <- calcCaS(object);
   }else if(length(object@xcmsSet@filepaths) <= 3 && calcCaS){
-    cat("Object must contain more than 3 samples to calculate correlation accros samples!\n");
+    cat("Object has to contain more than 3 samples to calculate correlation accros samples!\n");
   }
   
   #If object has isotope information and calcIso was selected
