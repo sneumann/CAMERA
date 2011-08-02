@@ -512,6 +512,7 @@ setMethod("calcPC.hcs", "xsAnnotate", function(object, ajc=NULL,
 })
 
 ##END Methods for Cluster Seperation of Pseudospectra
+
 calcCL3 <- function(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th, psg_list=psg_list){
 
   nrow <- nrow(object@groupInfo);
