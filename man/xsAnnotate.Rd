@@ -9,7 +9,7 @@
   It returns a xsAnnotate object, see \link{xsAnnotate-class}.
 }
 \usage{
-  xsAnnotate(xs = NULL, sample=NA, nSlaves = 1)
+  xsAnnotate(xs = NULL, sample=NA, nSlaves = 1, polarity = NULL)
 }
 \arguments{
   \item{xs}{a \code{xcmsSet} object}
@@ -19,6 +19,9 @@
   }
   \item{nSlaves}{
     For parallel mode set nSlaves higher than 1, but not higher than the number of cpu cores.
+  }
+  \item{polarity}{
+    Set polarity mode: "positive" or "negative"
   }
 }
 \examples{

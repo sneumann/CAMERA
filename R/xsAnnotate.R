@@ -1,4 +1,4 @@
-xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1){
+xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1, polarity=NULL){
 
  ## sample is:
  ### NA for maxInt-way
@@ -74,6 +74,13 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1){
     }
   }
 
+  if(!is.null(polarity)){
+    if(is.na(match.arg(polarity, c("positive","negative")))){
+      stop("Parameter polarity is unknown: ", graphMethod,"\n")  
+    }else{
+      object@polarity <- polarity;
+    }
+  }
   object@runParallel<-runParallel;
 
   colnames(object@annoID) <-  c("id","grp_id","rule_id");
@@ -94,7 +101,12 @@ setMethod("show", "xsAnnotate", function(object){
   }else{
     cat("Include no xcmsSet set\n");
   }
- 
+    
+  #Show polarity if avaiable
+  if(length(object@polarity) > 0){
+    cat("Polarity mode is set to: ",object@polarity,"\n");
+  }
+    
   #Show samples selection
   if(is.null(object@sample)){
     cat("Parameter sample not set\n");
@@ -782,7 +794,9 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, nh=2, polarity=object@polarity);
         object@ruleset <- rules;
       }
-    }else{ cat("Found and use user-defined ruleset!");}
+    }else{ 
+      cat("Found and use user-defined ruleset!");
+    }
   }else {
     #Erkenne polarität
     if(!is.null(polarity)){
@@ -1082,6 +1096,15 @@ getpspectra <- function(object, grp=NULL){
     lions <- ions[index];
     liso  <- iso[index];
 
+    #default polarity set to positive
+    polarity <- "+";
+    
+    if(length(object@polarity) > 0){
+      if(object@polarity == "negative"){
+        polarity <- "-";
+      }
+    }
+    
     for(i in 1:length(lions)){
       if(!is.null(lions[[i]])){
         if(length(lions[[i]]) > 1){
@@ -1102,9 +1125,9 @@ getpspectra <- function(object, grp=NULL){
           iso.name <- paste("[M+",liso[[i]]$iso,"]",sep="");
         }
         if(liso[[i]]$charge > 1){
-          isotopes[i] <- paste("[",liso[[i]]$y,"] ",iso.name," ",liso[[i]]$charge,"+",sep="");
+          isotopes[i] <- paste("[",liso[[i]]$y,"] ",iso.name," ",liso[[i]]$charge,polarity,sep="");
         }else{
-          isotopes[i] <- paste("[",liso[[i]]$y,"] ",iso.name," ","+",sep="");
+          isotopes[i] <- paste("[",liso[[i]]$y,"] ",iso.name," ",polarity,sep="");
         }
       }
     }
@@ -1152,7 +1175,16 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
   adduct   <- vector("character", nrow(object@groupInfo));
   isotopes <- vector("character", nrow(object@groupInfo));
   pcgroup  <- vector("character", nrow(object@groupInfo));
-
+   
+  #default polarity set to positive
+  polarity <- "+";
+    
+  if(length(object@polarity) > 0){
+    if(object@polarity == "negative"){
+      polarity <- "-";
+    }
+  }
+  
   #First isotope informationen and adduct informationen
   for(i in seq(along = isotopes)){
     #check if adduct annotation is present for peak i
@@ -1186,9 +1218,9 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
       }
       #Multiple charged?
       if(object@isotopes[[i]]$charge > 1){
-        isotopes[i] <- paste("[", object@isotopes[[i]]$y, "]", str.iso, object@isotopes[[i]]$charge,"+", sep="");
+        isotopes[i] <- paste("[", object@isotopes[[i]]$y, "]", str.iso, object@isotopes[[i]]$charge, polarity, sep="");
       }else{
-        isotopes[i] <- paste("[", object@isotopes[[i]]$y, "]", str.iso,"+", sep="");
+        isotopes[i] <- paste("[", object@isotopes[[i]]$y, "]", str.iso, polarity, sep="");
       }
     } else { 
       #No isotope informationen available
