@@ -14,7 +14,7 @@ setClass("xsAnnotate",
                     annoGrp="matrix",
                     isoID="matrix",
                     polarity="character",
-                    runParallel="numeric"),
+                    runParallel="list"),
     prototype(
                     groupInfo= matrix(ncol=0,nrow=0),
                     pspectra = list(),

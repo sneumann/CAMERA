@@ -1,3 +1,9 @@
+2011-02-08 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.4
+  * Add parameter polarity to xsAnnotate constructor
+  * getPeaklist and getpspectra returns now correct annotation of negative charged ions [M]-
+  * Add snow as additonal possibilty for parallel processing
+  * Add function cleanParallel to clean up with spawned slave processes
 2011-24-05 ckuhl <ckuhl@ipb-halle.de>
 	* Fix bug in findIsotopes, which could cause a crash, if maxiso was higher than 3 
 2011-12-05 ckuhl <ckuhl@ipb-halle.de>
