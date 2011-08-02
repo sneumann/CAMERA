@@ -89,17 +89,25 @@ setMethod("show", "xsAnnotate", function(object){
   #show main information
   cat("An \"xsAnnotate\" object!\n");
   cat("With",length(object@pspectra),"groups (pseudospectra)\n");
-  cat("With",length(sampnames(object@xcmsSet)),"samples and",nrow(object@groupInfo),"peaks\n");
+  if(!is.null(object@xcmsSet)){
+    cat("With",length(sampnames(object@xcmsSet)),"samples and",nrow(object@groupInfo),"peaks\n");
+  }else{
+    cat("Include no xcmsSet set\n");
+  }
  
   #Show samples selection
-  if(is.na(object@sample[1])){
-    cat(paste("Using automatic sample selection\n"));
-  } else if(all(object@sample > -1)){
-    cat("Using sample(s): ",paste(object@sample),"\n");
-  } else { 
-    cat(paste("Using complete measurement\n"));
+  if(is.null(object@sample)){
+    cat("Parameter sample not set\n");
+  }else{
+    if(is.na(object@sample[1])){
+      cat(paste("Using automatic sample selection\n"));
+    } else if(all(object@sample > -1)){
+      cat("Using sample(s): ",paste(object@sample),"\n");
+    } else { 
+      cat(paste("Using complete measurement\n"));
+    }
   }
-
+  
   #Show isotope information
   if(length(object@isotopes) > 0){
     cnt <- nrow(object@isoID)
@@ -115,7 +123,7 @@ setMethod("show", "xsAnnotate", function(object){
   #Show memory information
   memsize <- object.size(object)
   cat("Memory usage:", signif(memsize/2^20, 3), "MB\n");
-  if(object@runParallel == 1){
+  if(!is.null(object@runParallel) && object@runParallel == 1){
     cat("CAMERA runs in parallel mode!\n");
   }
 })
@@ -249,14 +257,49 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   return(invisible(object)); #return object
 })
 
-setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, ...) standardGeneric("groupCorr"));
+setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", 
+                                calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, 
+                                xraw=NULL, ...) standardGeneric("groupCorr"));
 
-setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL) {
+setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, 
+                                             graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, 
+                                             calcCaS = FALSE, psg_list=NULL, xraw=NULL) {
   
-  if (!class(object) == "xsAnnotate"){
-    stop ("no xsAnnotate object");
+  if (!is.numeric(cor_eic_th) || cor_eic_th < 0 || cor_eic_th > 1){
+    stop ("Parameter cor_eic_th must be numeric and between 0 and 1.\n");
   }
 
+  if (!is.numeric(pval) || pval < 0 || pval > 1){
+    stop ("Parameter cor_eic_th must be numeric and between 0 and 1.\n");
+  }
+  
+  checkMethod <- match.arg(graphMethod, c("hcs","lpc"))
+  if (is.na(checkMethod)){
+    stop("Parameter graphMethod is unknown: ", graphMethod,"\n")
+  }
+  rm(checkMethod)
+  
+  if (!is.logical(calcIso)) {
+    stop ("Parameter calcIso must be logical.\n");
+  }
+  
+  if (!is.logical(calcCiS)) {
+    stop ("Parameter calcCiS must be logical.\n");
+  }
+  
+  if (!is.logical(calcCaS)) {
+    stop ("Parameter calcCaS must be logical.\n");
+  }
+  
+  if (!is.null(psg_list) && (!is.numeric(psg_list) || any(psg_list > length(object@pspectra)) || any(psg_list < 0)) ) {
+    stop ("If parameter psg_list is used, it must be numeric and contains only indices lower equal maximum number
+          of pseudospectra.\n");
+  }
+  
+  if (!is.null(xraw) &&  !class(object) == "xcmsRaw") {
+    stop ("Parameter xraw must be null or an xcmsRaw object\n");
+  }
+  
   npspectra <- length(object@pspectra);
 
   cat("Start grouping after correlation.\n")
@@ -999,58 +1042,27 @@ annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.
 
 ###xsAnnotate exported Methods###
 
-findFragment <- function (object,ppm=20){
-  if (!class(object)=="xsAnnotate") stop ("no xsAnnotate object")
-  #number pseudospectra
-  devppm = ppm / 1000000;
-  npspectra <- length(object@pspectra);
-  if (object@polarity != "positive" & object@polarity != "negative") stop ("xsAnnotate object have wrong polarities.\nOnly pos/neg is allowed!")
-  neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
-  if (!file.exists(neutralloss)) stop('neutralloss.csv not found.')
-  neutralloss <- read.table(neutralloss, header=TRUE, dec=".", sep=",",
-                            as.is=TRUE, stringsAsFactors = FALSE);
-  colnames(neutralloss)<-c("name","massdiff")
-  fragment<-rep("",nrow(object@groupInfo))
-  for(i in 1:npspectra){
-   print (i);
-    index<-object@pspectra[[i]];
-    peaktable<-object@groupInfo[index,];
-    if(!is.matrix(peaktable)) peaktable<-matrix(peaktable,ncol=11);
-    mz <- peaktable[,1];
-
-    ML <- massDiffMatrixNL(mz,neutralloss)
-    m <- apply(ML,2,function (x) {fastMatch(mz,x,tol = max(2*devppm*mean(mz,na.rm=TRUE)))})
-    indi<-which(sapply(m,function (x) {length(unlist(x))})>0)
-    if(length(indi)==0) next;
-    for( ii in 1:length(indi)){
-      for(iii in 1:length(mz)){
-          if(!is.null(m[[indi[ii]]][[iii]])){
-            if(length(fragment[index[iii]])>1) {
-              fragment[index[iii]]<-paste(mz[m[[indi[ii]]][[iii]]],"-",neutralloss[indi[ii],"name"])
-            }else{
-              fragment[index[iii]]<-paste(fragment[index[iii]], mz[m[[indi[ii]]][[iii]]],"-",neutralloss[indi[ii],"name"])
-            }
-        }
-      }
-    }
-  }
-  invisible(cbind(getPeaklist(object),fragment))
-}
-
+#getpspectra
+#Generate for one (or more) pseudospectrum a peaklist
+#object - xsAnnotate
+#grp - pseudospectrum ID
 getpspectra <- function(object, grp=NULL){
-  #Generate Peaktable for specific pseudospectrum
   
-  if(is.null(grp)){
+  if(is.null(grp)) {
     cat("Error: No grp number!\n");
-  }else if(!(is.numeric(grp)) | any(grp > length(object@pspectra))){
+  } else if(!(is.numeric(grp)) | any(grp > length(object@pspectra))) {
     cat("Error: Grp is not numeric or contains number greater than maximum number of pseudospectra!\n");
-  }else{
-    index     <- unlist(object@pspectra[grp]);
+  } else {
+    index <- unlist(object@pspectra[grp]);
+    #Check if index has peaks
     if(length(index) == 0){
       cat("Error: Pseudospectra selection contains no peaks.\n")
       return(NULL);
     }
-    grpvec <- unlist(sapply(grp,function(x) {rep(x,length(object@pspectra[[x]]))}))
+    #get ps number for selected peaks  
+    grpvec <- unlist(sapply(grp, function(x) { rep(x, length(object@pspectra[[x]])) }))
+    
+    #extract peaktable
     peaktable <- object@groupInfo[index,]
 
     adduct    <- vector("character",length(index));
@@ -1073,6 +1085,7 @@ getpspectra <- function(object, grp=NULL){
           adduct[i] <- paste(lions[[i]][[1]]$name,lions[[i]][[1]]$mass);
         }
       }
+        
       if(!is.null(liso[[i]])){
         if(liso[[i]]$iso == 0){
           iso.name <- "[M]";
@@ -1106,60 +1119,86 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
   }
 
   #generate peaktable
+  #Check if xcmsSet contains only one sample
   if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
-    ##one sample
+    #intval is here ignored since all intensity values are already contained
     peaktable <- object@groupInfo;
   }else {
-    ##multiple sample
-    #use groupInfo information and replace intensity values
+    #Case of xcmsSet with multiple samples
+    #Use groupInfo information and replace intensity values
     peaktable <- object@groupInfo;
+    
+    #get intensity values from xcmsSet
     grpval <- groupval(object@xcmsSet, value=intval);
+    
+    #get column range for replacement
     grpval.ncol <- ncol(grpval)
     start <- ncol(peaktable) - grpval.ncol +1;
     ende  <- start + grpval.ncol - 1; 
+    
     peaktable[,start:ende] <- grpval;
   }
 
-  #allocate variables
+  #allocate variables for CAMERA output
   adduct   <- vector("character", nrow(object@groupInfo));
   isotopes <- vector("character", nrow(object@groupInfo));
   pcgroup  <- vector("character", nrow(object@groupInfo));
 
-  for(i in 1:length(isotopes)){
-    if(length(object@derivativeIons)>0 && !(is.null(object@derivativeIons[[i]]))){
-        if(length(object@derivativeIons[[i]])>1){
-            names<-paste(object@derivativeIons[[i]][[1]]$name,signif(object@derivativeIons[[i]][[1]]$mass,6));
-            for(ii in 2:length(object@derivativeIons[[i]]))
-            {
-                    names<-paste(names,object@derivativeIons[[i]][[ii]]$name,signif(object@derivativeIons[[i]][[ii]]$mass,6));
-            }
-            adduct[i]<-names;
-        }else{
-            adduct[i]<-paste(object@derivativeIons[[i]][[1]]$name,signif(object@derivativeIons[[i]][[1]]$mass,6));
+  #First isotope informationen and adduct informationen
+  for(i in seq(along = isotopes)){
+    #check if adduct annotation is present for peak i
+    if(length(object@derivativeIons) > 0 && !(is.null(object@derivativeIons[[i]]))) {
+      #Check if we have more than one annotation for peak i
+      if(length(object@derivativeIons[[i]]) > 1) {
+        #combine ion species name and rounded mass hypophysis
+        names <- paste(object@derivativeIons[[i]][[1]]$name, signif(object@derivativeIons[[i]][[1]]$mass, 6));
+        for(ii in 2:length(object@derivativeIons[[i]])) {
+          names <- paste(names, object@derivativeIons[[i]][[ii]]$name, signif(object@derivativeIons[[i]][[ii]]$mass, 6));
         }
-    }else { adduct[i]<-""; }
-    if(length(object@isotopes)>0 && !is.null(object@isotopes[[i]])){
-        num_iso<-object@isotopes[[i]]$iso;
-        if(num_iso==0){
-            str_iso <- "[M]";
-        }else { str_iso<-paste("[M+",num_iso,"]",sep="")}
-    if(object@isotopes[[i]]$charge>1){
-      isotopes[i] <- paste("[",object@isotopes[[i]]$y,"]",str_iso,object@isotopes[[i]]$charge,"+",sep="");
-    }else{
-      isotopes[i] <- paste("[",object@isotopes[[i]]$y,"]",str_iso,"+",sep="");
+        #save name in vector adduct
+        adduct[i] <- names;
+      } else {
+        #Only one annotation
+        adduct[i] <- paste(object@derivativeIons[[i]][[1]]$name, signif(object@derivativeIons[[i]][[1]]$mass, 6));
+      }
+    } else {
+      #no annotation empty name
+      adduct[i] <- ""; 
     }
-      }else { isotopes[i]<-""; }
+    
+    #Check if we have isotope informationen about peak i
+    if(length(object@isotopes) > 0&& !is.null(object@isotopes[[i]])) {
+      num.iso <- object@isotopes[[i]]$iso;
+      #Which isotope peak is peak i?
+      if(num.iso == 0){
+        str.iso <- "[M]";
+      } else { 
+        str.iso <- paste("[M+", num.iso, "]", sep="")
+      }
+      #Multiple charged?
+      if(object@isotopes[[i]]$charge > 1){
+        isotopes[i] <- paste("[", object@isotopes[[i]]$y, "]", str.iso, object@isotopes[[i]]$charge,"+", sep="");
+      }else{
+        isotopes[i] <- paste("[", object@isotopes[[i]]$y, "]", str.iso,"+", sep="");
+      }
+    } else { 
+      #No isotope informationen available
+      isotopes[i] <- ""; 
+    }
   }
+  
+  #Have we more than one pseudospectrum?
   if(length(object@pspectra) < 1){
       pcgroup <- 0;
-  }else{
-    for(i in 1:length(object@pspectra)){
-        index<-object@pspectra[[i]];
-        pcgroup[index]<-i;
+  } else {
+    for(i in seq(along = object@pspectra)){
+      index <- object@pspectra[[i]];
+      pcgroup[index] <- i;
     }
   }
+          
   rownames(peaktable)<-NULL;#Bugfix for: In data.row.names(row.names, rowsi, i) :  some row.names duplicated:
-  return(invisible(data.frame(peaktable,isotopes,adduct,pcgroup,stringsAsFactors=FALSE,row.names=NULL)));
+  return(invisible(data.frame(peaktable, isotopes, adduct, pcgroup, stringsAsFactors=FALSE, row.names=NULL)));
 })
 
 setGeneric("annotate", function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6, cor_eic_th=0.75, graphMethod="hcs",
@@ -1203,68 +1242,128 @@ setMethod("annotate", "xcmsSet", function(object, sample=NA, nSlaves=1, sigma=6,
   return(xa);
 })
 
+#Find NeutralLossSpecs
+#Test every pseudospectrum in a xsAnnotate object if the peaks match
+#a specific mz difference. Returns a boolean vector, where a hit is marked
+#with TRUE.
+#object - xsAnnotate object
+#mzdiff - mz difference of interest
+#mzabs  - allowed absolute error in mz
+#mppam  - allowed relative error in ppm (not used)
+
 findNeutralLossSpecs <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
 
+  if (!class(object) == "xsAnnotate"){ 
+    stop ("Parameter object is no xsAnnotate object\n")
+  }
+  
+  if(is.numeric(mzdiff) && mzdiff <= 0) {
+    stop ("Parameter mzdiff must be a positive numeric value\n")
+  }
+  
+  if(is.numeric(mzabs) && mzabs < 0) {
+    stop ("Parameter mzabs must be a positive numeric value\n")
+  }
+  
+  if(is.numeric(mzppm) && mzppm < 0) {
+    stop ("Parameter mzppm must be a positive numeric value\n")
+  }
+  
+  #Calculate mzrange
   nlmin <- mzdiff-mzabs
   nlmax <- mzdiff+mzabs
 
+  
   hits <- sapply(1:length(object@pspectra), function(j) {
     spec  <-  getpspectra(object, j)
 
-    mz  <-  spec[,1] #mz
-    nl  <-  as.matrix(dist(mz, method="manhattan"))
+    mz  <-  spec[,1] #mz vector
+    nl  <-  as.matrix(dist(mz, method="manhattan")) #distance matrix
       
-    length(which(nl > nlmin & nl < nlmax))>0
+    length(which(nl > nlmin & nl < nlmax)) > 0 #Test of match
   })
+  return(hits)
 }
 
-
+#Find NeutralLosses
+#Test every pseudospectrum in a xsAnnotate object if two peaks match
+#a specific mz difference. Returns a artifical xcmsSet
+#object - xsAnnotate object
+#mzdiff - mz difference of interest
+#mzabs  - allowed absolute error in mz
+#mppam  - allowed relative error in ppm (not used)
 findNeutralLoss <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
 
+  if (!class(object) == "xsAnnotate"){ 
+    stop ("Parameter object is no xsAnnotate object\n")
+  }
+  
+  if(is.numeric(mzdiff) && mzdiff <= 0) {
+    stop ("Parameter mzdiff must be a positive numeric value\n")
+  }
+  
+  if(is.numeric(mzabs) && mzabs < 0) {
+    stop ("Parameter mzabs must be a positive numeric value\n")
+  }
+  
+  if(is.numeric(mzppm) && mzppm < 0) {
+    stop ("Parameter mzppm must be a positive numeric value\n")
+  }
+  
+  #Calculate mzrange
   nlmin <- mzdiff-mzabs
   nlmax <- mzdiff+mzabs
 
+  #Create tempory xcmsSet object to store the peak matches
   xs <- new("xcmsSet");
 
   peaks <- matrix(ncol=11, nrow=0);
+  
   colnames(peaks) <- c("mz", "mzmin", "mzmax", "rt", "rtmin", "rtmax",
                        "into", "intb", "maxo", "sn", "sample");
   sampnames(xs) <- c("NeutralLoss")
   sampclass(xs) <- c("NeutralLoss")
 
-  for(j in 1:length(object@pspectra)) {
+  #Loop over all pseudospectra
+  for(j in seq(along = object@pspectra)) {
     
+    #get specific pseudospectrum j
     spec  <-  getpspectra(object, j)
+    lastcol <- ncol(spec);
     
-    mz  <-  spec[,1] #mz
+    #get mz values
+    mz  <-  spec[,1] 
+    
+    #generate distance matrix
     nl  <-  as.matrix(dist(mz, method="manhattan"))
-      
-    hits <- which(nl > nlmin & nl < nlmax,
-                  arr.ind = TRUE)
+    
+    #look for hits
+    hits <- which(nl > nlmin & nl < nlmax, arr.ind = TRUE)
 
-    if(length(hits) > 0) {
-      for (f in 1:nrow(hits)) {
-        hit <- as.vector( hits[f,])
+    # loop over all hits
+    for (f in seq_len(nrow(hits))) {
+      # hit f
+      hit <- as.vector( hits[f,])
         
-        ## Remove hit from lower diagonal matrix
-        if (hit[1] > hit[2]) {
-          next;
-        }
-
-        lastcol <- ncol(spec);
-        if (mz[hit[1]] > mz[hit[2]]) {
-          newpeak <- spec[hit[1],c(1:10,lastcol), drop=FALSE]
-        } else {
-          newpeak <- spec[hit[2],c(1:10,lastcol), drop=FALSE]
-        }
-        rownames(newpeak) <- as.character(j)
-        peaks <- rbind(peaks, newpeak)
+      ## Remove hit from lower diagonal matrix
+      if (hit[1] > hit[2]) {
+        next;
       }
-
+      
+      #For each peak-pair save the greater peak(higher mz value) to peak table
+      if (mz[hit[1]] > mz[hit[2]]) {
+        newpeak <- spec[hit[1],c(1:10,lastcol), drop=FALSE]
+      } else {
+        newpeak <- spec[hit[2],c(1:10,lastcol), drop=FALSE]
+      }
+        
+      rownames(newpeak) <- as.character(j)
+      peaks <- rbind(peaks, newpeak)
     }
   }
   colnames(peaks) <- c("mz", "mzmin", "mzmax", "rt", "rtmin", "rtmax",
-                       "into", "intb", "maxo", "sn", "pseudospectrum");      
+                       "into", "intb", "maxo", "sn", "pseudospectrum");
+  #Store peaks into the xcmsSet
   peaks(xs) <- as.matrix(peaks)
   invisible(xs)
 }
@@ -1550,8 +1649,9 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
   }
 return(peaklist);
 }    
- 
-combineHypothese <- function(mass.pos,mass.neg,ruleset,ini1,ini2,tol=0.02){
+
+
+combineHypothese <- function(mass.pos, mass.neg, ruleset, ini1, ini2, tol=0.02){
     ##generiere neue Peaklist
     tmp.ruleset <- ruleset[,c("name","nmol.pos","charge.pos","massdiff")];
     colnames(tmp.ruleset) <- c("name","nmol","charge","massdiff")
@@ -1561,68 +1661,84 @@ combineHypothese <- function(mass.pos,mass.neg,ruleset,ini1,ini2,tol=0.02){
       unlist(lapply(m, function(x) { if(is.null(x)){return(NA)}else{return(ini2[x[1]])} })); ##Select first hit, if more than one??
     });
     return(ML.match);
-#     results<-list();
-#     if(length(m)==0) {return(results);}
-#     for(i in 1:length(m))
-#     {
-#         if(is.null(m[[i]]))next;
-#         results[[length(results)+1]]<-c(ini1[i],ini2[m[[i]]])
-#     }
-#     return(results);
 }
 
 ##Speed-up function for ignoring NA values
 naOmit <- function(x) {
-    return (x[!is.na(x)]);
+  return (x[!is.na(x)]);
 }
 
-##create peak table diff
-getPeaks_selection <- function(xs,method="medret",value="into"){
-if (nrow(xs@groups) > 0) {
+# Create complete feature table
+# xs - xcmsSet object
+# method - groupval parameter method
+# value - groupval parameter method
+getPeaks_selection <- function(xs, method="medret", value="into"){
+  
+  if (!class(xs) == "xcmsSet") {
+    stop ("Parameter xs is no xcmsSet object\n")
+  }
+  
+  # Testing if xcmsSet is grouped
+  if (nrow(xs@groups) > 0) {
+    # get grouping information
      groupmat <- groups(xs)
-     ts <- data.frame(cbind(groupmat,groupval(xs, method=method, value=value)),row.names = NULL)
+     # generate data.frame for peaktable
+     ts <- data.frame(cbind(groupmat, groupval(xs, method=method, value=value)), row.names = NULL)
+     #rename column names
      cnames <- colnames(ts)
-     if (cnames[1] == 'mzmed') cnames[1] <- 'mz' else stop ('Peak information ?!?')
-     if (cnames[4] == 'rtmed') cnames[4] <- 'rt' else stop ('Peak information ?!?')
+     if (cnames[1] == 'mzmed') {
+       cnames[1] <- 'mz' 
+     } else { 
+       stop ('Peak information ?!?')
+     }
+     if (cnames[4] == 'rtmed') {
+       cnames[4] <- 'rt' 
+     } else {
+       stop ('Peak information ?!?')
+     }
      colnames(ts) <- cnames
-} else if (length(sampnames(xs)) == 1)
-        ts <- xs@peaks
-    else stop ('First argument must be a xcmsSet with group information or contain only one sample.')
-return(as.matrix(ts))
+  } else if (length(sampnames(xs)) == 1) { #Contains only one sample?
+    ts <- xs@peaks
+  } else {
+    stop ('First argument must be a xcmsSet with group information or contain only one sample.')
+  }
+  
+  return(as.matrix(ts))
 }
 
 
-# create peak table
-getPeaks <- function(xs,index=1){
-if (nrow(xs@groups) > 0) {
-        if(index== -1)
-        {
-# 		peaki <- getPeaksIdxCol(xs,NULL)[,1]
-                ts <- xs@peaks;
-        }
-        else
-        {
-                peaki <- getPeaksIdxCol(xs,NULL)[,index]
-                ts <- xs@peaks[peaki,]
-        }
-#      groupmat <- groups(xs)
-#      ts <- data.frame(cbind(groupmat,groupval(xs, "medret", "into")),row.names = NULL)
-#      index<-which(sampclass(xs)==category)[1]+sample-1;
-#      ts<- cbind(groupmat,groupval(xs, "medret", "into"))
-#      cnames <- colnames(ts)
-#      if (cnames[1] == 'mzmed') cnames[1] <- 'mz' else stop ('Peak information ?!?')
-#      if (cnames[4] == 'rtmed') cnames[4] <- 'rt' else stop ('Peak information ?!?')
-#      colnames(ts) <- cnames
-
-# 	cnames <- colnames(ts)
-# 	ts <- cbind(ts,which(xs@peaks[,"sample"]==index));
-# 	cnames<-append(cnames,"PeakID")
-# 	colnames(ts)<- cnames;
-} else if (length(sampnames(xs)) == 1)
+# Returns peak table of one! sample from a xcmsSet
+# Does not return the feature table (result from group)
+# xs - xcmsSet object
+# index - sample index
+# index = -1 return complete peak table overall sample
+getPeaks <- function(xs, index=1){
+ 
+  if (!class(xs) == "xcmsSet") {
+    stop ("Parameter xs is no xcmsSet object\n")
+  }
+  if (!is.numeric(index) && index > length(sampnames(xs)) | index < -1 | index == 0) {
+    stop("Parameter index must be between 1 and number of samples or -1\n")
+  }
+  
+  #Testing if xcmsSet is grouped
+  if (nrow(xs@groups) > 0) {
+    #Should all peaks returned
+    if(index == -1) {
+      ts <- xs@peaks;
+    } else {
+      #get peak indices for sample index
+      peaki <- getPeaksIdxCol(xs,NULL)[,index]
+      #extract peaks from sample index
+      ts <- xs@peaks[peaki,]
+    }
+  } else if (length(sampnames(xs)) == 1) {# xs not grouped, testing if it only contains one sample
         ts <- xs@peaks
-    else stop ('First argument must be a xcmsSet with group information or contain only one sample.')
-return(as.matrix(ts))
+  } else {
+    stop ('First argument must be a xcmsSet with group information or contain only one sample.')
+  }
+  
+  return(as.matrix(ts))
 }
-
 
 ###End xsAnnotate intern Function###
