@@ -48,30 +48,46 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1, polarity=NULL){
   }
 
   object@groupInfo <- getPeaks_selection(xs);
-
-  runParallel   <-  0;
+  runParallel <- list()
+  runParallel$enable   <-  0;
 
   if (nSlaves > 1) {
     ## If MPI is available ...
     rmpi = "Rmpi"
+    opt.warn <- options("warn")$warn
+    options("warn" = -1) 
     if (require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
       if (is.loaded('mpi_initialize')) {
         #test if not already slaves are running!
         if(mpi.comm.size() >0){ 
           warning("There are already intialized mpi slaves on your machine.\nCamera will try to uses them!\n");
-          runParallel<-1;
+          runParallel$enable <-1;
+          runParallel$mode <- rmpi;
         }else{
           mpi.spawn.Rslaves(nslaves=nSlaves, needlog=FALSE)
           if(mpi.comm.size() > 1){
             #Slaves have successfull spawned
-            runParallel<-1;
+            runParallel$enable <-1;
+            runParallel$mode <- rmpi;
           }else{ warning("Spawning of mpi slaves have failed. CAMERA will run without parallelization.\n");}
         }
       }else {
           #And now??
           warning("DLL mpi_initialize is not loaded. Run single core mode!\n");
       }
+    } else {
+      #try local sockets using snow package
+      snow = "snow"
+      if (try(require(snow,character.only=TRUE,quietly=TRUE))) {
+        cat("Starting snow cluster with",nSlaves,"local sockets.\n")
+        snowclust <- makeCluster(nSlaves, type = "SOCK")
+        runParallel$enable <- 1
+        runParallel$mode <- snow;
+        runParallel$cluster <- snowclust
+      }
     }
+    options("warn" = opt.warn)
+    cat("Run cleanParallel after processing to remove the spawned slave processes!\n")
   }
 
   if(!is.null(polarity)){
@@ -135,7 +151,7 @@ setMethod("show", "xsAnnotate", function(object){
   #Show memory information
   memsize <- object.size(object)
   cat("Memory usage:", signif(memsize/2^20, 3), "MB\n");
-  if(!is.null(object@runParallel) && object@runParallel == 1){
+  if(!is.null(object@runParallel) && object@runParallel$enable == 1){
     cat("CAMERA runs in parallel mode!\n");
   }
 })
@@ -822,8 +838,8 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
   ##Run as single or parallel mode
   runParallel <- 0;
 
-  if(object@runParallel == 1){
-    if(mpi.comm.size() > 0){
+  if(object@runParallel$enable == 1){
+    if(!(is.null(object@runParallel$cluster)) || mpi.comm.size() > 0 ){
       runParallel <- 1;
     }else{
       warning("CAMERA runs in parallel mode, but no slaves are spawned!\nRun in single core mode!\n");
@@ -851,13 +867,13 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
   massgrp   <- 0;
   ncl <- sum(sapply(object@pspectra, length));  
 
-  if (runParallel == 1) { ## ... we use MPI
+  if (runParallel == 1) { ## ... we run in parallel mode
     if(is.null(psg_list)){
-      cat('\nCalculating possible adducts in',npspectra,'Groups... \n % finished: ');
+      cat('\nCalculating possible adducts in',npspectra,'Groups... \n');
       lp <- -1;
       pspectra_list <- 1:npspectra;
     }else{
-      cat('\nCalculating possible adducts in',length(psg_list),'Groups... \n % finished: '); 
+      cat('\nCalculating possible adducts in',length(psg_list),'Groups... \n'); 
       lp <- -1;
       pspectra_list <- psg_list;
     }
@@ -886,7 +902,13 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         params <- list();
       }
     }
-    result <- xcmsPapply(argList, annotateGrpMPI)
+    if(is.null(object@runParallel$cluster)){
+      #Use MPI
+      result <- xcmsPapply(argList, annotateGrpMPI)
+    }else{
+      result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, x=argList, fun=annotateGrpMPI)
+    }
+    
     for(ii in 1:length(result)){
       if(length(result[[ii]]) == 0){
         next;
@@ -1409,6 +1431,22 @@ findNeutralLoss <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
   invisible(xs)
 }
 
+cleanParallel<- function(object){
+  ##testing objects
+  if (!class(object) == "xsAnnotate"){
+    stop ("xsa.pos is no xsAnnotate object")
+  }
+  
+  if(object@runParallel$enable == 1){
+    if(object@runParallel$mode == "Rmpi"){
+      mpi.close.Rslaves()
+    } else if(object@runParallel$mode == "snow" & !(is.null(object@runParallel$cluster))){
+      stopCluster(object@runParallel$cluster);
+    }
+    cat("Slaves were stopped!\n");
+  }
+}
+  
 ###End xsAnnotate exported Methods###
 
 

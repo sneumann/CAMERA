@@ -12,7 +12,7 @@ importFrom("stats", "cor.test")
 importFrom("utils", "flush.console", "object.size", "read.table")
 importFrom("igraph","graph.data.frame","label.propagation.community")
 
-export("annotate","xsAnnotate","getpspectra","annotateDiffreport","getIsotopeCluster","findNeutralLossSpecs","findNeutralLoss")
+export("annotate","xsAnnotate","getpspectra","annotateDiffreport","getIsotopeCluster","findNeutralLossSpecs","findNeutralLoss","cleanParallel")
 exportClasses("xsAnnotate")
 exportMethods("groupFWHM")
 exportMethods("findIsotopes")
