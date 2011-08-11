@@ -743,8 +743,10 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
   return(object);
 })
 
-setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
-setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL){
+setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
+                                   rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
+setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
+                                                rules=NULL, max_peaks=100, psg_list=NULL){
   
   # Scaling ppm factor
   devppm <- ppm / 1000000;
@@ -774,6 +776,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     }else{
       index <- object@sample;
     }
+    
     cat("Generating peak matrix for peak annotation!\n");
     mint     <- groupval(object@xcmsSet,value=intval)[,index,drop=FALSE];
     peakmat  <- object@xcmsSet@peaks;
@@ -852,15 +855,14 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
   quasimolion <- which(rules[, "quasi"]== 1)
 
   #Remove recognized isotopes from annotation m/z vector
-  if(length(isotopes) > 0){
-    for(x in 1:length(isotopes)){
-      if(!is.null(isotopes[[x]])){
-        if(isotopes[[x]]$iso != 0){
-          imz[x] <- NA;
-        }
+  for(x in seq(along = isotopes)){
+    if(!is.null(isotopes[[x]])){
+      if(isotopes[[x]]$iso != 0){
+        imz[x] <- NA;
       }
     }
   }
+  
 
   #counter for % bar
   npeaks    <- 0; 
