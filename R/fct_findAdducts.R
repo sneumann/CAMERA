@@ -10,16 +10,16 @@ annotateGrpMPI <- function(params){
   return(result);
 }
 
-annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
+annotateGrp <- function(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion) {
+  #m/z vector for group i with peakindex ipeak
   mz     <- imz[ipeak];
-#   int   <- mint[ipeak];
   na_ini <- which(!is.na(mz))
 
   if(length(na.omit(mz[na_ini])) < 1){
     return(NULL);
   }
 
-  ML     <- massDiffMatrix(mz[na_ini],rules);
+  ML <- massDiffMatrix(mz[na_ini], rules);
   
   hypothese <- createHypothese(ML,rules,devppm,mzabs,na_ini);
   
