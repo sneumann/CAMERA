@@ -1,4 +1,7 @@
 2011-02-08 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.5
+  * Bugfix for findIsotopes if ppm was very high it could occur that one peak is assigned as two or more isotope peaks
+2011-02-08 ckuhl <ckuhl@ipb-halle.de>
   * Version 1.9.4
   * Add parameter polarity to xsAnnotate constructor
   * getPeaklist and getpspectra returns now correct annotation of negative charged ions [M]-
