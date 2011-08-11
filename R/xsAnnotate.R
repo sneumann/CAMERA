@@ -501,12 +501,13 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
   isotope   <- vector("list", length(imz));
   npspectra <- length(object@pspectra);
   isomatrix <- matrix(ncol=5, nrow=0);
+  colnames(isomatrix) <- c("mpeak","isopeak","iso","charge","intrinsic")
 
 
   cat("Run isotope peak annotation\n % finished: ");
   lp <- -1;
   #Suche Isotope in jeder Gruppe
-  for(i in 1:npspectra){
+  for(i in seq(along = object@pspectra)){
     #indizes der peaks aus der gruppe in der peaktable
     ipeak <- object@pspectra[[i]];
 
@@ -555,7 +556,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
             if(is.null(m[[1]])){
               next;
             }
-
+                      
             isolength <- sapply(m,length)
 
             maxIso <- which(isolength==0)[1];
@@ -565,7 +566,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
               maxIso <- maxiso + 1;  
             }
 
-            candidate.matrix <- matrix(0,nrow=maxIso,ncol=max(isolength)*2);
+            candidate.matrix <- matrix(0, nrow=maxIso, ncol=max(isolength)*2);
 
             #for every sample
             for(sample.index in c(1:ncol(mint))){
@@ -619,14 +620,23 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
             index <- which.max(res <- candidate.matrix[1,seq(1,ncol(candidate.matrix),by=2)]/candidate.matrix[1,seq(1,ncol(candidate.matrix),by=2)+1])
             if (length(index) > 0 && res[index] >= minfrac){
               #C13 Peak over minfrac threshold
-              isomatrix<-rbind(isomatrix,c(spectra[j,2],spectra[m[[1]][index]+j-1,2],1,charge,0))
+              isomatrix<-rbind(isomatrix, c(spectra[j, 2], spectra[m[[1]][index]+j-1, 2], 1, charge, 0))
               maxhits <- candidate.matrix[1,index*2]
               #Check if we have more than one isotopic candidate
-              if(nrow(candidate.matrix)>2){
+              if(nrow(candidate.matrix) > 2){
                 for(z in 2:(nrow(candidate.matrix)-1)){
                   #Check z'th isotopic peak
                   #Select best candidate - here most hits
+                  for( zi in seq(1,ncol(candidate.matrix),by=2)){
+                    if(spectra[m[[z]][zi]+j-1,2] %in% isomatrix[,2]){
+                        candidate.matrix[z,zi] <- -1;
+                    }
+                  }
                   index <- which.max(res <- candidate.matrix[z,seq(1,ncol(candidate.matrix),by=2)])
+                  if(res == -1){
+                    #Best isotope peak was already used. No more isotope peaks can be applied.
+                    break;
+                  }
                   if(candidate.matrix[z,index*2] <= candidate.matrix[maxIso,1] & all(candidate.matrix[z,index*2-1] <= maxhits)){
                       maxhits <- c(maxhits,candidate.matrix[z,index*2-1]);
                       isomatrix<-rbind(isomatrix,c(spectra[j,2],spectra[m[[z]][index]+j-1,2],z,charge,0))
@@ -636,9 +646,11 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
                 }
               }
             }
+              
           }
         }
       }
+          
     }
   }
 
@@ -863,7 +875,6 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     }
   }
   
-
   #counter for % bar
   npeaks    <- 0; 
   massgrp   <- 0;
@@ -959,8 +970,10 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       pspectra_list <- psg_list;
       sum_peaks <- sum(sapply(object@pspectra[psg_list],length));
     }
-    for(j in 1:length(pspectra_list)){
+      
+    for(j in seq(along = pspectra_list)){
       i <- pspectra_list[j];
+      
       #peak index for those in pseudospectrum i
       ipeak <- object@pspectra[[i]];
 
@@ -968,6 +981,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       npeaks.global <- npeaks.global + length(ipeak);
       perc   <- round((npeaks.global) / ncl * 100)
       perc   <- perc %/% 10 * 10;
+      
       if (perc != lp && perc != 0) { 
         cat(perc,' '); 
         lp <- perc;
@@ -979,7 +993,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
 
       #check if the pspec contains more than one peak 
       if(length(ipeak) > 1){
-        hypothese <- annotateGrp(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion);
+        hypothese <- annotateGrp(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion);
         #save results
         if(is.null(hypothese)){
           next;
@@ -989,18 +1003,19 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         
         #combine annotation hypotheses to annotation groups for one compound mass
         for(hyp in 1:nrow(hypothese)){
-          peakid <- ipeak[hypothese[hyp,"massID"]];
-          if(old_massgrp != hypothese[hyp,"massgrp"]) {
+          peakid <- ipeak[hypothese[hyp, "massID"]];
+          if(old_massgrp != hypothese[hyp, "massgrp"]) {
             massgrp <- massgrp + 1;
             old_massgrp <- hypothese[hyp, "massgrp"];
-            annoGrp <- rbind( annoGrp,c(massgrp,hypothese[hyp,"mass"], sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"]),i) ) 
+            annoGrp <- rbind( annoGrp, c(massgrp, hypothese[hyp, "mass"], 
+                                         sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp), "ips"]), i) ) 
           }
           annoID <- rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
         }
       }
     }
 
-    derivativeIons <- getderivativeIons(annoID,annoGrp,rules,length(imz));
+    derivativeIons <- getderivativeIons(annoID, annoGrp, rules, length(imz));
 
     cat("\n");
 
