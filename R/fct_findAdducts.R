@@ -2,12 +2,12 @@
 
 
 annotateGrpMPI <- function(params){
-library(CAMERA);
-result<-list();
-  for(ii in 1:length(params$i)){
-    result[[ii]]<-CAMERA:::annotateGrp(params$pspectra[[params$i[[ii]]]],params$imz,params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
-  }
-return(result);
+  library(CAMERA);
+  result <- list();
+    for(ii in 1:length(params$i)){
+      result[[ii]] <- CAMERA:::annotateGrp(params$pspectra[[params$i[[ii]]]], params$imz, params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
+    }
+  return(result);
 }
 
 annotateGrp <- function(ipeak,imz,rules,mzabs,devppm,isotopes,quasimolion) {
@@ -117,198 +117,208 @@ createHypothese <- function(ML,rules,devppm,mzabs,na_ini){
 
 
 create_hypothese <- function(m, index, ML, rules, na_ini){
-a <- m[index];
-# a2 <- lapply(a, sort);
-b <- a[which(duplicated(a) == FALSE)];
-b_length <- sapply(b, length);
-b_ini    <- 1:length(b);
-b2       <- b[order(b_length)];
-b_ini    <- b_ini[order(b_length)];
-add      <- 1;
-ini_new  <- c();
-
-b2_length <- sapply(b2,length);
-b.index <- vector("numeric",length=max(b_length)-1);
-
-for( i in 2:max(b_length) - 1){
-  b.index[i-1] <- which( b2_length > i)[1];
-}
-b.index[max(b_length)-1] <- which(b2_length >= max(b_length)-1)[1]
-
-# time <- proc.time()
-while(length(b2) > 0){
-  ind <- b.index[length(b2[[1]])-1];
-  ini <- which(sapply(b2[ind:length(b2)], function(x) {all((b2[[1]]) %in% x)}) == TRUE);
-  if(length(ini) >= 1){
-    ini_new <- append(ini_new, add);
-    b2  <- b2[-1];
-    add <- add+1;
-  }else{
-    b2 <- b2[-1];
-    add<-add+1;
+  a <- m[index];
+  # a2 <- lapply(a, sort);
+  b <- a[which(duplicated(a) == FALSE)];
+  b_length <- sapply(b, length);
+  b_ini    <- 1:length(b);
+  b2       <- b[order(b_length)];
+  b_ini    <- b_ini[order(b_length)];
+  add      <- 1;
+  ini_new  <- c();
+  
+  b2_length <- sapply(b2,length);
+  b.index <- vector("numeric",length=max(b_length)-1);
+  
+  for( i in 2:max(b_length) - 1){
+    b.index[i-1] <- which( b2_length > i)[1];
   }
-}
-# proc.time() - time
-
-
-
-
-if(length(ini_new > 0)){
-  ini_new <- b_ini[ini_new];
-  b <- b[-ini_new];
-}
-
-nrow_b   <- length(b);
-ncol_b   <- sapply(b, length)
-nrow_ML  <- nrow(ML);
-ncol_ML  <- ncol(ML);
-ML.v     <- as.vector(ML);
-hypomass <- sapply(b, function(x) {mean(ML.v[x])})
-hypo     <- matrix(NA,ncol=8);
-colnames(hypo) <- c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp");
-
-for(row in 1:nrow_b){
-  for(col in 1:ncol_b[row]){
-    adduct <- b[[row]][col] %/% nrow_ML + 1;
-    mass   <- b[[row]][col] %% nrow_ML;
-    if(mass == 0){
-      mass   <- nrow_ML;
-      adduct <- adduct - 1;
+  b.index[max(b_length)-1] <- which(b2_length >= max(b_length)-1)[1]
+  
+  # time <- proc.time()
+  while(length(b2) > 0){
+    ind <- b.index[length(b2[[1]])-1];
+    ini <- which(sapply(b2[ind:length(b2)], function(x) {all((b2[[1]]) %in% x)}) == TRUE);
+    if(length(ini) >= 1){
+      ini_new <- append(ini_new, add);
+      b2  <- b2[-1];
+      add <- add+1;
+    }else{
+      b2 <- b2[-1];
+      add<-add+1;
     }
-    hypo   <- rbind(hypo, c(na_ini[mass], adduct, rules[adduct, "nmol"], rules[adduct, "charge"], hypomass[row], rules[adduct, "oidscore"], rules[adduct,"ips"], row));
   }
-}
-hypo  <- hypo[-1,];
-check <- 1;
-hypothese <- matrix(NA, ncol=9);
-colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips", "massgrp", "check");
-hypothese <- cbind(hypo, check);
-
-return(hypothese)
+  # proc.time() - time
+  
+  
+  
+  
+  if(length(ini_new > 0)){
+    ini_new <- b_ini[ini_new];
+    b <- b[-ini_new];
+  }
+  
+  nrow_b   <- length(b);
+  ncol_b   <- sapply(b, length)
+  nrow_ML  <- nrow(ML);
+  ncol_ML  <- ncol(ML);
+  ML.v     <- as.vector(ML);
+  hypomass <- sapply(b, function(x) {mean(ML.v[x])})
+  hypo     <- matrix(NA,ncol=8);
+  colnames(hypo) <- c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp");
+  
+  for(row in 1:nrow_b){
+    for(col in 1:ncol_b[row]){
+      adduct <- b[[row]][col] %/% nrow_ML + 1;
+      mass   <- b[[row]][col] %% nrow_ML;
+      if(mass == 0){
+        mass   <- nrow_ML;
+        adduct <- adduct - 1;
+      }
+      hypo   <- rbind(hypo, c(na_ini[mass], adduct, rules[adduct, "nmol"], rules[adduct, "charge"], hypomass[row], rules[adduct, "oidscore"], rules[adduct,"ips"], row));
+    }
+  }
+  hypo  <- hypo[-1,];
+  check <- 1;
+  hypothese <- matrix(NA, ncol=9);
+  colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips", "massgrp", "check");
+  hypothese <- cbind(hypo, check);
+  
+  return(hypothese)
 }
 
 
 check_ips<- function(hypothese){
-for(hyp in 1:nrow(hypothese))
-{
-    if(length( which( hypothese[,"massgrp"] == hypothese[hyp,"massgrp"])) < 2){hypothese[hyp,"check"]=0;}
-    if(length(id<-which(hypothese[,"massID"]==hypothese[hyp,"massID"] & hypothese[,"check"]!=0))>1)
-    {
-        masses<-hypothese[id,"mass"]
-        nmasses<-sapply(masses,function(x) { sum(hypothese[which(hypothese[,"mass"]==x),"ips"]) })
-        masses<-masses[-which(nmasses==max(nmasses))];
-        if(length(masses)>0)
-        {
-            hypothese[unlist(sapply(masses, function(x) {which(hypothese[,"mass"]==x)})),"check"]=0;
-        }
+  for(hyp in 1:nrow(hypothese)){
+    if(length(which(hypothese[, "massgrp"] == hypothese[hyp, "massgrp"])) < 2){
+      hypothese[hyp, "check"] = 0;
     }
-}
-hypothese<-hypothese[which(hypothese[,"check"]==TRUE),];
-if(is.null(nrow(hypothese))) hypothese = matrix(hypothese,byrow=F,ncol=9)
-colnames(hypothese)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp","check")
-return(hypothese)
+      
+    if(length(id <- which(hypothese[, "massID"] == hypothese[hyp, "massID"] & hypothese[, "check"] != 0)) > 1){
+      masses <- hypothese[id, "mass"]
+      nmasses <- sapply(masses, function(x) { 
+                                  sum(hypothese[which(hypothese[, "mass"] == x), "ips"]) 
+                                  })
+      masses <- masses[-which(nmasses == max(nmasses))];
+      if(length(masses) > 0){
+        hypothese[unlist(sapply(masses, function(x) {which(hypothese[,"mass"]==x)})),"check"]=0;
+      }
+    }
+  }
+  
+  hypothese <- hypothese[which(hypothese[, "check"]==TRUE), ];
+  if(is.null(nrow(hypothese))) {
+    hypothese <- matrix(hypothese, byrow=F, ncol=9)
+  }
+  colnames(hypothese)<-c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips","massgrp", "check")
+  return(hypothese)
 }
 
 check_oid_causality <- function(hypothese,rules){
-for(hyp in 1:nrow(hypothese)){
-  #check nmol
-  if(hypothese[hyp, "nmol"] > 1){
-    #nmol > 1;
-    check_sure <- TRUE;
-    if(hypothese[hyp, "charge"] == 1){
-      #nmol > 1 and charge = 1; e.g. [2M+H]+, ensure [M+H] is there
-      if(length(which(hypothese[, "mass"] == hypothese[hyp, "mass"] & hypothese[, "oidscore"] == hypothese[hyp, "oidscore"])) > 1){
-        #same oidscore is there, could also be [3M+H]; otherwise could not check
-        for(prof in (hypothese[hyp, "nmol"] - 1):1){
-        #check if [M+H] is there, for a [3M+H], [2M+H] and [M+H] has to be there
-          indi <- which(hypothese[,"mass"] == hypothese[hyp,"mass"] & hypothese[,"oidscore"] == hypothese[hyp,"oidscore"] & hypothese[,"nmol"] == prof)
-          if(length(indi) == 0){
+  for(hyp in 1:nrow(hypothese)){
+    #check nmol
+    if(hypothese[hyp, "nmol"] > 1){
+      #nmol > 1;
+      check_sure <- TRUE;
+      if(hypothese[hyp, "charge"] == 1){
+        #nmol > 1 and charge = 1; e.g. [2M+H]+, ensure [M+H] is there
+        if(length(which(hypothese[, "mass"] == hypothese[hyp, "mass"] & hypothese[, "oidscore"] == hypothese[hyp, "oidscore"])) > 1){
+          #same oidscore is there, could also be [3M+H]; otherwise could not check
+          for(prof in (hypothese[hyp, "nmol"] - 1):1){
+          #check if [M+H] is there, for a [3M+H], [2M+H] and [M+H] has to be there
+            indi <- which(hypothese[,"mass"] == hypothese[hyp,"mass"] & hypothese[,"oidscore"] == hypothese[hyp,"oidscore"] & hypothese[,"nmol"] == prof)
+            if(length(indi) == 0){
+              check_sure <- FALSE;
+              hypothese[hyp,"check"] <- 0;
+              next;
+            }
+          }
+        }
+      }else if(abs(hypothese[hyp, "charge"]) == hypothese[hyp, "nmol"]){
+        #nmol > 1 and charge = nmol; e.g. [2M+2H]2+
+        if(length(which(hypothese[, "mass"] == hypothese[hyp, "mass"] & hypothese[, "oidscore"] == hypothese[hyp, "oidscore"])) > 1){
+          for(prof in (hypothese[hyp,"nmol"]-1):1){
+            indi<-which(hypothese[,"mass"]==hypothese[hyp,"mass"] & hypothese[,"oidscore"]== hypothese[hyp,"oidscore"] & hypothese[,"nmol"]==prof)
+            if(length(indi) == 0){
+              check_sure <- FALSE;
+              hypothese[hyp,"check"] <- 0;#next;
+            }
+          }
+        }
+        if(length(indi <- which(hypothese[, "mass"] == hypothese[hyp, "mass"] & abs(hypothese[, "charge"]) == hypothese[, "nmol"])) > 1){
+          #check if [M+H] [2M+2H]... annotate the same molecule
+          massdiff <- rules[hypothese[indi,"ruleID"],"massdiff"] / rules[hypothese[indi,"ruleID"],"charge"]
+          if(length(indi_new <- which(duplicated(massdiff)))>0){
             check_sure <- FALSE;
-            hypothese[hyp,"check"] <- 0;
-            next;
+            hypothese[hyp, "check"] <- 0;
           }
         }
       }
-    }else if(abs(hypothese[hyp, "charge"]) == hypothese[hyp, "nmol"]){
-      #nmol > 1 and charge = nmol; e.g. [2M+2H]2+
-      if(length(which(hypothese[, "mass"] == hypothese[hyp, "mass"] & hypothese[, "oidscore"] == hypothese[hyp, "oidscore"])) > 1){
-        for(prof in (hypothese[hyp,"nmol"]-1):1){
-          indi<-which(hypothese[,"mass"]==hypothese[hyp,"mass"] & hypothese[,"oidscore"]== hypothese[hyp,"oidscore"] & hypothese[,"nmol"]==prof)
-          if(length(indi) == 0){
-            check_sure <- FALSE;
-            hypothese[hyp,"check"] <- 0;#next;
-          }
-        }
+      if(check_sure){
+        hypothese[hyp,"check"] <- 1;
       }
-      if(length(indi <- which(hypothese[, "mass"] == hypothese[hyp, "mass"] & abs(hypothese[, "charge"]) == hypothese[, "nmol"])) > 1){
-        #check if [M+H] [2M+2H]... annotate the same molecule
-        massdiff <- rules[hypothese[indi,"ruleID"],"massdiff"] / rules[hypothese[indi,"ruleID"],"charge"]
-        if(length(indi_new <- which(duplicated(massdiff)))>0){
-          check_sure <- FALSE;
-          hypothese[hyp, "check"] <- 0;
-        }
-      }
-    }
-    if(check_sure){
-      hypothese[hyp,"check"] <- 1;
-    }
-  }else{
-    if(hypothese[hyp,"charge"]>1){
-            ##todo
     }else{
-            #nothing to say
+      if(hypothese[hyp,"charge"] > 1){
+              ##todo
+      }else{
+              #nothing to say
+      }
     }
   }
-}
-hypothese<-hypothese[which(hypothese[,"check"]==TRUE),];
-if(is.null(nrow(hypothese))) hypothese = matrix(hypothese,byrow=F,ncol=9)
-colnames(hypothese)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp","check")
-return(hypothese)
-}
-
-check_quasimolion <- function(hypothese,quasimolion){
-hypomass<-unique(hypothese[,"mass"])
-for(mass in 1:length(hypomass))
-{
-    if(!any(quasimolion %in% hypothese[which(hypothese[,"mass"]==hypomass[mass]),"ruleID"])){
-        hypothese[which(hypothese[,"mass"]==hypomass[mass]),"check"]=0;
-    }
-    else if(is.null(nrow(hypothese[which(hypothese[,"mass"]==hypomass[mass]),]))){
-        hypothese[which(hypothese[,"mass"]==hypomass[mass]),"check"]=0;
-    }
-}
-hypothese<-hypothese[which(hypothese[,"check"]==TRUE),];
-if(is.null(nrow(hypothese))) hypothese = matrix(hypothese,byrow=F,ncol=9)
-colnames(hypothese)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp","check")
-return(hypothese)
+  hypothese <- hypothese[which(hypothese[, "check"] == TRUE), ];
+  if(is.null(nrow(hypothese))) {
+    hypothese <- matrix(hypothese, byrow=F, ncol=9)
+  }
+  colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips", "massgrp", "check")
+  return(hypothese)
 }
 
-check_isotopes <- function(hypothese,isotopes,ipeak){
-for(hyp in 1:nrow(hypothese)){
-    peakid<-ipeak[hypothese[hyp,1]];
+check_quasimolion <- function(hypothese, quasimolion){
+  hypomass <- unique(hypothese[, "mass"])
+  for(mass in 1:length(hypomass)){
+    if(!any(quasimolion %in% hypothese[which(hypothese[, "mass"] == hypomass[mass]), "ruleID"])){
+      hypothese[which(hypothese[, "mass"] == hypomass[mass]), "check"] = 0;
+    }else if(is.null(nrow(hypothese[which(hypothese[, "mass"] == hypomass[mass]), ]))){
+      hypothese[which(hypothese[, "mass"] == hypomass[mass]), "check"] = 0;
+    }
+  }
+  
+  hypothese <- hypothese[which(hypothese[, "check"]==TRUE), ];
+  if(is.null(nrow(hypothese))) {
+    hypothese <- matrix(hypothese, byrow=F, ncol=9)
+  }
+  colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips", "massgrp", "check")
+  return(hypothese)
+}
+
+check_isotopes <- function(hypothese, isotopes, ipeak){
+  for(hyp in 1:nrow(hypothese)){
+    peakid <- ipeak[hypothese[hyp, 1]];
     if(!is.null(isotopes[[peakid]])){
-        #Isotope da
-        explainable<-FALSE;
-        if(isotopes[[peakid]]$charge==abs(hypothese[hyp,"charge"])){
-            explainable<-TRUE;
-        }
-        if(!explainable){
-            #delete Rule
-            hypothese[hyp,"check"]=0;
-        }
+      #Isotope da
+      explainable <- FALSE;
+      if(isotopes[[peakid]]$charge == abs(hypothese[hyp, "charge"])){
+        explainable <- TRUE;
+      }
+      if(!explainable){
+        #delete Rule
+        hypothese[hyp,"check"]=0;
+      }
     }
-}
-hypothese<-hypothese[which(hypothese[,"check"]==TRUE),];
-if(is.null(nrow(hypothese))) hypothese = matrix(hypothese,byrow=F,ncol=9)
-colnames(hypothese)<-c("massID","ruleID","nmol","charge","mass","oidscore","ips","massgrp","check")
-return(hypothese)
+  }
+  hypothese <- hypothese[which(hypothese[, "check"]==TRUE), ];
+  if(is.null(nrow(hypothese))){
+    hypothese <- matrix(hypothese, byrow=F, ncol=9)
+  } 
+  colnames(hypothese) <- c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips", "massgrp", "check")
+  return(hypothese)
 }
 
-calcRules2 <- function (maxcharge=3, mol=3, nion=1, nnloss=1, nnadd=1, nh=2, polarity=NULL){
+calcRules2 <- function (maxcharge=3, mol=3, nion=1, nnloss=1, nnadd=1, nh=3, polarity=NULL){
 
   ##Read Tabellen
   ionlist <- system.file('lists/ions.csv', package = "CAMERA")[1]
-  if (!file.exists(ionlist)) stop('ionlist.csv not found.')
+  if (!file.exists(ionlist)) stop('ions.csv not found.')
   ionlist<-read.table(ionlist, header=TRUE, dec=".", sep=",", as.is=TRUE, stringsAsFactors = FALSE);
 
   neutralloss <- system.file('lists/neutralloss.csv', package = "CAMERA")[1]
@@ -321,148 +331,172 @@ calcRules2 <- function (maxcharge=3, mol=3, nion=1, nnloss=1, nnadd=1, nh=2, pol
   ##End Read Tabellen
 
   ##Create Rules
-  ruleset     <- matrix(nrow=0,ncol=8);
+  ruleset     <- matrix(nrow=0, ncol=8);
   colnames(ruleset) <- c("name","nmol","charge","massdiff","typ","mandatory","score","parent")
 
   tmpname   <- c();
   tmpcharge <- 0;
   tmpmass   <- 0;
   tmpionparent<- NA;
-
+  massH <- 1.007276
+  
   ##Positive Rule set
   if(polarity == "positive"){
-    #Hydrogen hard coded
-    for(k in 1:mol){
-
-      if(k == 1){
-        #For M+H
-        str    <- "";
-        tmpips <- 0.5;
-        quasi  <- 1 
-      }else{
-        #For xM+H
-        str    <-  k;
-        tmpips <- 0;
-        quasi  <- 0 
-      };
-
-      #(kM+H)
-      ruleset <- rbind(ruleset,cbind(paste("[", str, "M+H]+", sep=""),k,1,1.007276,"A",quasi,tmpips+0.5,tmpionparent));
-      #(kM+2H)
-      ruleset <- rbind(ruleset,cbind(paste("[", str, "M+H]2+", sep=""),k,2,2.014552,"A",0,0.5,tmpionparent+1));
-      #(kM+3H)
-      ruleset <- rbind(ruleset,cbind(paste("[", str, "M+H]3+", sep=""),k,3,3.021828,"A",0,0.5,tmpionparent+2));
-
-      for(i in 1:nrow(ionlist)){
-        #xM+H + additional Kation like Na or K
-        if(ionlist[i,2] <= 0) {
-          #Ions for negative charge
-          next;
-        }
-
-        #Add Rule to Ruleset
-        if(ionlist[i,2] == 1){
-          ruleset <- rbind(ruleset,cbind(paste("[",str,"M+H+",ionlist[i,1],"]2+",sep=""),k,ionlist[i,2]+1,ionlist[i,3]+1.007276,"A",0,0.25,tmpionparent));
-        }else{
-          ruleset <- rbind(ruleset,cbind(paste("[",str,"M+H+",ionlist[i,1],"]",ionlist[i,2]+1,"+",sep=""),k,ionlist[i,2]+1,ionlist[i,3]+1.007276,"A",0,0.25,tmpionparent));
-        }
-      }
-      
-      ##Coeff - coefficient Matrix, for generating Rules with exchange ions like [M-2H+Na] (M-H and change of H against Na)
-
-      coeff <- expand.grid(rep(list(0:nion), nrow(ionlist)))
-      if(length(list <- which(ionlist[,2] <= 0)) > 0){
-          coeff[,list] <- 0;
-      }
-
-      coeff <- unique(coeff);
-      coeff <- cbind(coeff,rep(0,nrow(coeff)));
-      coeff <- coeff[-1,] #Remove 0,0,0....,0
-      tmp   <- NULL;
-
-      for(i in 1:nrow(ionlist)){
-        if(ionlist[i,2] <= 0) next;
-        #so fare only one change per ion
-        tmp <- rbind(tmp,t(apply(coeff,1,function(x) {x[i]<-x[i]+1;x[nrow(ionlist)+1]<-1;x})));
-      }
-
-      coeff <- unique(rbind(coeff,tmp));
-
-      for(i in 1:nrow(coeff)){
-        if(sum(coeff[i,1:nrow(ionlist)]>3) | any(coeff[i,1:nrow(ionlist)]>1)){
-          next;
-        }
-        tmpname   <- paste("[",str,"M",sep="");
-        tmpcharge <- 0;
-        tmpmass   <- 0;
-
-        for(ii in 1:(ncol(coeff)-1)){
-          if(coeff[i,ii] > 0){
-            if(coeff[i,ii] > 1){
-              tmpname <- paste(tmpname,"+",coeff[i,ii],ionlist[ii,1],sep="");
-            }else{
-              tmpname <- paste(tmpname,"+",ionlist[ii,1],sep="");
-            }
-            tmpcharge <- tmpcharge + coeff[i,ii] * ionlist[ii,2];
-            tmpmass   <- tmpmass + coeff[i,ii] * ionlist[ii,3];
-          }
-        }
-
-        if(coeff[i,ncol(coeff)] > 0){
-          #Change of H against Kation has occured, minus mass of H
-          tmpname   <- paste(tmpname,"-H",sep="");
-          tmpcharge <- tmpcharge-1;
-          tmpmass   <- tmpmass-1.007276;
-        }
-
-        if(tmpcharge > 1){
-          tmpname <- paste(tmpname,"]",tmpcharge,"+",sep="")
-        }else{
-          tmpname<-paste(tmpname,"]+",sep="")
-        }
-
-        if(tmpcharge > maxcharge){
-          next;
-        }
-
-        if(sum(coeff[i,])==1&& k==1){
-          ruleset <- rbind(ruleset,cbind(tmpname,k,tmpcharge,tmpmass,"A",1,0.75,tmpionparent));
-        }else{
-          ruleset <- rbind(ruleset,cbind(tmpname,k,tmpcharge,tmpmass,"A",0,0.25,tmpionparent));
-        }
-      }
-    }
-
-    ## Create neutral addition to M+H from list
-    for(i in 1:nrow(neutraladdition)){
-      #Neutraladdition to M+H
-      ruleset <- rbind(ruleset,cbind(paste("[M+H+",neutraladdition[i,1],"]+",sep=""),1,1,neutraladdition[i,2]+1.007276,"A",0,0.25,1));
-
-    }
-
-    ## Create neutral addition to M+Ion from list
-    for(i in 1:nrow(neutralloss)){
-      ruleset <- rbind(ruleset,cbind(paste("[M+H-",neutralloss[i,1],"]+",sep=""),1,1,-neutralloss[i,2]+1.007276*ii,"F",0,0.25,1));
-      for(ii in 2:maxcharge){
-        ruleset <- rbind(ruleset,cbind(paste("[M+",ii,"H-",neutralloss[i,1],"]",ii,"+",sep=""),1,ii,-neutralloss[i,2]+1.007276*ii,"F",0,0.25,ii));
-      }
-    }
-
-    #Eleminate Rules with charge > maxcharge
-    if(length(index<-which(ruleset[,"charge"]>maxcharge))>0){
-        ruleset<- ruleset[-index,];
-    }
-  }else if(polarity=="negative"){
-    ##negative Rule set
+    charge <- "+"
+    chargeValue <- 1
+  }else if(polarity == "negative"){
+    charge <- "-"
+    chargeValue <- -1
   }else{
     stop("Unknown polarity mode in rule set creating! Debug!\n")
   }
+
+  #Hydrogen part is hard coded
+  for(k in 1:mol){
+    if(k == 1){
+      #For M+H
+      str    <- "";
+      tmpips <- 0.5;
+      quasi  <- 1 
+    }else{
+      #For xM+H
+      str    <-  k;
+      tmpips <- 0;
+      quasi  <- 0 
+    }
+
+    for(xh in seq.int(nh)){
+      if(xh == 1){
+        ruleset <- rbind(ruleset, cbind(paste("[", str, "M", charge, "H]", charge, sep=""), k, chargeValue, 
+                                        massH*chargeValue, "A", 
+                                        quasi, tmpips+0.5, tmpionparent));
+       } else {
+        ruleset <- rbind(ruleset, cbind(paste("[", str, "M", charge, xh, "H]", xh, charge, sep=""), 
+                                        k,xh*chargeValue, massH*xh*chargeValue, "A", 0, 0.5, tmpionparent+1));
+      }
+    }
+        
+    for(i in 1:nrow(ionlist)){
+      #Add change of kat- respectively anion against one hydrogen
+      if(ionlist[i, 2] > 0){
+        if(ionlist[i, 2] == 1){
+          sumcharge <- "";
+        }else{
+          sumcharge <- ionlist[i, 2];
+        }
+        ruleset <- rbind(ruleset, cbind(paste("[", str, "M", charge,"H+", ionlist[i,1], "-H]", sumcharge,
+                                               charge, sep=""), k, ionlist[i, 2]*chargeValue, 
+                                        ionlist[i, 3]+massH*(chargeValue-1),
+                                        "A", 0, 0.25, tmpionparent));  
+      }
+        
+      #xM+H + additional Kation like Na or K      
+      if(ionlist[i,2] <= 0 & chargeValue > 0) {
+        #Ions with negative charge, when polarity is positive
+        next;
+      } else if(ionlist[i, 2] >= 0 & chargeValue < 0){
+        #Ions with positive charge, when polarity is negative
+        next;
+      }
+
+      #Add Rule to Ruleset
+      if(abs(ionlist[i, 2]) == 1){
+        ruleset <- rbind(ruleset, cbind(paste("[", str, "M", charge,"H+", ionlist[i,1], "]2", 
+                                              charge, sep=""), k, ionlist[i, 2]+1*chargeValue, 
+                                        ionlist[i, 3]+massH*chargeValue, "A", 0, 0.25, tmpionparent));
+      }else{
+        ruleset <- rbind(ruleset, cbind(paste("[", str, "M", charge,"H+", ionlist[i, 1], "]", 
+                                              ionlist[i, 2]+(1*chargeValue),
+                                        charge, sep=""), k, ionlist[i, 2]+1*chargeValue, 
+                                        ionlist[i, 3]+massH*chargeValue, "A" ,0, 0.25, tmpionparent));
+      }
+          
+    }#End for loop nrow(ionlist)
+      
+    ##Coeff - coefficient Matrix, for generating rules with
+    #combination of kat- or anionsexchange ions like [M-2H+Na] (M-H and change of H against Na)
+    coeff <- expand.grid(rep(list(0:nion), nrow(ionlist)))
+    if(chargeValue > 0){
+      index <- which(ionlist[, 2] <= 0);
+    }else{
+      index <- which(ionlist[, 2] >= 0);
+    }
+
+    if(length(index) > 0){
+      coeff[, index] <- 0;
+    }
+
+    coeff <- unique(coeff);
+    for(i in 1:nrow(coeff)){
+      if(sum(coeff[i, 1:nrow(ionlist)]) > 2 | sum(coeff[i, 1:nrow(ionlist)]) < 1){
+        next;
+      }
+          
+      tmpname   <- paste("[",str,"M",sep="");
+      tmpcharge <- 0;
+      tmpmass   <- 0;
+
+      for(ii in 1:(ncol(coeff))){
+        if(coeff[i,ii] > 0){
+          if(coeff[i,ii] > 1){
+            tmpname <- paste(tmpname, "+", coeff[i, ii], ionlist[ii, 1], sep="");
+          }else{
+            tmpname <- paste(tmpname, "+", ionlist[ii, 1], sep="");
+          }
+          tmpcharge <- tmpcharge + coeff[i, ii] * ionlist[ii, 2];
+          tmpmass   <- tmpmass + coeff[i, ii] * ionlist[ii, 3];
+        }
+      }
+
+      if(abs(tmpcharge) > 1){
+        tmpname <- paste(tmpname, "]", tmpcharge, charge, sep="")
+      }else{
+        tmpname <- paste(tmpname, "]", charge, sep="")
+      }
+
+      if(tmpcharge > maxcharge){
+        next;
+      }
+
+      if(sum(coeff[i, ]) == 1 && k == 1){
+        ruleset <- rbind(ruleset, cbind(tmpname, k, tmpcharge, tmpmass, "A", 1, 0.75, tmpionparent));
+      }else{
+        ruleset <- rbind(ruleset, cbind(tmpname, k, tmpcharge, tmpmass, "A", 0, 0.25, tmpionparent));
+      }
+    }#end for loop nrow(coeff)
+  }#end for loop k
+
+  # Create neutral addition to M+H from list
+  for(i in 1:nrow(neutraladdition)){
+    #Add neutral ion to only M+H
+    ruleset <- rbind(ruleset, cbind(paste("[M", charge, "H+", neutraladdition[i, 1], "]", charge, sep="") , 1, chargeValue, 
+                                    neutraladdition[i, 2]+(massH*chargeValue), "A", 0, 0.25, 1));
+  }
+
+  ## Add neutral loss from list to ruleset
+  for(i in 1:nrow(neutralloss)){
+    ruleset <- rbind(ruleset, cbind(paste("-", neutralloss[i, 1], sep=""), 1, 0, 
+                                    -neutralloss[i, 2], "F", 0, 0.25, 1));
+    #Eliminate rules with charge > maxcharge
+    if(length(index <- which(ruleset[, "charge"] > maxcharge)) > 0){
+      ruleset <- ruleset[-index, ];
+    }
+  }    
   return(ruleset);
 }
 
 
 calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=NULL){
-    name<-c();nmol<-c();charge<-c();massdiff<-c();oidscore<-c();quasi<-c();ips<-c();
+    #Allocate variables
+    name     <- c();
+    nmol     <- c();
+    charge   <- c();
+    massdiff <- c();
+    oidscore <- c();
+    quasi    <- c();
+    ips      <- c();
+    fragment <- c();
+    
     ##Read Tabellen
     ionlist <- system.file('lists/ions.csv', package = "CAMERA")[1]
     if (!file.exists(ionlist)) stop('ions.csv not found.')
@@ -481,42 +515,50 @@ calcRules <- function (maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=N
                                   as.is=TRUE, stringsAsFactors = FALSE);
     ##End Read Tabellen
 
-    ##Erzeuge Regeln
+    ##temp variables
     tmpname   <- c();
     tmpnmol   <- c();
     tmpcharge <- 0;
     tmpmass   <- 0;
     tmpips    <- 0;
-
+    tmpfragment <- c();
+    
     #Molekülionen
     if(polarity=="positive"){
-        #Wasserstoff, hard codiert
+        #Hydrogen, hard coded
         for(k in 1:mol){
-            if(k == 1){
-              str    <- "";
-              tmpips <- 1.0;
-            }else{
-              str    <-  k;
-              tmpips <- 0.5;
-            };
-            name     <- append(name, paste("[", str, "M+H]+", sep=""));
-            charge   <- append(charge, 1);
-            massdiff <- append(massdiff, 1.007276);
-            nmol     <- append(nmol, k);
-            if(k == 1) {
-              quasi  <- append(quasi, 1);
-            } else { 
-              quasi  <- append(quasi, 0);
-            };
-            oidscore <- append(oidscore, 1);
-            ips      <- append(ips, tmpips)
-            name     <- append(name,paste("[",str,"M+2H]2+",sep=""));
-            charge<-append(charge,2);
-            massdiff<-append(massdiff,2.014552);
-            nmol<-append(nmol,k);quasi<-append(quasi,0);
-            oidscore<-append(oidscore,2);
-            ips<-append(ips,tmpips)
-            name<-append(name,paste("[",str,"M+3H]3+",sep=""));
+          # k - number of molecules (kM+X)
+          if(k == 1){
+            str    <- "";
+            tmpips <- 1.0;
+          }else{
+            str    <-  k;
+            tmpips <- 0.5;
+          };
+            
+          name     <- append(name, paste("[", str, "M+H]+", sep=""));
+          charge   <- append(charge, 1);
+          massdiff <- append(massdiff, 1.007276);
+          nmol     <- append(nmol, k);
+
+          if(k == 1) {
+            quasi  <- append(quasi, 1);
+          } else { 
+            quasi  <- append(quasi, 0);
+          };
+          
+          oidscore <- append(oidscore, 1);
+          ips      <- append(ips, tmpips)
+          
+          name     <- append(name, paste("[", str, "M+2H]2+", sep=""));
+          charge   <- append(charge, 2);
+          massdiff <- append(massdiff, 2.014552);
+          nmol     <- append(nmol, k);
+          quasi    <- append(quasi, 0);
+          oidscore <- append(oidscore, 2);
+          ips      <- append(ips, tmpips)
+          
+          name     <- append(name,paste("[",str,"M+3H]3+",sep=""));
             charge<-append(charge,3);
             massdiff<-append(massdiff,3.021828);
             nmol<-append(nmol,k);
