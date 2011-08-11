@@ -902,11 +902,16 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         params <- list();
       }
     }
+    #Some informationen for the user
+    cat("Parallel mode: There are",length(argList), "tasks.\n")
+    
     if(is.null(object@runParallel$cluster)){
       #Use MPI
       result <- xcmsPapply(argList, annotateGrpMPI)
     }else{
-      result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, x=argList, fun=annotateGrpMPI)
+      #For snow
+      result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, x=argList, fun=annotateGrpMPI, 
+                                        msgfun=msgfun.snowParallel)
     }
     
     for(ii in 1:length(result)){
@@ -1431,7 +1436,12 @@ findNeutralLoss <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
   invisible(xs)
 }
 
-cleanParallel<- function(object){
+msgfun.snowParallel <- function(x,i){
+  cat("Sending task # ",i,"\n");
+  flush.console();
+}
+
+cleanParallel <- function(object){
   ##testing objects
   if (!class(object) == "xsAnnotate"){
     stop ("xsa.pos is no xsAnnotate object")
