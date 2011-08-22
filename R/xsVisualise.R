@@ -2,93 +2,77 @@ setGeneric("plotEICs", function(object,
                                 pspec=1:length(object@pspectra),
                                 maxlabel=0, sleep=0,
                                 ...) standardGeneric("plotEICs"))
+
 setMethod("plotEICs", "xsAnnotate", function(object,
                                              pspec=1:length(object@pspectra),
-                                             maxlabel=0, sleep=0,method="bin"){
-           smpls <- unique(object@psSamples[pspec])
-           #Ranges <- matrix(ncol=4, nrow=length(pspecIdx))
-           xeic <- new("xcmsEIC");
-           xeic@rtrange <- matrix(nrow=length(pspec), ncol=2)
-           xeic@mzrange <- matrix(nrow=length(pspec), ncol=2)
-           pcpos <- 1;
-           for (a in 1:length(smpls)) { ## sample-wise EIC collection
-               xraw <- xcmsRaw(object@xcmsSet@filepaths[smpls[a]],profmethod=method)
-#                rtmargin <- 0.0018 * max(xraw@scantime)
-               rtmargin <- 1; #1 second
-               pspecS <- pspec[which(object@psSamples[pspec] == smpls[a])]
-               peaks <- CAMERA:::getPeaks(object@xcmsSet,smpls[a])  ## getting ALL peaks from the current sample (not that bad)
-               eic <- lapply (pspecS, function(pc) {
-                   pidx <- object@pspectra[[pc]]
-                   pks <- peaks[pidx,]
-                   gks <- object@groupInfo[pidx,]
-                   nap <- which(is.na(pks[,1]))
-                   pks[nap,] <- cbind(gks[nap,c(1:6), drop=FALSE],matrix(nrow=length(nap),ncol=5,0))
-                   bbox <- c(rtmin = min(pks[,"rtmin"])-rtmargin,
-                             rtmax = max(pks[,"rtmax"])+rtmargin,
-                             mzmin = min(pks[,"mzmin"]),
-                             mzmax = max(pks[,"mzmax"]))
-#                                  rtrange=matrix(bbox[c("rtmin","rtmax")],
-                   eic <- xcms:::getEIC(xraw,
-                                 rtrange=pks[,c("rtmin","rtmax")],
-#                                  nrow=length(pidx), ncol=2, byrow=TRUE),
-                                 mzrange=pks[,c("mzmin", "mzmax"), drop=FALSE])
-                   xeic@rtrange[pcpos, ] <<- bbox[c("rtmin","rtmax")]
-                   xeic@mzrange[pcpos, ] <<- bbox[c("mzmin","mzmax")]
-                   cat("-->",pcpos,"\n")
-                   pcpos <<- pcpos+1
-                    ##stop("WTF?")
-                   eic@eic[[1]]
-                   })
-               xeic@eic <- c(xeic@eic, eic)
-            }
-           names(xeic@eic) <- paste("Pseudospectrum ", pspec, sep="")
-
-  ## Setup Peak and Neighbourhood Colors,
-  ## Now: all black
-  ## Later: by Annotation 
-  ##
-
+                                             maxlabel=0, sleep=0, method="bin"){
+  #Which different samples need to be addressed for extracting raw data
+  smpls <- unique(object@psSamples[pspec])
+           
+  xeic  <- new("xcmsEIC");
+  xeic@rtrange <- matrix(nrow=length(pspec), ncol=2)
+  xeic@mzrange <- matrix(nrow=length(pspec), ncol=2)
+  #iterator for ps-grp
+  pcpos <- 1;
+  #one second overlap
+  rtmargin <- 1; 
   
+  for (a in seq(along=smpls)) { ## sample-wise EIC collection
+    #read rawData into one xcmsRaw
+    xraw <- xcmsRaw(object@xcmsSet@filepaths[smpls[a]], profmethod=method)
+
+    pspecS <- pspec[which(object@psSamples[pspec] == smpls[a])]
+    ## getting ALL peaks from the current sample (not that bad)
+    peaks <- CAMERA:::getPeaks(object@xcmsSet, smpls[a])  
+    eic   <- lapply (pspecS, function(pc) {
+      pidx <- object@pspectra[[pc]]
+      pks <- peaks[pidx, , drop=FALSE]
+      gks <- object@groupInfo[pidx, , drop=FALSE]
+      
+      nap <- which(is.na(pks[, 1]))
+      pks[nap, ] <- cbind(gks[nap, c(1:6), drop=FALSE], matrix(nrow=length(nap), ncol=5, 0))
+      bbox <- c(rtmin = min(pks[, "rtmin"])-rtmargin,
+                rtmax = max(pks[, "rtmax"])+rtmargin,
+                mzmin = min(pks[, "mzmin"]),
+                mzmax = max(pks[, "mzmax"]))
+      eic <- xcms:::getEIC(xraw, rtrange=pks[, c("rtmin", "rtmax"), drop=FALSE],
+                                 mzrange=pks[, c("mzmin", "mzmax"), drop=FALSE])
+      #write resulting bounding box into xcmsEIC
+      xeic@rtrange[pcpos, ] <<- bbox[c("rtmin","rtmax")]
+      xeic@mzrange[pcpos, ] <<- bbox[c("mzmin","mzmax")]
+      cat("-->", pcpos, "\n")
+      pcpos <<- pcpos+1
+      
+      eic@eic[[1]]
+    })
+    xeic@eic <- c(xeic@eic, eic)
+  }
+  names(xeic@eic) <- paste("Pseudospectrum ", pspec, sep="")
+
  if(maxlabel > 0){
   col <- rainbow(maxlabel);
- }else {
+ } else {
   col <- c();
-  }
-#  ## creating a lightcolor-vector:
-#   rgbcol <- matrix(nrow=25,ncol=3) ## generating 25 rgb-values
-#   colv <- c(0,0.6,1) ## color-intensities
-#   id<-c(1,1,1)
-#   for (a in 1:25){
-#       rgbcol[a,] <- c(colv[id[1]],colv[id[2]],colv[id[3]])
-#       if (id[3] < 3) {
-#           id[3] <- id[3] + 1
-#           }else{
-#           id[3] <- 1
-#           if (id[2] < 3) {
-#               id[2] <- id[2] + 1
-#               }else{ 
-#               id[2] <- 1
-#               id[1] <- id[1] + 1
-#               }
-#           }
-#     } ## kind of binary-addition loop
-#   rgbcol <- rgbcol[order(apply(rgbcol,1,sum)),]
-#   col <- rgb(rgbcol[-14,]) ## remove middle-grey and generating colors
-#   lcol <- rgb(0.6,0.6,0.6)
-  ##
-  ## Loop through all pspectra
-  ##
-   # stop("again")
-  for (ps in 1:length(pspec)) {
+ }
+  
+ ##
+ ## Loop through all pspectra
+ ##
+
+  for (ps in seq(along=pspec)) {
     EIC <- xeic@eic[[ps]];
     pidx <- object@pspectra[[pspec[ps]]];
-    peaks <- CAMERA:::getPeaks(object@xcmsSet,object@psSamples[pspec[ps]])[pidx,]
-    grps <- object@groupInfo[pidx,]
-    nap <- which(is.na(peaks[,1]))
-    naps <- rep(FALSE, nrow(peaks))
-    naps[nap] <- TRUE;
-    peaks[nap,] <- cbind(grps[nap,c(1:6), drop=FALSE],matrix(nrow=length(nap),ncol=5,0))
+    peaks <- CAMERA:::getPeaks(object@xcmsSet,object@psSamples[pspec[ps]])[pidx,,drop=FALSE]
+    grps <- object@groupInfo[pidx, ]
+    nap <- which(is.na(peaks[, 1]))
+    if(length(nap) > 0){
+      naps <- rep(FALSE, nrow(peaks))
+      naps[nap] <- TRUE;
+      peaks[nap,] <- cbind(grps[nap,c(1:6), drop=FALSE], matrix(nrow=length(nap), ncol=5,0))
+    }
+    
     main <- paste("Pseudospectrum ", pspec[ps], sep="")
+    
     ## Calculate EICs and plot ranges
     neics <- length(pidx)
     lmaxlabel <- min(maxlabel, neics)
