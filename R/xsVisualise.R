@@ -65,8 +65,9 @@ setMethod("plotEICs", "xsAnnotate", function(object,
     peaks <- CAMERA:::getPeaks(object@xcmsSet,object@psSamples[pspec[ps]])[pidx,,drop=FALSE]
     grps <- object@groupInfo[pidx, ]
     nap <- which(is.na(peaks[, 1]))
-    if(length(nap) > 0){
-      naps <- rep(FALSE, nrow(peaks))
+    naps <- rep(FALSE, nrow(peaks))
+    
+    if(length(nap) > 0){  
       naps[nap] <- TRUE;
       peaks[nap,] <- cbind(grps[nap,c(1:6), drop=FALSE], matrix(nrow=length(nap), ncol=5,0))
     }
@@ -74,48 +75,54 @@ setMethod("plotEICs", "xsAnnotate", function(object,
     main <- paste("Pseudospectrum ", pspec[ps], sep="")
     
     ## Calculate EICs and plot ranges
-    neics <- length(pidx)
+    neics     <- length(pidx)
     lmaxlabel <- min(maxlabel, neics)
-    ##col <- c((lmaxlabel+1):2, rep(1, neics-lmaxlabel))
-    eicidx <- 1:neics;
+    eicidx <- 1:neics
     maxint <- numeric(length(eicidx))
+
     for (j in eicidx) {
-        maxint[j] <- max(EIC[[j]][,"intensity"])
+        maxint[j] <- max(EIC[[j]][, "intensity"])
     }
-    o <- order(maxint, decreasing = TRUE)
+    o  <- order(maxint, decreasing = TRUE)
     rt <- xeic@rtrange[ps, ];    
-    rt.min <- round(mean(peaks[,"rtmin"]),digits=3);
-    rt.med <- round(peaks[o[1],"rt"],digits=3);
-    rt.max <- round(mean(peaks[,"rtmax"]),digits=3);
+    rt.min <- round(mean(peaks[, "rtmin"]), digits=3);
+    rt.med <- round(peaks[o[1], "rt"], digits=3);
+    rt.max <- round(mean(peaks[, "rtmax"]), digits=3);
     ## Open Plot
-   # stop("testing idx 4,5")
+
     plot(0, 0, type = "n", xlim = rt, ylim = c(0, max(maxint)),xaxs='i',
                    xlab = "Retention Time (seconds)", ylab = "Intensity",
                    main = paste("Extracted Ion Chromatograms for ", main,"\nTime: From",rt.min,"to",rt.max,", mean",rt.med))
+  
     ## Plot Peak and surrounding
-    lcol <- rgb(0.6,0.6,0.6);
-    lcol <- c(col,rep(lcol,max(nrow(peaks)-maxlabel,0)));
-    cnt <- 1;
+    lcol <- rgb(0.6, 0.6, 0.6);
+    lcol <- c(col, rep(lcol, max(nrow(peaks) - maxlabel, 0)));
+    cnt  <- 1;
     for (j in eicidx[o]) {
-        pts <- xeic@eic[[ps]][[j]]
-        points(pts, type = "l", col = lcol[cnt]);
-        cnt <- cnt + 1;
-        peakrange <- peaks[,c("rtmin","rtmax"), drop=FALSE]
-        ptsidx <- pts[,"rt"] >= peakrange[j,1] & pts[,"rt"] <= peakrange[j,2]
-        if (naps[j]) points(pts[ptsidx,], type = "l", col = col[j], lwd=1.3, lty=3) else
-                     points(pts[ptsidx,], type = "l", col = col[j], lwd=1.3)
+      pts <- xeic@eic[[ps]][[j]]
+      points(pts, type = "l", col = lcol[cnt]);
+      cnt <- cnt + 1;
+      peakrange <- peaks[,c("rtmin","rtmax"), drop=FALSE]
+      ptsidx <- pts[,"rt"] >= peakrange[j,1] & pts[,"rt"] <= peakrange[j,2]
+      if (naps[j]){ 
+        points(pts[ptsidx, ], type = "l", col = col[j], lwd=1.3, lty=3)
+      } else {
+        points(pts[ptsidx, ], type = "l", col = col[j], lwd=1.3)
+      }
     }
     ## Plot Annotation Legend
     pspectrum <- getpspectra(object, grp=pspec[ps])
     mz <- pspectrum[o, "mz"];
-    if (lmaxlabel>0 & "adduct" %in% colnames(pspectrum)) {
-        adduct <- sub("^ ","",pspectrum[o, "adduct"]) #Remove Fronting Whitespaces
-        mass <- sapply(strsplit(adduct, " "), function(x) {x[2]})
+    #Check adduct annotation
+    if (lmaxlabel > 0 & "adduct" %in% colnames(pspectrum)) {
+        adduct <- sub("^ ", "", pspectrum[o, "adduct"]) #Remove Fronting Whitespaces
+        mass   <- sapply(strsplit(adduct, " "), function(x) {x[2]})
         adduct <- sapply(strsplit(adduct, " "), function(x) {x[1]})
         umass <- unique(na.omit(mass[1:maxlabel]));
         adduct[is.na(adduct)] <- "";
         test <- vector("list",length=length(mz));
         mz <- format(pspectrum[o[1:lmaxlabel], "mz"], digits=5);
+        
         if(length(umass) > 0){
           for(i in 1:length(umass)){
             ini <- which(mass==umass[i]);
@@ -123,24 +130,28 @@ setMethod("plotEICs", "xsAnnotate", function(object,
               firstpart  <- strsplit(adduct[ini[ii]], "M")[[1]][1]
               secondpart <- strsplit(adduct[ini[ii]], "M")[[1]][2]
               masspart   <- mz[ini[ii]];
-              test[[ini[ii]]] <- substitute(paste(masspart," ",firstpart,M[i],secondpart),list(firstpart=firstpart,i=i,secondpart=secondpart,masspart = masspart))
+              test[[ini[ii]]] <- substitute(paste(masspart, " ", firstpart, M[i], secondpart), 
+                                            list(firstpart=firstpart, i=i, secondpart=secondpart,
+                                                 masspart = masspart))
             }
           }
         }
-        for(i in 1:lmaxlabel){
+        
+        for(i in seq(along=lmaxlabel)){
           if(is.null(test[[i]])){
             test[[i]] <- mz[i];
           }
         }
+        
         leg <- as.expression(test[1:lmaxlabel]);  
         legend("topright", legend=leg, col=lcol, lty=1)
     }
+            
     if (sleep > 0) {
       Sys.sleep(sleep)
     }
   }
 })
-
 
 
 setGeneric("plotPsSpectrum", function(object, pspec=1:length(object@pspectra), log=FALSE,
