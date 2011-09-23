@@ -224,8 +224,8 @@ setMethod("calcIsotopes", "xsAnnotate", function(object){
   npeaks.global <- 0; #Counter for % bar
   npspectra <- length(object@pspectra);
   #Columns Peak 1, Peak 2, correlation coefficienct, Pseudospectrum Index
-  resMat <- matrix(nrow=0,ncol=4)
-  colnames(resMat) <- c("x","y","cor","ps")
+  resMat <- matrix(nrow=0, ncol=4)
+  colnames(resMat) <- c("x", "y", "cor", "ps")
 
   if(length(object@isotopes) < 1){
     cat('Object contains no Isotope Information.\nRun findIsotopes before.\n');
@@ -255,8 +255,8 @@ setMethod("calcIsotopes", "xsAnnotate", function(object){
           if(npi <2){
             next;
           }
-          tmp <- matrix(nrow=0,ncol=2);
-          invisible(lapply(pi,function(x) {
+          tmp <- matrix(nrow=0, ncol=2);
+          invisible(lapply(pi, function(x) {
               if(!is.null(object@isotopes[[x]])) tmp <<- rbind(tmp,c(x,object@isotopes[[x]]$y))
             }))
           if(nrow(tmp)<1){
@@ -265,9 +265,12 @@ setMethod("calcIsotopes", "xsAnnotate", function(object){
           index.min <- min(tmp[,2]);
           index.max <- max(tmp[,2]);
           for(ii in index.min:index.max){
-              tmp2 <- expand.grid(tmp[which(tmp[,2]==ii),1],tmp[which(tmp[,2]==ii),1],KEEP.OUT.ATTRS=FALSE)
-              tmp2 <- tmp2[-which(tmp2[,1] >= tmp2[,2]),]
-              resMat <- rbind(resMat,cbind(x=tmp2[,1],y=tmp2[,2],cor=1,ps=i));
+              tmp2 <- expand.grid(tmp[which(tmp[,2]==ii),1],tmp[which(tmp[,2]==ii),1], KEEP.OUT.ATTRS=FALSE)
+              tmp2 <- tmp2[-which(tmp2[, 1] >= tmp2[,2]), , drop=FALSE]
+              if(nrow(tmp2)== 0){
+                next;
+              }
+              resMat <- rbind(resMat, cbind(x=tmp2[ ,1], y=tmp2[ ,2], cor=1, ps=i));
           }
       }          
     }else{

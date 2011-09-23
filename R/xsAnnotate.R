@@ -479,7 +479,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
     cat("Generating peak matrix!\n");
     imz  <- object@groupInfo[, "mz"];
     irt  <- object@groupInfo[, "rt"];
-    mint <- object@groupInfo[, intval,drop=FALSE];
+    mint <- object@groupInfo[, intval, drop=FALSE];
   }else{
     ##multiple sample
     if(is.na(object@sample[1])){
