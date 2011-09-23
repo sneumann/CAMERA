@@ -325,7 +325,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
           of pseudospectra.\n");
   }
   
-  if (!is.null(xraw) &&  !class(object) == "xcmsRaw") {
+  if (!is.null(xraw) &&  !class(xraw) == "xcmsRaw") {
     stop ("Parameter xraw must be null or an xcmsRaw object\n");
   }
   
