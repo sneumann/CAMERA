@@ -1,3 +1,7 @@
+2011-23-09 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.7
+  * Bugfix in calcIsotopes, causes groupCorr with calcIso to crash with (Error in rbind(resMat ...)
+  * Bugfix in groupCorr with given xcmsRaw
 2011-22-08 ckuhl <ckuhl@ipb-halle.de>
   * Version 1.9.6
   * Bugfix in plotEICs (Error in pks[, 1] : incorrect number of dimensions)
