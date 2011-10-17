@@ -523,7 +523,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
       #peak mass and intensity for pseudospectrum
       mz  <- imz[ipeak];
       int <- mint[ipeak, , drop=FALSE];
-      isomatrix <-  findIsotopesPspec(isomatrix, mz, int, params)              
+      isomatrix <-  findIsotopesPspec(isomatrix, mz, ipeak, int, params)              
     }
   }
 
