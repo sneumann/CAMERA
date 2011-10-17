@@ -463,14 +463,18 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
   IM <- calcIsotopeMatrix(maxiso=maxiso, maxcharge=maxcharge);
   # scaling
   devppm <- ppm / 1000000;
-
+  filter <- TRUE;
+  params <- list(maxiso=maxiso, maxcharge=maxcharge, devppm=devppm, mzabs=mzabs, IM=IM, minfrac=minfrac, filter=filter)
+  
   #Check if object have been preprocessed with groupFWHM
-  if(npspectra < 1) { 
+  if(npspectra < 1) {
+    cat("xsAnnotate contains no pseudospectra. Regroup all peaks into one!\n")
     npspectra <- 1;
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo));
     object@psSamples  <- 1;
   }
-
+  
+  #number of pseudospectra
   ncl <- sum(sapply(object@pspectra, length));
 
   # get mz,rt,into from peaktable
@@ -511,154 +515,23 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
     #indizes der peaks aus der gruppe in der peaktable
     ipeak <- object@pspectra[[i]];
 
-    #percent output
-    npeaks.global <- npeaks.global + length(ipeak);
-    perc   <- round((npeaks.global) / ncl * 100)
-    perc   <- perc %/% 10 * 10;
-    if (perc != lp && perc != 0) { 
-      cat(perc,' '); 
-      lp <- perc;
-    }
-    if (.Platform$OS.type == "windows"){ 
-      flush.console();
-    }
-    #end percent output
+    #Ouput counter
+    percentOutput(npeaks.global, length(ipeak), ncl, lp)
     
-    #Have pseudospectrum more than one peak
+    #Pseudospectrum has more than one peak
     if(length(ipeak) > 1){
       #peak mass and intensity for pseudospectrum
       mz  <- imz[ipeak];
-      int <- mint[ipeak,,drop=FALSE];
-
-      #matrix with all important informationen
-      spectra <- matrix(c(mz, ipeak), ncol=2)
-      int     <- int[order(spectra[, 1]),,drop=FALSE]
-      spectra <- spectra[order(spectra[, 1]), ];    
-      cnt <- nrow(spectra);
-
-      #for every peak in pseudospectrum
-      for ( j in 1:(length(mz) - 1)){
-        
-        #create distance matrix
-        MI <- spectra[j:cnt, 1] - spectra[j, 1];
-        max.index <- max(which(MI< IM[maxiso,1]+max(2*devppm*mz)+ mzabs))
-
-        #for every charge
-        for(charge in maxcharge:1){
-          
-          #find matches with the distance matrix
-#           m <- fastMatch(MI[1:max.index],IM[,charge],tol= max(2*devppm*mz)+ mzabs)
-          m <- fastMatch(IM[,charge],MI[1:max.index],tol= max(2*devppm*mz)+ mzabs)
-
-          #for every match, test of isotopes existing
-          if(any(!sapply(m,is.null))){
-            #checking first isotopic peak
-            if(is.null(m[[1]])){
-              next;
-            }
-                      
-            isolength <- sapply(m,length)
-
-            maxIso <- which(isolength==0)[1];
-
-            if(is.na(maxIso)){
-              #all Isotope peaks have been found
-              maxIso <- maxiso + 1;  
-            }
-
-            candidate.matrix <- matrix(0, nrow=maxIso, ncol=max(isolength)*2);
-
-            #for every sample
-            for(sample.index in c(1:ncol(mint))){
-
-              if(!is.na(int[j,sample.index])){              
-                  candidate.matrix[maxIso,1 ] <- candidate.matrix[maxIso,1] + 1
-              }
-
-              #for every isotope mz match
-              for( iso in 1:(maxIso-1)){
-
-                for( candidate in 1:(ncol(candidate.matrix)/2)){
-                  if (iso == 1){
-                    # first isotopic peak
-                    # check C13 rule
-                    int.c13 <- int[m[[iso]][candidate]+j-1,sample.index];
-                    int.c12 <- int[j,sample.index]
-                    int.available <- all(!is.na(c(int.c12,int.c13)))
-                    if (int.available){
-                      theo.mass <- spectra[j, 1] * charge; #theoretical mass
-                      numC      <- round(theo.mass / 12); #max. number of C in molecule
-                      inten.max <- int.c12 * numC * 0.011; #highest possible intensity
-                      inten.min <- int.c12 * 1    * 0.011; #lowest possible intensity
-                      if(int.c13 < inten.max && int.c13 > inten.min){
-                          candidate.matrix[iso,candidate * 2 - 1] <- candidate.matrix[iso,candidate * 2 - 1] + 1
-                          candidate.matrix[iso,candidate * 2 ] <- candidate.matrix[iso,candidate * 2] + 1
-                      }else{
-                          candidate.matrix[iso,candidate * 2 ] <- candidate.matrix[iso,candidate * 2] + 1
-                      }
-                    } else {
-
-                    }
-                  } else {
-                    int.cx <- int[m[[iso]][candidate]+j-1,sample.index];
-                    int.c12  <- int[j,sample.index];
-                    int.available <- all(!is.na(c(int.c12,int.cx)))
-                    if (int.available) { 
-                      candidate.matrix[iso,candidate * 2 - 1] <- candidate.matrix[iso,candidate * 2 - 1] + 1
-                      candidate.matrix[iso,candidate * 2 ] <- candidate.matrix[iso,candidate * 2] + 1                        
-                    }else{
-                      candidate.matrix[iso,candidate * 2 ] <- candidate.matrix[iso,candidate * 2] + 1
-                    }
-                  }
-                }
-              }
-            }
-
-            ##TODO: Implement intrinsic charges
-            #evaluate if candiates are real isotopic peaks
-            #First C13 - find best candidate - best candidate = best hit / occurence rate
-            index <- which.max(res <- candidate.matrix[1,seq(1,ncol(candidate.matrix),by=2)]/candidate.matrix[1,seq(1,ncol(candidate.matrix),by=2)+1])
-            if (length(index) > 0 && res[index] >= minfrac){
-              #C13 Peak over minfrac threshold
-              isomatrix<-rbind(isomatrix, c(spectra[j, 2], spectra[m[[1]][index]+j-1, 2], 1, charge, 0))
-              maxhits <- candidate.matrix[1,index*2]
-              #Check if we have more than one isotopic candidate
-              if(nrow(candidate.matrix) > 2){
-                for(z in 2:(nrow(candidate.matrix)-1)){
-                  #Check z'th isotopic peak
-                  #Select best candidate - here most hits
-                  for( zi in seq(1,ncol(candidate.matrix),by=2)){
-                    if(spectra[m[[z]][zi]+j-1,2] %in% isomatrix[,2]){
-                        candidate.matrix[z,zi] <- -1;
-                    }
-                  }
-                  index <- which.max(res <- candidate.matrix[z,seq(1,ncol(candidate.matrix),by=2)])
-                  if(res == -1){
-                    #Best isotope peak was already used. No more isotope peaks can be applied.
-                    break;
-                  }
-                  if(candidate.matrix[z,index*2] <= candidate.matrix[maxIso,1] & all(candidate.matrix[z,index*2-1] <= maxhits)){
-                      maxhits <- c(maxhits,candidate.matrix[z,index*2-1]);
-                      isomatrix<-rbind(isomatrix,c(spectra[j,2],spectra[m[[z]][index]+j-1,2],z,charge,0))
-                  }else{
-                    break;
-                  }
-                }
-              }
-            }
-              
-          }
-        }
-      }
-          
+      int <- mint[ipeak, , drop=FALSE];
+      isomatrix <-  findIsotopesPspec(isomatrix, mz, int, params)              
     }
   }
-
 
   #clean isotopes
   if(is.null(nrow(isomatrix))) {
     isomatrix = matrix(isomatrix, byrow=F, ncol=length(isomatrix)) 
   }
+  
   #check if every isotope has only one annotation
   if(length(idx.duplicated <- which(duplicated(isomatrix[, 2]))) > 0){
     peak.idx <- unique(isomatrix[idx.duplicated, 2]);
@@ -1847,4 +1720,20 @@ getPeaks <- function(xs, index=1){
   return(as.matrix(ts))
 }
 
+
+#function write percent Output
+percentOutput <- function(len.old, len.add, len.max, cnt){
+  len <- len.old + len.add;
+  perc <- round((len) / len.max * 100)
+  perc <- perc %/% 10 * 10;
+  if (perc != cnt && perc != 0) { 
+    cat(perc,' '); 
+    cnt2 <- perc;
+    eval.parent(substitute(cnt <- cnt2))
+  }
+  if (.Platform$OS.type == "windows"){ 
+    flush.console();
+  }
+  eval.parent(substitute(len.old <- len))
+}
 ###End xsAnnotate intern Function###
