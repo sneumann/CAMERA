@@ -11,7 +11,7 @@ calcIsotopeMatrix <- function(maxiso,maxcharge){
 
 }
 
-findIsotopesPspec <- function(isomatrix, mz, int, params){
+findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
   #isomatrix - isotope annotations (5 column matrix)
   #mz - m/z vector, contains all m/z values from specific pseudospectrum
   #int - int vector, see above
@@ -51,7 +51,7 @@ findIsotopesPspec <- function(isomatrix, mz, int, params){
         #second column - how often could a isotope int test be performed
         candidate.matrix <- matrix(0, nrow=maxIso, ncol=max(isolength)*2);
         #for every sample
-        for(sample.index in c(1:ncol(mint))){
+        for(sample.index in c(1:ncol(int))){
           if(!is.na(int[j, sample.index])){              
             candidate.matrix[maxIso,1 ] <- candidate.matrix[maxIso,1] + 1
           }

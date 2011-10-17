@@ -63,12 +63,12 @@ annotateDiffreport(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6,
  xs.fill    <- fillPeaks(xs.grp)
  
  #fast preselection
- diffreport  <- annotateDiffreport(xs.fill,quick=TRUE)
- index <- c(1,18,35,45,56) #Make only for those grps a adduct annotation
- diffreport2 <- annotateDiffreport(xs.fill,psg_list=index,metlin = TRUE)
+# diffreport  <- annotateDiffreport(xs.fill,quick=TRUE)
+# index <- c(1,18,35,45,56) #Make only for those grps a adduct annotation
+# diffreport2 <- annotateDiffreport(xs.fill,psg_list=index,metlin = TRUE)
 
  #automatic selection for groups with peaks p-val < 0.05 and fold-change > 3
- diffreport <- annotateDiffreport(xs.fill,pval_th=0.05,fc=3)
+# diffreport <- annotateDiffreport(xs.fill,pval_th=0.05,fc=3)
 }
 
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
