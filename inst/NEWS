@@ -1,3 +1,6 @@
+2011-20-25 <rtautenh@scripps.edu>
+  * Version 1.9.9
+  * added some "drop=FALSE" to fix "Error in isomatrix[, 1] : incorrect number of dimensions" error
 2011-20-10 ckuhl <ckuhl@ipb-halle.de>
   * Version 1.9.8
   * Correct rule table extended_adducts_pos.csv (typo in proton mass)
