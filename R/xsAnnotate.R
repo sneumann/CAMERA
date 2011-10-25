@@ -552,11 +552,11 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
       idx <- which(charges.length == max(charges.length));
       if(length(idx) == 1){
         #max is unique
-        isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),]
+        isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),, drop=FALSE]
       }else{
         #select this one, which lower charge
         idx <- which.max(charges.list[idx]);
-        isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),]
+        isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),, drop=FALSE]
       }
     }
   }
@@ -578,11 +578,11 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
       idx <- which(charges.length == max(charges.length));
       if(length(idx) == 1){
         #max is unique
-        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] %in% charges.list[-idx]),]
+        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] %in% charges.list[-idx]),, drop=FALSE]
       }else{
         #select this one, which lower charge
         idx <- which.min(charges.list[idx]);
-        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] %in% charges.list[-idx]),]
+        isomatrix <- isomatrix[-which(isomatrix[, 1] == peak & isomatrix[, 4] %in% charges.list[-idx]),, drop=FALSE]
       }
     }
   }
@@ -603,7 +603,7 @@ setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, p
   }
 
   if(length(index2remove) > 0){
-    isomatrix <- isomatrix[-index2remove,];
+    isomatrix <- isomatrix[-index2remove,, drop=FALSE];
   }
 
   object@isoID <- matrix(nrow=0, ncol=4);
