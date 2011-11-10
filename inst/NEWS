@@ -1,3 +1,7 @@
+2011-10-11 <ckuhl@ipb-halle.de>
+  * Version 1.11.1
+  * add the possibility to extract multiple isotope intensity from different samples
+    with getIsotopeCluster
 2011-20-25 <rtautenh@scripps.edu>
   * Version 1.9.9
   * added some "drop=FALSE" to fix "Error in isomatrix[, 1] : incorrect number of dimensions" error
