@@ -907,7 +907,7 @@ annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.
   pval_th = NULL, fc_th = NULL,sortpval=TRUE, ...) {
 
   if (!class(object)=="xcmsSet") stop ("no xcmsSet object");
-  diffrep <- diffreport(object, ...);
+  diffrep <- diffreport(object, sortpval=FALSE, ...);
   if(quick){
     #Quick run, no groupCorr and findAdducts
     xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);

@@ -1,3 +1,7 @@
+2011-24-11 <ckuhl@ipb-halle.de>
+  * Version 1.11.2
+  * Bugfix in annotateDiffreport: Since 1.7.7 mismatch of the peaklist from CAMERA and the diffreport function results 
+    in false ordered peaktable
 2011-10-11 <ckuhl@ipb-halle.de>
   * Version 1.11.1
   * add the possibility to extract multiple isotope intensity from different samples
