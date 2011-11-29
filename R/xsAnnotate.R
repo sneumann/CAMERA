@@ -159,8 +159,10 @@ setMethod("show", "xsAnnotate", function(object){
 ###End Constructor###
 
 ###xsAnnotate generic Methods###
-setGeneric("groupFWHM", function(object, sigma=6, perfwhm=0.6, intval="maxo") standardGeneric("groupFWHM"))
-setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intval="maxo") {
+setGeneric("groupFWHM", function(object, sigma=6, perfwhm=0.6, intval="maxo") 
+  standardGeneric("groupFWHM"))
+
+setMethod("groupFWHM", "xsAnnotate", function(object, sigma=6, perfwhm=0.6, intval="maxo") {
   # grouping after retentiontime 
   # sigma - number of standard deviation arround the mean (6 = 2 x 3 left and right)
   # perfwhm - 0.3;
@@ -178,6 +180,7 @@ setMethod("groupFWHM","xsAnnotate", function(object, sigma=6, perfwhm=0.6, intva
   psSamples <- NA;
 
   cat("Start grouping after retention time.\n")
+
   if(object@groupInfo[1, "rt"] == -1) {
      # Like FTICR Data
      warning("Warning: no retention times avaiable. Do nothing\n");
@@ -444,8 +447,11 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
 })
 
 
-setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo",minfrac=0.5) standardGeneric("findIsotopes"));
-setMethod("findIsotopes","xsAnnotate", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo",minfrac=0.5){
+setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, 
+                                    intval="maxo",minfrac=0.5) standardGeneric("findIsotopes"));
+setMethod("findIsotopes","xsAnnotate", 
+          function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo",minfrac=0.5){
+  
   #searches in every pseudospectrum after mass differences, which matches isotope distances
 
   if (!class(object) == "xsAnnotate"){
@@ -904,76 +910,86 @@ annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.
   calcIso=FALSE, calcCaS=FALSE, maxcharge=3, maxiso=4, minfrac=0.5,
   ppm=5, mzabs=0.015, quick=FALSE, psg_list=NULL, rules=NULL,
   polarity="positive", multiplier=3, max_peaks=100, intval="into",
-  pval_th = NULL, fc_th = NULL,sortpval=TRUE, ...) {
+  pval_th = NULL, fc_th = NULL, sortpval=TRUE, ...) {
 
   if (!class(object)=="xcmsSet") stop ("no xcmsSet object");
+  
+  #use diffreport from xcms
   diffrep <- diffreport(object, sortpval=FALSE, ...);
+  
   if(quick){
     #Quick run, no groupCorr and findAdducts
     xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
-    xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
-    xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
-    xa.result<-getPeaklist(xa);
+    xa <- groupFWHM(xa, perfwhm=perfwhm, sigma=sigma);
+    xa <- findIsotopes(xa, maxcharge=maxcharge, maxiso=maxiso, ppm=ppm, mzabs=mzabs)
+    xa.result <- getPeaklist(xa);
   }else{
     xa <- xsAnnotate(object, sample=sample, nSlaves=nSlaves);
-    xa <- groupFWHM(xa,perfwhm=perfwhm,sigma=sigma);
-    xa <- findIsotopes(xa,maxcharge=maxcharge,maxiso=maxiso,ppm=ppm,mzabs=mzabs)
+    xa <- groupFWHM(xa, perfwhm=perfwhm, sigma=sigma);
+    xa <- findIsotopes(xa, maxcharge=maxcharge, maxiso=maxiso, ppm=ppm, mzabs=mzabs)
     if(is.null(psg_list) & is.null(pval_th) & is.null(fc_th)){
-      #keine Liste vorgegeben!
-      #Werde alle gruppen berechent, psg_list=NULL
+      #no restriction for calculation ps-spectra
+      #all groups will be calculated, psg_list=NULL
     }else{
-      #Ein Wert wurde vorgegeben
-      #Generiere psg_list
-      peaklist<-getPeaklist(xa);
+      #One value was set
+      #generate psg_list
+      peaklist <- getPeaklist(xa);
+      #Do we have restriction for psg_list?
       if(is.null(psg_list)){
-        psg_list<-1:length(xa@pspectra);
+        psg_list <- 1:length(xa@pspectra);
       }
+      
       if(!is.null(pval_th)){
-        #Finde alle Gruppen, welche Feature enthalten, mit p-val < pval_th
+        #Find groups, which include features with p-val < pval_th
         index <- which(diffrep[, "pvalue"] < pval_th);
         index.grp <- unique(peaklist[index, "pcgroup"]);
-        if(length(index.grp)>0){
+        if(length(index.grp) > 0){
           psg_list  <- psg_list[which(psg_list %in% index.grp)]
-        }else{
+        } else {
           cat("No groups found, which satisfy your conditions!\n")
           result <- cbind(diffrep, peaklist[, c("isotopes","adduct","pcgroup")])
           return(result);
         }
       }
+      
       if(!is.null(fc_th)){
-        #Finde alle Gruppen, welche Feature enthalten, mit fc > pval_th
+        #Find groups, which include features with fc > fc_th
         index <- which(diffrep[, "fold"] > fc_th);
         index.grp <- unique(peaklist[index, "pcgroup"]);
-        if(length(index.grp)>0){
+        if(length(index.grp) > 0){
           psg_list  <- psg_list[which(psg_list %in% index.grp)]
-        }else{
+        } else {
           cat("No groups found, which satisfy your conditions!\n")
           result <- cbind(diffrep, peaklist[, c("isotopes","adduct","pcgroup")])
           return(result);
         }
       }
-        if(length(psg_list) < 1){
-          #Keine Grp mehr uebrig
-          cat("No groups found, which satisfy your conditions!\n")
-          result <- cbind(diffrep, peaklist[, c("isotopes","adduct","pcgroup")])
-          return(result);
-        }
+      
+      if(length(psg_list) < 1){
+        #no group satisfy conditions
+        cat("No groups found, which satisfy your conditions!\n")
+        result <- cbind(diffrep, peaklist[, c("isotopes","adduct","pcgroup")])
+        return(result);
+      }
     }
-    #Add to psg_list all groups, with has been created after groupCorr
+    
+    #Include into psg_list all groups that has been created after groupCorr
     cnt <- length(xa@pspectra);
     xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list)
     if(!is.null(psg_list)){
       psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
     }
-    xa <- findAdducts(xa,multiplier=multiplier,ppm=ppm,mzabs=mzabs,polarity=polarity,rules=rules,psg_list=psg_list);
-    xa.result<-getPeaklist(xa);
+    xa <- findAdducts(xa, multiplier=multiplier, ppm=ppm, mzabs=mzabs, 
+                      polarity=polarity, rules=rules, psg_list=psg_list);
+    
+    xa.result <- getPeaklist(xa);
   }
-  #Kombiniere Resultate
-
-  result <- cbind(diffrep, xa.result[, c("isotopes","adduct","pcgroup")])
+  
+  #combines results
+  result <- cbind(diffrep, xa.result[, c("isotopes", "adduct", "pcgroup")])
   if(sortpval){
-    #Sortierung wieder herstellen
-    result <- result[order(result[,"pvalue"]),];
+    #return diffreport order if p-value sorting is true
+    result <- result[order(result[, "pvalue"]), ];
   }
   return(result);
 } 
