@@ -1,3 +1,6 @@
+2011-29-11 <ckuhl@ipb-halle.de>
+  * Version 1.11.3
+  * Add new function combinexsAnnos. It allows checking and reannotation of sample with a coressponding sample from the opposite ion mode
 2011-24-11 <ckuhl@ipb-halle.de>
   * Version 1.11.2
   * Bugfix in annotateDiffreport: Since 1.7.7 mismatch of the peaklist from CAMERA and the diffreport function results 
