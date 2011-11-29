@@ -1368,7 +1368,7 @@ cleanParallel <- function(object){
 
 ###xsAnnotate intern Function###
 
-combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
+combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
   # two xsAnnotate objects (pos,neg)
   # pos: returns pos. (true) or neg. (false) peaklist;  default = TRUE
   # tol: max allowed time difference between pos and neg pseudospectra
@@ -1381,7 +1381,7 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
     stop ("xsa.neg is no xsAnnotate object")
   }
   if (xsa.pos@polarity != "positive" & xsa.neg@polarity != "negative"){
-    stop ("xsAnnotate object have bad polarities.\nOnly positive or negative are allowed!")
+    stop ("xsAnnotate object have unknown polarities.\nOnly positive or negative are allowed!")
   }
   
   ##1. Step
@@ -1389,6 +1389,7 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
   rt1 <- sapply(xsa.pos@pspectra, function(x) { 
           mean(xsa.pos@groupInfo[x, "rt"]) 
     })
+  
   rt2 <- sapply(xsa.neg@pspectra, function(x) { 
           mean(xsa.neg@groupInfo[x, "rt"]) 
     })
@@ -1406,17 +1407,21 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
     }else{
       name <- "M-H/M+H";
     }
-    ruleset <- data.frame(name, 1, 1, 1,1,2.014552, 1, 1); 
-    colnames(ruleset) <- c("name", "nmol.pos", "nmol.neg","charge.pos","charge.neg", "massdiff", "ID.pos","ID.neg");
+    ruleset <- data.frame(name, 1, 1, 1, 1, 2.014552, 1, 1); 
+    colnames(ruleset) <- c("name", "nmol.pos", "nmol.neg", "charge.pos", "charge.neg", 
+                           "massdiff", "ID.pos", "ID.neg");
   }else{
     #generate rules stated in ruleset
-    if(!is.matrix(ruleset) | ncol(ruleset) != 2){
-      stop("Ruleset is no matrix or number of cols are unequal two");
+    if(!is.matrix(ruleset) || ncol(ruleset) != 2){
+      stop("Ruleset is no matrix or number of cols is unequal two");
     }else{
-          name <- c(); 
-          nmol.pos <- c(); nmol.neg <- c();
-          charge.pos <-c(); charge.neg <- c();
-          massdiff<-c();
+      #check provided ruleset
+      name <- c(); 
+      nmol.pos <- c(); 
+      nmol.neg <- c();
+      charge.pos <- c(); 
+      charge.neg <- c();
+      massdiff   <- c();
          apply(ruleset,1, function(x) {
             name <<- c(name,paste(rules.pos[x[1],"name"],rules.neg[x[2],"name"],sep="/"));
             nmol.pos <<- c(nmol.pos,rules.pos[x[1],"nmol"]);
@@ -1426,14 +1431,18 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
             massdiff <<- c(massdiff, rules.pos[x[1],"massdiff"] - rules.neg[x[2],"massdiff"]);
             return();
         })
-        ruleset <- data.frame(name,nmol.pos,nmol.neg,charge.pos,charge.neg,massdiff,ruleset);
-        colnames(ruleset) <- c("name", "nmol.pos", "nmol.neg","charge.pos","charge.neg", "massdiff", "ID.pos","ID.neg");
+      #check charges
+      if(! all(charge.pos == abs(charge.neg))){
+        stop("Ruleset can't combine rules with unequal charges")
+      }
+      ruleset <- data.frame(name,nmol.pos,nmol.neg,charge.pos,charge.neg,massdiff,ruleset);
+      colnames(ruleset) <- c("name", "nmol.pos", "nmol.neg","charge.pos","charge.neg", "massdiff", "ID.pos","ID.neg");
     }
   }
 
   #allocate variable for matching results 
   endresult <- matrix(ncol=6, nrow=0);
-  colnames(endresult) <- c("grp_pos","peak_pos","grp_neg","peak_neg","mass","rule")
+  colnames(endresult) <- c("grp.pos", "peak.pos", "grp.neg", "peak.neg", "mass", "rule")
    
   #Annotations from positive Samples
   annoID.pos  <- xsa.pos@annoID; 
@@ -1448,9 +1457,8 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
   peaklist <- c(); #set global variable
 
   #for every pseudospectra
-  for(i in 1:length(ps.match)){
+  for(i in seq(along=ps.match)){
     #check for match
-#     cat(i,"\n");
     if(is.null(ps.match[[i]])){
       #no corresponding match in neg sample
       next;
@@ -1458,71 +1466,78 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
 
     #matrix stores matches
     result.matrix <- matrix(ncol=4, nrow=0);
-    colnames(result.matrix) <- c("pos peak ID","neg peak ID","j","Rule");
+    colnames(result.matrix) <- c("pos.peak.ID", "neg.peak.ID", "j", "rule");
+    
     #get all m/z values from pos pseudospectrum
     grp.pos <- getpspectra(xsa.pos, i);
-    m.pos   <- NA;
+    m.pos <- grp.pos[, "mz"]
 
     #remove m/z values of annotated isotope peaks
     for(k in 1:nrow(grp.pos)){
       if(!is.null(xsa.pos@isotopes[[xsa.pos@pspectra[[i]][k]]])){
         if(xsa.pos@isotopes[[xsa.pos@pspectra[[i]][k]]]$iso > 0){
-          m.pos <- append(m.pos, NA);
-          next;
+          m.pos[k] <- NA;
         }
       }
-      m.pos <- append(m.pos, grp.pos[k, 1])
     }
-    m.pos <- m.pos[-1]; #Remove NA
+    
     na.ini.pos <- which(!is.na(m.pos)); #index of non NA values
-
+    
+    if(length(na.ini.pos) < 1){
+      next;
+    }
     #get all m/z hypotheses (if exists)
-    if(length(index <- which(annoGrp.pos[,4] == i)) >0){
-       masslist.pos <- annoGrp.pos[index,2];
+    if(length(index <- which(annoGrp.pos[, 4] == i)) > 0){
+       masslist.pos <- annoGrp.pos[index, 2];
     }else{
        #no annotation exists
        masslist.pos <- NULL;
     }
+    
     #for every matching neg pseudospectra
-    for(j in 1:length(ps.match[[i]])){
+    for(j in seq(along=ps.match[[i]])){
       #get all m/z values from neg pseudospectrum
       grp.neg <- getpspectra(xsa.neg, ps.match[[i]][j]);
-      m.neg   <- NA;
+      m.neg   <- grp.neg[,"mz"]
       #remove masses of annotated isotope peaks
       for(k in 1:nrow(grp.neg)){
         if(!is.null(xsa.neg@isotopes[[xsa.neg@pspectra[[ps.match[[i]][j]]][k]]])){
           if(xsa.neg@isotopes[[xsa.neg@pspectra[[ps.match[[i]][j]]][k]]]$iso > 0){
-            m.neg <- append(m.neg, NA);
+            m.neg[k] <- NA;
             next;
           }
         }
-        m.neg <- append(m.neg, grp.neg[k, 1]);
       }
-      m.neg <- m.neg[-1]; #Remove NA
-      na.ini.neg <- which(!is.na(m.neg));#index of non NA values
 
+      na.ini.neg <- which(!is.na(m.neg));#index of non NA values
+    if(length(na.ini.neg) < 1){
+      next;
+    }
       #get all m/z hypotheses (if exists)
-      if(length(index <- which(annoGrp.pos[,4] == ps.match[[i]][j])) >0){
-       masslist.neg <- annoGrp.pos[index,2];
+      if(length(index <- which(annoGrp.pos[, 4] == ps.match[[i]][j])) > 0){
+        masslist.neg <- annoGrp.pos[index, 2];
       }else{
-       #no annotation exists
-       masslist.neg <- NULL;
+        #no annotation exists
+        masslist.neg <- NULL;
       }
 
       #match rules against m/z values
-      results <- matrix(NA,nrow=length(m.pos),ncol=nrow(ruleset));
-      results[na.ini.pos,] <- combineHypothese(naOmit(m.pos), naOmit(m.neg), ruleset, na.ini.pos, na.ini.neg);
+      results <- matrix(NA, nrow=length(m.pos), ncol=nrow(ruleset));
+      results[na.ini.pos, ] <- CAMERA:::combineHypothese(naOmit(m.pos), naOmit(m.neg), 
+                                                ruleset, na.ini.pos, na.ini.neg);
+      
       if(!all(is.na(results))){
-#       if(length(results)>0){
         #Found Hits between pos and neg datasets with ruleset
-#         apply(results,1, function(x) {
-        
         for(l in 1:ncol(results)){
-            index <- which(!is.na(results[, l]));
-            if(length(index) > 0){
-                  tmp <- matrix(c(xsa.pos@pspectra[[i]][index],xsa.neg@pspectra[[ps.match[[i]][j]]][results[index,l]]),ncol=2);
-                result.matrix <- rbind(result.matrix,cbind(tmp,ps.match[[i]][j],l));
-            }
+          index <- which(!is.na(results[, l]));
+          if(length(index) > 0){
+            #peak index of matching peaks
+            #first column pos, second neg
+            tmp <- matrix(c(xsa.pos@pspectra[[i]][index], 
+                            xsa.neg@pspectra[[ps.match[[i]][j]]][results[index, l]]),
+                          ncol=2);
+            result.matrix <- rbind(result.matrix, cbind(tmp,ps.match[[i]][j],l));
+          }
         }
       }
     }
@@ -1532,40 +1547,43 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
     }
 
     for(ii in 1:nrow(result.matrix)){
-#         cat(ii);
-        if(length(index <- which(annoID.pos[,"id"] == result.matrix[ii,1] )) > 0){
-          #Peak has annotation(s)
-          if(all(annoID.pos[index,"rule_id"] == ruleset[result.matrix[ii,4],"ID.pos"])){
-            #Peak has only one annotation and could be verified
-            mass <- 2;
-            endresult <- rbind(endresult,c(i,result.matrix[ii,1],result.matrix[ii,3],result.matrix[ii,2],mass,result.matrix[ii,4]));
-            grp2save  <- c(grp2save,annoID.pos[index,"grp_id"]);
-          }else{
-            #Peak has more than one annotation or verfication goes wrong
-            grp.save <- which(annoID.pos[index ,"rule_id"] == ruleset[result.matrix[ii,4],"ID.pos"]);
-            if(length(grp.save) > 0 ){
-              #Save verified annotation and remove from index
-              grp2save  <- c(grp2save,annoID.pos[index[grp.save],"grp_id"]);
-              index <- index[-grp2save];
-              mass <- 2;
-              endresult <- rbind(endresult,c(i,result.matrix[ii,1],result.matrix[ii,3],result.matrix[ii,2],mass,result.matrix[ii,4]));
-      
-            }else{
-              #Found new annotation
-              mass <- 1;
-              endresult <- rbind(endresult,c(i,result.matrix[ii,1],result.matrix[ii,3],result.matrix[ii,2],mass,result.matrix[ii,4]));
-            }  
-            #delete all other hypotheses
-            grp2del  <- c(grp2del,annoID.pos[index,"grp_id"]);
-          }
+      if(length(index <- which(annoID.pos[, "id"] == result.matrix[ii, 1] )) > 0){
+        #Peak has annotation(s)
+        if(all(annoID.pos[index, "rule_id"] == ruleset[result.matrix[ii,4], "ID.pos"])){
+          #Peak has only one annotation and could be verified
+          mass <- 2;
+          endresult <- rbind(endresult, c(i, result.matrix[ii, 1], result.matrix[ii, 3],
+                                          result.matrix[ii, 2], mass, result.matrix[ii, 4]));
+          grp2save  <- c(grp2save, annoID.pos[index, "grp_id"]);
         }else{
-          #Peak has no annotation
-          #Add annotation according to ruleset
+          #Peak has more than one annotation or verfication goes wrong
+          grp.save <- which(annoID.pos[index, "rule_id"] == ruleset[result.matrix[ii, 4], "ID.pos"]);
+          if(length(grp.save) > 0 ){
+            #Save verified annotation and remove from index
+            grp2save  <- c(grp2save, annoID.pos[index[grp.save], "grp_id"]);
+            index <- index[-grp2save];
+            mass <- 2;
+            endresult <- rbind(endresult, c(i, result.matrix[ii, 1], result.matrix[ii, 3],
+                                            result.matrix[ii, 2], mass,result.matrix[ii, 4]));  
+          }else{
+            #Found new annotation
             mass <- 1;
-            endresult <- rbind(endresult,c(i,result.matrix[ii,1],result.matrix[ii,3],result.matrix[ii,2],mass,result.matrix[ii,4]));
+            endresult <- rbind(endresult, c(i, result.matrix[ii, 1], result.matrix[ii, 3],
+                                            result.matrix[ii, 2], mass, result.matrix[ii, 4]));
+          }  
+          #delete all other hypotheses
+          grp2del  <- c(grp2del, annoID.pos[index, "grp_id"]);
         }
+      }else{
+        #Peak has no annotation
+        #Add annotation according to ruleset
+        mass <- 1;
+        endresult <- rbind(endresult, c(i, result.matrix[ii, 1], result.matrix[ii, 3],
+                                        result.matrix[ii, 2], mass, result.matrix[ii, 4]));
+      }
     }
-  }
+  }#end for i loop
+
   #Remove grp2del groups, if they are in grp2save
   grp2del <- unique(grp2del);
   grp2save <- unique(grp2save);
@@ -1594,15 +1612,17 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
       for(i in 1:nrow(endresult)){
         if(endresult[i, 5] == 1){
           old.grpid <- old.grpid + 1;
-          rule.ID <- ruleset[endresult[i,6],"ID.pos"];
-          annoID.pos  <- rbind(annoID.pos,  c(endresult[i,"peak_pos"],old.grpid,rule.ID))
-          mass <- (xsa.pos@groupInfo[endresult[i,"peak_pos"],"mz"]*rules.pos[rule.ID,"charge"] - rules.pos[rule.ID,"massdiff"]) / rules.pos[rule.ID,"nmol"];
+          rule.ID <- ruleset[endresult[i,6], "ID.pos"];
+          annoID.pos  <- rbind(annoID.pos, c(endresult[i, "peak.pos"], old.grpid, rule.ID))
+          mass <- (xsa.pos@groupInfo[endresult[i,"peak.pos"],"mz"]*rules.pos[rule.ID,"charge"] - rules.pos[rule.ID,"massdiff"]) / rules.pos[rule.ID,"nmol"];
           annoGrp.pos <- rbind(annoGrp.pos, c(old.grpid,mass,2,endresult[i,1]))
         }
-        add.adducts[endresult[i,"peak_pos"]]<-paste("Found",ruleset[endresult[i,6],1]);
+        add.adducts[endresult[i,"peak.pos"]]<-paste("Found",ruleset[endresult[i,6],1]);
       }
     }
-    xsa.pos@derivativeIons <- getderivativeIons(annoID.pos,annoGrp.pos,rules.pos,length(xsa.pos@isotopes)); #save results
+    #save results
+    xsa.pos@derivativeIons <- getderivativeIons(annoID.pos, annoGrp.pos, rules.pos, 
+                                                length(xsa.pos@isotopes));
     peaklist <- getPeaklist(xsa.pos);
     index    <- ncol(peaklist);
     peaklist<-cbind(peaklist,add.adducts);
@@ -1627,22 +1647,23 @@ combine_xsanno <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
       for(i in 1:nrow(endresult)){
         if(endresult[i, 5] == 1){
           old.grpid <- old.grpid + 1;
-          rule.ID <- ruleset[endresult[i,5],"ID.neg"];
-          annoID.neg  <- rbind(annoID.neg,  c(endresult[i,"peak_neg"],old.grpid,rule.ID))
-          mass <- (xsa.neg@groupInfo[endresult[i,"peak_neg"],"mz"]* abs(rules.neg[rule.ID,"charge"]) - rules.neg[rule.ID,"massdiff"]) / rules.neg[rule.ID,"nmol"];
+          rule.ID <- ruleset[endresult[i,6],"ID.neg"];
+          annoID.neg  <- rbind(annoID.neg,  c(endresult[i,"peak.neg"],old.grpid,rule.ID))
+          mass <- (xsa.neg@groupInfo[endresult[i,"peak.neg"],"mz"]* abs(rules.neg[rule.ID,"charge"]) - rules.neg[rule.ID,"massdiff"]) / rules.neg[rule.ID,"nmol"];
           annoGrp.neg <- rbind(annoGrp.neg, c(old.grpid,mass,2,endresult[i,1]))
         }
-        add.adducts[endresult[i,"peak_neg"]]<-paste("Found",ruleset[endresult[i,5],1]);
+        add.adducts[endresult[i,"peak.neg"]]<-paste("Found",ruleset[endresult[i,6],1]);
       }
     }
+
     xsa.neg@derivativeIons <- getderivativeIons(annoID.neg,annoGrp.neg,rules.neg,length(xsa.neg@isotopes)); #save results
     peaklist<-getPeaklist(xsa.neg);
     index<-ncol(peaklist)
     peaklist<-cbind(peaklist,add.adducts);
     colnames(peaklist)[index+1] <- "pos. Mode"
-
   }
-return(peaklist);
+
+  return(peaklist);
 }    
 
 
