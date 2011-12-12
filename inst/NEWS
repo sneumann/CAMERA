@@ -1,3 +1,6 @@
+2011-12-12 <ckuhl@ipb-halle.de>
+  * Version 1.11.4
+  * Add missing Rd page combinexsAnnos
 2011-29-11 <ckuhl@ipb-halle.de>
   * Version 1.11.3
   * Add new function combinexsAnnos. It allows checking and reannotation of sample with a coressponding sample from the opposite ion mode
