@@ -319,7 +319,11 @@ setMethod("combineCalc.sum", signature("matrix","matrix"), function(object1,obje
           }
         })
 
-        resMat <- matrix(ncol=4,nrow=length(ls(combination)));
+        if(!is.null(combination[["NA NA NA"]])){
+          rm("NA NA NA",envir=combination)
+        }
+        
+        resMat <- matrix(ncol=4, nrow=length(ls(combination)));
 
         i<-1;y<-c();
         sapply(ls(combination), function(x) {
@@ -327,7 +331,7 @@ setMethod("combineCalc.sum", signature("matrix","matrix"), function(object1,obje
             y[3] <- combination[[x]];
             resMat[i,] <<- y; i<<-i+1;
         })
-        resMat <- matrix(as.numeric(resMat),ncol=4);
+        resMat <- matrix(as.numeric(resMat), ncol=4);
         colnames(resMat) <- c("x","y","cor","ps")
 
         return(invisible(resMat));
