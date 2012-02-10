@@ -1,3 +1,7 @@
+2012-02-10 <ckuhl@ipb-halle.de>
+  * Version 1.11.5
+  * Bugfix in groupCorr where parameter cor_eic_th doesn't influence correlation across samples
+  * Add new parameter for groupCorr cor_exp_th
 2011-12-12 <ckuhl@ipb-halle.de>
   * Version 1.11.4
   * Add missing Rd page combinexsAnnos
