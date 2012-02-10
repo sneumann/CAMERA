@@ -122,7 +122,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
               }
             }
             index <- which.max(res <- candidate.matrix[z,seq(1,ncol(candidate.matrix),by=2)])
-            if(res == -1){
+            if(res[1] == -1){
               #Best isotope peak was already used. No more isotope peaks can be applied.
               break;
             }
