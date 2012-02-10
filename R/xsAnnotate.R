@@ -424,13 +424,13 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   #Check if we have at least 2 result matrixes
   if(length(res) > 2){
     #combine the first two to create the result Table
-    resMat <- combineCalc(res[[1]],res[[2]],method="sum");
+    resMat <- combineCalc(res[[1]], res[[2]], method="sum");
     for( i in 3:length(res)){
-      resMat <- combineCalc(resMat,res[[i]],method="sum");
+      resMat <- combineCalc(resMat, res[[i]], method="sum");
     }         
   }else if(length(res) == 2){
     #combine one time
-    resMat <- combineCalc(res[[1]],res[[2]],method="sum")
+    resMat <- combineCalc(res[[1]], res[[2]], method="sum")
   } else {
     #Only one matrix
     resMat <- res[[1]];
