@@ -1,3 +1,6 @@
+2012-02-15 <ckuhl@ipb-halle.de>
+ * Version 1.11.6
+ * Fix error in groupCorr: If sample is set to something other than 1 or NA, it result in a crash
 2012-02-10 <ckuhl@ipb-halle.de>
   * Version 1.11.5
   * Bugfix in groupCorr where parameter cor_eic_th doesn't influence correlation across samples

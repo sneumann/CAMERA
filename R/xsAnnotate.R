@@ -395,7 +395,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
         scantimes <- tmp$scantimes
         rm(tmp);
         #new calcCL function with rcorr from Hmisc
-        if(i == 1){
+        if(length(res) == 0){
           res[[1]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
         }else{
           res[[1]] <- combineCalc(res[[1]],calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list),method="sum")
