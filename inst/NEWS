@@ -1,3 +1,7 @@
+2012-02-17 <ckuhl@ipb-halle.de>
+ * Version 1.11.7
+ * Bugfix in findAddcuts, where the ruleset is not saved within a xsAnnotate object with user defined rules
+ * Changed a general groupCorr behaviour. If no edge is above correlation threshold, all peaks are seperated in pspecs of size 1
 2012-02-15 <ckuhl@ipb-halle.de>
  * Version 1.11.6
  * Fix error in groupCorr: If sample is set to something other than 1 or NA, it result in a crash
