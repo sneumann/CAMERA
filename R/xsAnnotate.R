@@ -436,12 +436,12 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
     resMat <- res[[1]];
   }
 
-  if(nrow(resMat) < 1){
+  #if(nrow(resMat) < 1){
     #Matrix contains no edge
     #Do nothing!
-    cat("No group was seperated.\n")
-    return(invisible(object));
-  }
+   # cat("No group was seperated.\n")
+  #  return(invisible(object));
+  #}
 
   #Perform graph seperation to seperate co-eluting pseudospectra
   object <- calcPC(object, method=graphMethod, ajc=resMat, psg_list=psg_list);                                   
