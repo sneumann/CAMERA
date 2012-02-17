@@ -711,6 +711,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         object@ruleset <- rules;
       }
     }else{ 
+      object@ruleset <- rules;
       cat("Found and use user-defined ruleset!");
     }
   }else {
@@ -732,7 +733,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       }else stop("polarity mode in xcmsSet unknown, please define variable polarity.")
   }else stop("polarity mode could not be estimated from the xcmsSet, please define variable polarity!")
     #save ruleset
-    object@ruleset<-rules;
+    object@ruleset <- rules;
   }
 
   ##Run as single or parallel mode
