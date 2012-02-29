@@ -1,6 +1,9 @@
+2012-02-29 <ckuhl@ipb-halle.de>
+ * Version 1.11.8
+ * Bugfix in findAdducts parallel mode, where wrong psgrp indices were stored in annoGrp
 2012-02-17 <ckuhl@ipb-halle.de>
  * Version 1.11.7
- * Bugfix in findAddcuts, where the ruleset is not saved within a xsAnnotate object with user defined rules
+ * Bugfix in findAdducts, where the ruleset is not saved within a xsAnnotate object with user defined rules
  * Changed a general groupCorr behaviour. If no edge is above correlation threshold, all peaks are seperated in pspecs of size 1
 2012-02-15 <ckuhl@ipb-halle.de>
  * Version 1.11.6
