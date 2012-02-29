@@ -779,7 +779,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     argList <- list();
     cnt_peak <- 0;
     if(is.null(max_peaks)){
-      max_peaks==100;
+      max_peaks=100;
     }
     params <- list();
     
@@ -809,7 +809,8 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       result <- xcmsPapply(argList, annotateGrpMPI)
     }else{
       #For snow
-      result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, x=argList, fun=annotateGrpMPI, 
+      result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, 
+                                        x=argList, fun=annotateGrpMPI, 
                                         msgfun=msgfun.snowParallel)
     }
     
@@ -827,13 +828,15 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         index <- argList[[ii]]$i[[iii]];
         ipeak <- object@pspectra[[index]];
         for(hyp in 1:nrow(hypothese)){
-          peakid<-ipeak[hypothese[hyp,"massID"]];
+          peakid <- ipeak[hypothese[hyp,"massID"]];
           if(old_massgrp != hypothese[hyp,"massgrp"]) {
             massgrp <- massgrp+1;
             old_massgrp <- hypothese[hyp,"massgrp"];
-            annoGrp <- rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"ips"]),i) ) 
+            annoGrp <- rbind(annoGrp, c(massgrp, hypothese[hyp, "mass"], 
+                        sum(hypothese[which(hypothese[, "massgrp"]==old_massgrp),
+                                       "ips"]), as.numeric(names(result[[ii]][iii])))) 
           }
-          annoID <- rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
+          annoID <- rbind(annoID, c(peakid,massgrp,hypothese[hyp, "ruleID"]))
         }
       }
     }
