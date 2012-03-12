@@ -1,0 +1,16 @@
+citHeader("To cite the CAMERA package in publications use:")
+
+citEntry(entry="article",  
+   author=c(
+   person("C.", "Kuhl"), person("R.", "Tautenhahn"), person("C.","Boettcher"),
+   person(c("T.","R."),"Larson"), person("S.","Neumann")),
+   title="CAMERA: an integrated strategy for compound spectra extraction
+  and annotation of liquid chromatography/mass spectrometry data sets",
+   journal="Analytical Chemistry",
+   year="2012",
+   volume="84",
+   pages="283--289",
+   url="http://pubs.acs.org/doi/abs/10.1021/ac202450g",
+   textVersion = paste("Kuhl, C., Tautenhahn, R., Boettcher, C., Larson, T. R. and Neumann, S.",
+                       "CAMERA: an integrated strategy for compound spectra extraction and annotation of liquid chromatography/mass spectrometry data sets.",
+                       "Analytical Chemistry, 84:283-289 (2012)"))
