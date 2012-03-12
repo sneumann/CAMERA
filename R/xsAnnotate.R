@@ -1466,6 +1466,11 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
   grp2save <- c();
   peaklist <- c(); #set global variable
 
+  cat ("Run combining of xsAnnotates\n % finished: ");
+  lp <- -1;
+  ncl<-sum(sapply(ps.match,length));
+  npeaks.global <- 0;
+  
   #for every pseudospectra
   for(i in seq(along=ps.match)){
     #check for match
@@ -1592,6 +1597,7 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
                                         result.matrix[ii, 2], mass, result.matrix[ii, 4]));
       }
     }
+    percentOutput(npeaks.global, length(ps.match[[i]]), length(ps.match), lp)
   }#end for i loop
 
   #Remove grp2del groups, if they are in grp2save
@@ -1603,7 +1609,7 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
       grp2del <- grp2del[-index];
     }
   }
-
+  cat("\nGenerate Peaklist....\n");
   if(pos){
     #return postive peaklist
     if(length(grp2del) > 0){
