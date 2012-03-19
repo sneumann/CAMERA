@@ -44,6 +44,7 @@ annotateGrp <- function(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion)
   if(length(quasimolion) > 0){
     hypothese <- check_quasimolion(hypothese, quasimolion);
   }
+  
   if(nrow(hypothese) < 2){
     return(NULL);
   };
@@ -56,7 +57,9 @@ annotateGrp <- function(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion)
   
   #Prüfe IPS-Score
   hypothese <- check_ips(hypothese)
-  if(nrow(hypothese)<2){return(NULL);};
+  if(nrow(hypothese) < 2){
+    return(NULL);
+  };
   
   return(hypothese);
 }
@@ -197,7 +200,16 @@ check_ips<- function(hypothese){
     if(length(which(hypothese[, "massgrp"] == hypothese[hyp, "massgrp"])) < 2){
       hypothese[hyp, "check"] = 0;
     }
-      
+  }
+  hypothese <- hypothese[which(hypothese[, "check"]==TRUE), ];
+  if(is.null(nrow(hypothese))) {
+    hypothese <- matrix(hypothese, byrow=F, ncol=9)
+  }
+  if(nrow(hypothese) < 1){
+    colnames(hypothese)<-c("massID", "ruleID", "nmol", "charge", "mass", "oidscore", "ips","massgrp", "check")
+    return(hypothese)
+  }
+  for(hyp in 1:nrow(hypothese)){
     if(length(id <- which(hypothese[, "massID"] == hypothese[hyp, "massID"] & hypothese[, "check"] != 0)) > 1){
       masses <- hypothese[id, "mass"]
       nmasses <- sapply(masses, function(x) { 
