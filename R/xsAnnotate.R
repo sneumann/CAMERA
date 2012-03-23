@@ -365,8 +365,8 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
       maxscans <- length(xraw@scantime)
       scantimes<-list();
       scantimes[[1]] <- xraw@scantime
-      pdata <- peaks(xa@xcmsSet)
-      EIC <- CAMERA:::getEICs(xraw,pdata,maxscans)
+      pdata <- object@groupInfo
+      EIC <- CAMERA:::getEICs(xraw, pdata, maxscans)
       
       res[[1]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
     }else if(is.na(object@sample[1])){
