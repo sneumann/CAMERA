@@ -1,4 +1,7 @@
 2012-03-19 <ckuhl@ipb-halle.de>
+ * Version 1.11.10
+ * Bugfix in groupCorr, where the function throws an error if argument xraw is not null
+2012-03-19 <ckuhl@ipb-halle.de>
  * Version 1.11.9
  * Bugfix in findAdducts, where adduct annotation filtering was to stringent, if ips score is higher 1.5
 2012-02-29 <ckuhl@ipb-halle.de>
