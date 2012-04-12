@@ -567,7 +567,7 @@ setMethod("findIsotopes","xsAnnotate",
         isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),, drop=FALSE]
       }else{
         #select this one, which lower charge
-        idx <- which.max(charges.list[idx]);
+        idx <- which.min(charges.list[idx]);
         isomatrix <- isomatrix[-which(isomatrix[, 1] %in% peak.mono[-idx] & isomatrix[, 4] %in% charges.list[-idx]),, drop=FALSE]
       }
     }
@@ -618,6 +618,7 @@ setMethod("findIsotopes","xsAnnotate",
     isomatrix <- isomatrix[-index2remove,, drop=FALSE];
   }
 
+  isomatrix <- isomatrix[order(isomatrix[,1]),,drop=FALSE]
   object@isoID <- matrix(nrow=0, ncol=4);
   colnames(object@isoID)  <-  c("mpeak","isopeak","iso","charge");
   object@isoID <- rbind(object@isoID, isomatrix[, 1:4]);
