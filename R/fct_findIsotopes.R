@@ -74,10 +74,12 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     colnames(hits) <- c(1:ncol(hits))
     
     
-    #checking first isotopic peak
+    #check occurence of first isotopic peak
     hit <- apply(hits, 1, function(x) any(x==1))
+    #drop nonhits
     hits <- hits[hit, , drop=FALSE]
     
+    #if no first isotopic peaks exists, next
     if(nrow(hits) == 0){
       next;
     }
@@ -85,6 +87,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     #getting max. isotope cluster length
     #TODO: unique or not????
     #isolength <- apply(hits, 1, function(x) length(which(unique(x) %% 2 !=0)))
+    #isohits - for each charge, length of peak within intervals
     isohits   <- lapply(1:nrow(hits), function(x) which(hits[x, ] %% 2 !=0))
     isolength <- sapply(isohits, length)
 
@@ -174,7 +177,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
             index2 <- which.max(candidate.ratio[charge, index]);
             save.ratio <- candidate.ratio[charge, index[index2]]
             candidate.ratio[charge,index] <- 0
-            candidate.ratio[charge,iso] <- save.ratio
+            candidate.ratio[charge,index[index2]] <- save.ratio
             index <- index[-index2]
             isohits[[charge]] <- isohits[[charge]][-index]
           }

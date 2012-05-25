@@ -600,7 +600,9 @@ setMethod("findIsotopes", "xsAnnotate",
       #which charges we have
       charges.list   <- isomatrix[peak.mono.idx, 4];
       tmp <- cbind(peak.mono,charges.list);
-      charges.length <- apply(tmp,1, function(x,isomatrix) { length(which(isomatrix[, 1] == x[1] & isomatrix[,4] == x[2])) },isomatrix);
+      charges.length <- apply(tmp,1, function(x,isomatrix) { 
+        length(which(isomatrix[, 1] == x[1] & isomatrix[,4] == x[2])) }, 
+                              isomatrix);
       idx <- which(charges.length == max(charges.length));
       if(length(idx) == 1){
         #max is unique
@@ -663,8 +665,8 @@ setMethod("findIsotopes", "xsAnnotate",
     isomatrix <- isomatrix[-index2remove,, drop=FALSE];
   }
 
- isomatrix <- isomatrix[order(isomatrix[,1]),,drop=FALSE]
- #Create isotope matrix within object
+  isomatrix <- isomatrix[order(isomatrix[,1]),,drop=FALSE]
+  #Create isotope matrix within object
   object@isoID <- matrix(nrow=0, ncol=4);
   colnames(object@isoID)  <-  c("mpeak", "isopeak", "iso", "charge");
   

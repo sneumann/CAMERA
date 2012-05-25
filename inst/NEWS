@@ -1,3 +1,6 @@
+2012-05-25 <ckuhl@ipb-halle.de>
+ * Version 1.13.2
+ * First changes for improved isotope detection
 2012-04-12 <ckuhl@ipb-halle.de>
  * Version 1.13.1
  * Bugfix for findIsotopes to fix not consecutive isotope label like [M]+,[M+2]+ without [M+1]+
