@@ -7,7 +7,7 @@
  Annotate isotope peaks for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes.
 }
 \usage{
-  findIsotopes(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo", minfrac=0.5)
+  findIsotopes(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval=c("maxo","into","intb"), minfrac=0.5, isotopeMatrix = NULL)
 }
 
 \arguments{
@@ -18,6 +18,7 @@
   \item{mzabs}{allowed variance for the search}
   \item{intval}{choose intensity values for C12/C13 check. Allowed values are into, maxo, intb }
   \item{minfrac}{in case of multiple samples, percentaged value of samples, which have to contain the correct C12/C13 ratio}
+  \item{isotopeMatrix}{four column m/z-diff and ratio Matrix, for matching isotopic peaks.}
 }
 \details{
   Isotope peaks are annotated for a xsAnnotate object according to given rules (maxcharge, maxiso). The algorithm benefits from a earlier grouping of the data, with groupFWHM. 
