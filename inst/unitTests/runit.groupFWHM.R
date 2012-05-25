@@ -31,7 +31,7 @@ test.anno_single <- function() {
 
         ## findIsotopes without group before
     anI2 <- findIsotopes(an)
-    checkEqualsNumeric(nrow(anI2@isoID),34)
+    checkEqualsNumeric(nrow(anI2@isoID),35)
 
     ## findAdducts without anything before
     file  <- system.file('rules/primary_adducts_pos.csv', package = "CAMERA")

@@ -454,29 +454,68 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
 
 
 setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, 
-                                    intval="maxo",minfrac=0.5) standardGeneric("findIsotopes"));
-setMethod("findIsotopes","xsAnnotate", 
-          function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, intval="maxo",minfrac=0.5){
+                                    intval=c("maxo","into","intb"),minfrac=0.5, 
+                                    isotopeMatrix=NULL) standardGeneric("findIsotopes"));
+
+setMethod("findIsotopes", "xsAnnotate", 
+  function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, 
+                   intval=c("maxo","into","intb"), minfrac=0.5,  isotopeMatrix=NULL){
   
-  #searches in every pseudospectrum after mass differences, which matches isotope distances
-
-  if (!class(object) == "xsAnnotate"){
-    stop ("no xsAnnotate object");
+  #searches in every pseudospectrum after mass differences, 
+  #which matches isotope distances
+  
+  ####Test arguments####
+  #test maxcharge  
+  if(!is.wholenumber(maxcharge) || maxcharge < 1){
+    stop("Invalid argument 'maxcharge'. Must be integer and > 0.\n")
   }
-
-  if (!sum(intval == c("into","intb","maxo"))){
-       stop("unknown intensity value!")
+  
+  #test maxiso
+  if(!is.wholenumber(maxiso) || maxiso < 1){
+    stop("Invalid argument 'maxiso'. Must be integer and > 0.\n")
   }
-
+  
+  #test ppm
+  if(!is.numeric(ppm) || ppm < 0){
+    stop("Invalid argument 'ppm'. Must be numeric and not negative.\n")
+  }
+  
+  #test mzabs
+  if(!is.numeric(mzabs) || mzabs < 0){
+    stop("Invalid argument 'mzabs'. Must be numeric and not negative.\n")
+  }
+  
+  #test intval
+  intval <- match.arg(intval)
+  
+  #test minfrac
+  if(!is.numeric(minfrac) || minfrac < 0 || minfrac > 1){
+    stop("Invalid argument 'minfrac'. Must be numeric and between 0 and 1.\n")
+  }
+  
+  #test isotopeMatrix
+  if(!is.null(isotopeMatrix)){
+    if(!is.matrix(isotopeMatrix) || ncol(isotopeMatrix) != 4 || nrow(isotopeMatrix) < 1
+       || !is.numeric(isotopeMatrix)){
+      stop("Invalid argument 'isotopeMatrix'. Must be four column numeric matrix.\n")
+    } else {
+      colnames(isotopeMatrix) <- c("mzmin", "mzmax", "intmin", "intmax")
+    }
+  }else if(maxiso > 8){
+     stop("Invalid argument 'maxiso'. Must be lower 9 or provide your own isotopeMatrix.\n")
+  }else{
+    isotopeMatrix <- calcIsotopeMatrix(maxiso=maxiso)
+  }
+  ####End Test arguments####
+  
   npeaks.global <- 0; #Counter for % bar
   npspectra <- length(object@pspectra);
 
-  # calculate Isotope_Matrix
-  IM <- calcIsotopeMatrix(maxiso=maxiso, maxcharge=maxcharge);
   # scaling
   devppm <- ppm / 1000000;
   filter <- TRUE;
-  params <- list(maxiso=maxiso, maxcharge=maxcharge, devppm=devppm, mzabs=mzabs, IM=IM, minfrac=minfrac, filter=filter)
+  #generate parameter list
+  params <- list(maxiso=maxiso, maxcharge=maxcharge, devppm=devppm, mzabs=mzabs, IM=isotopeMatrix, minfrac=minfrac, filter=filter)
   
   #Check if object have been preprocessed with groupFWHM
   if(npspectra < 1) {
@@ -486,10 +525,10 @@ setMethod("findIsotopes","xsAnnotate",
     object@psSamples  <- 1;
   }
   
-  #number of pseudospectra
+  #number of peaks in pseudospectra
   ncl <- sum(sapply(object@pspectra, length));
 
-  # get mz,rt,into from peaktable
+  # get mz,rt and intensity values from peaktable
   if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
     ##one sample case
     cat("Generating peak matrix!\n");
@@ -515,16 +554,17 @@ setMethod("findIsotopes","xsAnnotate",
   }
 
   isotope   <- vector("list", length(imz));
-  npspectra <- length(object@pspectra);
+    
   isomatrix <- matrix(ncol=5, nrow=0);
-  colnames(isomatrix) <- c("mpeak","isopeak","iso","charge","intrinsic")
+  colnames(isomatrix) <- c("mpeak", "isopeak", "iso", "charge", "intrinsic")
 
 
   cat("Run isotope peak annotation\n % finished: ");
   lp <- -1;
-  #Suche Isotope in jeder Gruppe
+
+  #look for isotopes in every pseudospectra
   for(i in seq(along = object@pspectra)){
-    #indizes der peaks aus der gruppe in der peaktable
+    #get peak indizes for i-th pseudospectrum
     ipeak <- object@pspectra[[i]];
 
     #Ouput counter
@@ -600,31 +640,41 @@ setMethod("findIsotopes","xsAnnotate",
   }
 
   #Combine isotope cluster, if they overlap
-  index2remove <-c();
-  if(length(idx.duplicated <- which(isomatrix[,1] %in% isomatrix[,2]))>0){
+  index2remove <- c();
+
+  if(length(idx.duplicated <- which(isomatrix[, 1] %in% isomatrix[, 2]))>0){
     for(i in 1:length(idx.duplicated)){
-      index <-  which(isomatrix[,2] == isomatrix[idx.duplicated[i],1])
-      index2 <- sapply(index,function(x,isomatrix) which(isomatrix[,1] == isomatrix[x,1] & isomatrix[,3] == 1),isomatrix)
+      index <-  which(isomatrix[, 2] == isomatrix[idx.duplicated[i], 1])
+      index2 <- sapply(index, function(x, isomatrix) which(isomatrix[, 1] == isomatrix[x, 1] & isomatrix[,3] == 1),isomatrix)
       if(length(index2) == 0){
         index2remove <- c(index2remove,idx.duplicated[i])
       }
       max.index <- which.max(isomatrix[index,4]);
-      isomatrix[idx.duplicated[i],1] <- isomatrix[index[max.index],1];
-      isomatrix[idx.duplicated[i],3] <- isomatrix[index[max.index],3]+1;
+      isomatrix[idx.duplicated[i], 1] <- isomatrix[index[max.index], 1];
+      isomatrix[idx.duplicated[i], 3] <- isomatrix[index[max.index], 3]+1;
     }
   }
 
+  if(length(index <- which(isomatrix[,"iso"] > maxiso)) > 0){
+    index2remove <- c(index2remove, index)
+  }
+  
   if(length(index2remove) > 0){
     isomatrix <- isomatrix[-index2remove,, drop=FALSE];
   }
 
-  isomatrix <- isomatrix[order(isomatrix[,1]),,drop=FALSE]
+ isomatrix <- isomatrix[order(isomatrix[,1]),,drop=FALSE]
+ #Create isotope matrix within object
   object@isoID <- matrix(nrow=0, ncol=4);
-  colnames(object@isoID)  <-  c("mpeak","isopeak","iso","charge");
+  colnames(object@isoID)  <-  c("mpeak", "isopeak", "iso", "charge");
+  
+  #Add isomatrix to object
   object@isoID <- rbind(object@isoID, isomatrix[, 1:4]);
-  # Zähler für Isotopengruppen
+  
+  # counter for isotope groups
   globalcnt <- 0;
   oldnum    <- 0;
+  
   if(nrow(isomatrix) > 0){
     for( i in 1:nrow(isomatrix)){
       if(!isomatrix[i, 1] == oldnum){
@@ -632,7 +682,7 @@ setMethod("findIsotopes","xsAnnotate",
           isotope[[isomatrix[i, 1]]] <- list(y=globalcnt, iso=0, charge=isomatrix[i, 4], val=isomatrix[i, 5]);
           oldnum <- isomatrix[i, 1];
       };
-      isotope[[isomatrix[i,2]]]<-list(y=globalcnt,iso=isomatrix[i,3],charge=isomatrix[i,4],val=isomatrix[i,5]);
+      isotope[[isomatrix[i,2]]] <- list(y=globalcnt,iso=isomatrix[i,3],charge=isomatrix[i,4],val=isomatrix[i,5]);
     }
   }
   cnt<-nrow(object@isoID);
@@ -1774,6 +1824,8 @@ getPeaks <- function(xs, index=1){
   return(as.matrix(ts))
 }
 
+
+is.wholenumber <- function(x, tol = .Machine$double.eps^0.5)  abs(x - round(x)) < tol
 
 #function write percent Output
 percentOutput <- function(len.old, len.add, len.max, cnt){
