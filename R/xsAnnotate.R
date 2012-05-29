@@ -99,7 +99,7 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1, polarity=NULL){
   }
   object@runParallel<-runParallel;
 
-  colnames(object@annoID) <-  c("id","grp_id","rule_id");
+  colnames(object@annoID) <-  c("id","grpID","ruleID","parentID");
   colnames(object@annoGrp)<-  c("id","mass","ips","psgrp");
   colnames(object@isoID)  <-  c("mpeak","isopeak","iso","charge")
 
@@ -697,6 +697,7 @@ setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, pol
                                    rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
 setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
                                                 rules=NULL, max_peaks=100, psg_list=NULL){
+  newFragments <- FALSE;
   
   # Scaling ppm factor
   devppm <- ppm / 1000000;
@@ -704,7 +705,8 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
   npeaks.global <- 0;
 
   # get mz values from peaklist
-  imz    <- object@groupInfo[,"mz"];
+  imz    <- object@groupInfo[, "mz"];
+  #TODO: Change intensity choosing?
   intval <- "maxo"; #max. intensity
 
   #number of pseudo-spectra
@@ -728,7 +730,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     }
     
     cat("Generating peak matrix for peak annotation!\n");
-    mint     <- groupval(object@xcmsSet,value=intval)[,index,drop=FALSE];
+    mint     <- groupval(object@xcmsSet,value=intval)[, index, drop=FALSE];
     peakmat  <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
     
@@ -747,10 +749,10 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
   # other variables
   oidscore <- c();
   index    <- c();
-  annoID   <- matrix(ncol=3, nrow=0)
+  annoID   <- matrix(ncol=4, nrow=0)
   annoGrp  <- matrix(ncol=4, nrow=0)
-  colnames(annoID) <-  c("id", "grp_id", "rule_id");
-  colnames(annoGrp)<-  c("id", "mass", "ips", "psgrp");
+  colnames(annoID)  <-  colnames(object@annoID)
+  colnames(annoGrp) <-  colnames(object@annoGrp)
 
   ##Examine polarity and rule set
   if(!(object@polarity == "")){
@@ -760,7 +762,9 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         rules <- object@ruleset;
       }else{ 
         cat("Ruleset could not read from object! Recalculate\n");
-        rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, nh=2, polarity=object@polarity);
+        rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, nh=2,
+                           polarity=object@polarity, 
+                           lib.loc= .libPaths(),newFragments=newFragments);
         object@ruleset <- rules;
       }
     }else{ 
@@ -772,15 +776,19 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     if(!is.null(polarity)){
       if(polarity %in% c("positive","negative")){
         if(is.null(rules)){
-          rules <- calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=polarity);
+          rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, 
+                              nh=2, polarity=polarity, lib.loc= .libPaths(),
+                             newFragments=newFragments);
         }else{ cat("Found and use user-defined ruleset!");}
           object@polarity <- polarity;
       }else stop("polarity mode unknown, please choose between positive and negative.")
-    }else if(length(object@xcmsSet@polarity)>0){
+    }else if(length(object@xcmsSet@polarity) > 0){
       index <- which(sampclass(object@xcmsSet) == object@category)[1] + object@sample-1;
       if(object@xcmsSet@polarity[index] %in% c("positive","negative")){
         if(is.null(rules)){
-          rules<-calcRules(maxcharge=3,mol=3,nion=2,nnloss=1,nnadd=1,nh=2,polarity=object@xcmsSet@polarity[index]);
+          rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, 
+                             nh=2, polarity=object@xcmsSet@polarity[index], 
+                             lib.loc= .libPaths(), newFragments=newFragments);
         }else{ cat("Found and use user-defined ruleset!");}
         object@polarity <- polarity;
       }else stop("polarity mode in xcmsSet unknown, please define variable polarity.")
@@ -803,8 +811,13 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     runParallel <- 0;
   }
 
-  quasimolion <- which(rules[, "quasi"]== 1)
-
+  if("quasi" %in% colnames(rules)){
+  #backup for old rule sets
+   quasimolion <- which(rules[, "quasi"]== 1) 
+  }else{
+   quasimolion <- which(rules[, "mandatory"]== 1)
+  }
+  
   #Remove recognized isotopes from annotation m/z vector
   for(x in seq(along = isotopes)){
     if(!is.null(isotopes[[x]])){
@@ -829,6 +842,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       lp <- -1;
       pspectra_list <- psg_list;
     }
+    
     argList <- list();
     cnt_peak <- 0;
     if(is.null(max_peaks)){
@@ -866,7 +880,14 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
                                         x=argList, fun=annotateGrpMPI, 
                                         msgfun=msgfun.snowParallel)
     }
-    
+    if("typ" %in% colnames(rules)){
+      rules.idx <- which(rules[, "typ"]== "A")
+      parent <- TRUE;
+    }else{
+      #backup for old rule sets
+      rules.idx <- 1:nrow(rules);
+      parent <- FALSE;
+    }
     for(ii in 1:length(result)){
       if(length(result[[ii]]) == 0){
         next;
@@ -881,15 +902,18 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         index <- argList[[ii]]$i[[iii]];
         ipeak <- object@pspectra[[index]];
         for(hyp in 1:nrow(hypothese)){
-          peakid <- ipeak[hypothese[hyp,"massID"]];
+          peakid <- as.numeric(ipeak[hypothese[hyp, "massID"]]);
           if(old_massgrp != hypothese[hyp,"massgrp"]) {
             massgrp <- massgrp+1;
             old_massgrp <- hypothese[hyp,"massgrp"];
-            annoGrp <- rbind(annoGrp, c(massgrp, hypothese[hyp, "mass"], 
-                        sum(hypothese[which(hypothese[, "massgrp"]==old_massgrp),
-                                       "ips"]), as.numeric(names(result[[ii]][iii])))) 
+            annoGrp <- rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"score"]),i) ) 
           }
-          annoID <- rbind(annoID, c(peakid,massgrp,hypothese[hyp, "ruleID"]))
+          if(parent){
+            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp,c("ruleID","parent")]))  
+          }else{
+            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp,c("ruleID")],NA))
+          }
+          
         }
       }
     }
@@ -912,7 +936,15 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       pspectra_list <- psg_list;
       sum_peaks <- sum(sapply(object@pspectra[psg_list],length));
     }
-      
+    if("typ" %in% colnames(rules)){
+      rules.idx <- which(rules[, "typ"]== "A")
+      parent <- TRUE;
+    }else{
+      #backup for old rule sets
+      rules.idx <- 1:nrow(rules);
+      parent <- FALSE;
+    }
+    
     for(j in seq(along = pspectra_list)){
       i <- pspectra_list[j];
       
@@ -935,7 +967,8 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
 
       #check if the pspec contains more than one peak 
       if(length(ipeak) > 1){
-        hypothese <- annotateGrp(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion);
+        
+        hypothese <- annotateGrp(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion, rules.idx=rules.idx);
         #save results
         if(is.null(hypothese)){
           next;
@@ -945,14 +978,18 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         
         #combine annotation hypotheses to annotation groups for one compound mass
         for(hyp in 1:nrow(hypothese)){
-          peakid <- ipeak[hypothese[hyp, "massID"]];
+          peakid <- as.numeric(ipeak[hypothese[hyp, "massID"]]);
           if(old_massgrp != hypothese[hyp, "massgrp"]) {
             massgrp <- massgrp + 1;
             old_massgrp <- hypothese[hyp, "massgrp"];
-            annoGrp <- rbind( annoGrp, c(massgrp, hypothese[hyp, "mass"], 
-                                         sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp), "ips"]), i) ) 
+            annoGrp <- rbind(annoGrp, c(massgrp, hypothese[hyp, "mass"], 
+                                         sum(hypothese[ which(hypothese[, "massgrp"] == old_massgrp), "score"]), i) ) 
           }
-          annoID <- rbind(annoID, c(peakid,massgrp,hypothese[hyp,"ruleID"]))
+          if(parent){
+            annoID <- rbind(annoID, c(peakid, massgrp, hypothese[hyp, "ruleID"], ipeak[hypothese[hyp, "parent"]]))
+          }else{
+            annoID <- rbind(annoID, c(peakid, massgrp, hypothese[hyp, "ruleID"], NA))
+          }
         }
       }
     }
@@ -962,8 +999,8 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     cat("\n");
 
     object@derivativeIons <- derivativeIons;
-    object@annoID<-annoID;
-    object@annoGrp<-annoGrp;
+    object@annoID  <- annoID;
+    object@annoGrp <- annoGrp;
     return(object)
   }
 })
@@ -1164,7 +1201,7 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
     start <- ncol(peaktable) - grpval.ncol +1;
     ende  <- start + grpval.ncol - 1; 
     
-    peaktable[,start:ende] <- grpval;
+    peaktable[, start:ende] <- grpval;
   }
 
   #allocate variables for CAMERA output

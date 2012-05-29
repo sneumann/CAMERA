@@ -1,10 +1,10 @@
 Package: CAMERA
-Version: 1.13.2
-Date: 2012-05-25
+Version: 1.13.3
+Date: 2012-05-29
 Title: Collection of annotation related methods for mass spectrometry data 
 Author: Carsten Kuhl, Ralf Tautenhahn, Steffen Neumann {ckuhl|sneumann}@ipb-halle.de, rtautenh@scripps.edu
 Maintainer: Carsten Kuhl <ckuhl@ipb-halle.de>
-Depends: R (>= 2.1.0), methods, xcms (>= 1.13.5)
+Depends: R (>= 2.1.0), methods, xcms (>= 1.13.5), Biobase
 Imports: methods, xcms, RBGL, graph, graphics, grDevices, stats, utils, Hmisc, igraph
 Suggests: faahKO, RUnit
 Enhances: Rmpi, snow
