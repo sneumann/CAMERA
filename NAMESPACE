@@ -12,6 +12,9 @@ importFrom("stats", "cor.test")
 importFrom("utils", "flush.console", "object.size", "read.table")
 importFrom("igraph","graph.data.frame","label.propagation.community")
 
+importClassesFrom(Biobase, "Versioned")
+importFrom(Biobase, validMsg)
+
 export("annotate","xsAnnotate","getpspectra","annotateDiffreport","getIsotopeCluster","findNeutralLossSpecs","findNeutralLoss","cleanParallel","combinexsAnnos")
 exportClasses("xsAnnotate")
 exportMethods("groupFWHM")
@@ -29,3 +32,10 @@ exportMethods("calcPC",
 exportMethods("calcCiS",
 	      "calcCaS",
 	      "calcIsotopes")
+
+exportClasses("ruleSet")
+exportMethods("setDefaultLists",
+              "readLists",
+              "setDefaultParams",
+              "setParams",
+              "generateRules")
