@@ -665,7 +665,7 @@ setMethod("generateRules2", signature="ruleSet", function (object) {
 ##
 
 calcRules <- function (maxcharge=3, mol=3, nion=2, nnloss=1,
-                       nnadd=1, nh=2, polarity=NULL, lib.loc = NULL, newFragments=FALSE){
+                       nnadd=1, nh=2, polarity=NULL, lib.loc = .libPaths(), newFragments=FALSE){
 
   r <- new("ruleSet")
   r <- setDefaultLists(r, lib.loc=lib.loc)

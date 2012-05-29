@@ -14,7 +14,7 @@
 \alias{setDefaultParams}
 \alias{setDefaultParams,ruleSet-method}
 \alias{setParams}
-\alias{setParams,ruleSet,numeric,numeric,numeric,numeric,numeric,numeric,character-method}
+\alias{setParams,ruleSet,numeric,numeric,numeric,numeric,numeric,numeric,character,character-method}
 			
 \title{Class \code{ruleSet}}
 \description{
@@ -46,7 +46,8 @@
     \item{\code{polarity }:}{Polarity of the ruleSet.}    
     
     \item{\code{rules}:}{data.frame of resulting mass differences, this
-  is the dynamic ruleSet.}   
+  is the dynamic ruleSet.}
+    \item{\code{lib.loc}}{Path to local R library}
   }  
 }
 
