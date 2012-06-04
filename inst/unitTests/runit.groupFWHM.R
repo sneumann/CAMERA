@@ -47,7 +47,7 @@ test.anno_single <- function() {
 
     ## findAdducts with psg_list
     anFAc <- findAdducts(anFI, polarity="positive", psg_list=c(5,6,7,8,9,10,11,12))
-    checkEqualsNumeric(length(unique(anFAc@annoID[,1])),9)
+    checkEqualsNumeric(length(unique(anFAc@annoID[,1])),7)
     }
 
 test.anno_multi <- function() {
