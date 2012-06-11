@@ -157,7 +157,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
                        by=2)] / candidate.matrix[, seq(from=2, 
                       to=ncol(candidate.matrix), by=2)];
     if(is.null(dim(candidate.ratio))){
-      candidate.ratio <- matrix(candidate.ratio, nrow=1)
+      candidate.ratio <- matrix(candidate.ratio, nrow=nrow(candidate.matrix))
     }
     if(any(is.nan(candidate.ratio))){
       candidate.ratio[which(is.nan(candidate.ratio))] <- 0;
