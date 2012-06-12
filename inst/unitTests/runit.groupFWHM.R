@@ -31,7 +31,7 @@ test.anno_single <- function() {
 
         ## findIsotopes without group before
     anI2 <- findIsotopes(an)
-    checkEqualsNumeric(nrow(anI2@isoID),35)
+    checkEqualsNumeric(nrow(anI2@isoID),33)
 
     ## findAdducts without anything before
     file  <- system.file('rules/primary_adducts_pos.csv', package = "CAMERA")
@@ -41,9 +41,9 @@ test.anno_single <- function() {
 
     ## findIsotopes and findAdducts 
     anFI <- findIsotopes(anFC)
-    checkEqualsNumeric(nrow(anFI@isoID),24)
+    checkEqualsNumeric(nrow(anFI@isoID),23)
     anFA <- findAdducts(anFI, polarity="positive")
-    checkEqualsNumeric(length(unique(anFA@annoID[,1])),35)
+    checkEqualsNumeric(length(unique(anFA@annoID[,1])),32)
 
     ## findAdducts with psg_list
     anFAc <- findAdducts(anFI, polarity="positive", psg_list=c(5,6,7,8,9,10,11,12))
