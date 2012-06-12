@@ -59,14 +59,21 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     
     #IM - isotope matrix (column diffs(min,max) per charge, row num. isotope)
     IM <- t(sapply(1:params$maxcharge,function(x){
-      mzmin <- (params$IM[, "mzmin"] - error.ppm[j]-params$mzabs*x) / x
-      mzmax <- (params$IM[, "mzmax"] + error.ppm[j]+params$mzabs*x) / x
+      mzmin <- (params$IM[, "mzmin"]) / x;
+      mzmax <- (params$IM[, "mzmax"]) / x;
+      error <-      (error.ppm[j]+params$mzabs) / x
       res   <- c(0,0);
       for(k in 1:length(mzmin)){
         res <- c(res, mzmin[k]+res[2*k-1], mzmax[k]+res[2*k])
       }
+      res[seq(1,length(res),by=2)] <- res[seq(1,length(res),by=2)]-error
+      res[seq(2,length(res),by=2)] <- res[seq(2,length(res),by=2)]+error
       return (res[-c(1:2)])
     } ))
+    
+    #Sort IM to fix bug, with high ppm and mzabs values 
+    #TODO: Find better solution and give feedback to user!
+    IM <- t(apply(IM,1,sort))
     
     #find peaks, which m/z value is in isotope interval
     hits <- t(apply(IM, 1, function(x){ findInterval(MI[1:max.index], x)}))

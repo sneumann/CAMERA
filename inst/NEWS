@@ -1,3 +1,5 @@
+2012-06-12 <ckuhl@ipb-halle.de>
+ * Bugfix in findIsotopes, clears 'vec' must be sorted non-decreasingly error
 2012-06-11 <ckuhl@ipb-halle.de>
  * Version 1.13.4
  * Add ByteCompile: TRUE
