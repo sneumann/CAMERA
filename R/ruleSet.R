@@ -438,7 +438,7 @@ setMethod("generateRules",
                 name<-append(name,paste("[M-H-",neutralloss[i,1],"]-",sep=""));
                 charge<-append(charge,-1);
                 massdiff<-  append(massdiff,-neutralloss[i,2]-1.007276);
-       
+                nmol<-append(nmol,1);
                 quasi<-append(quasi,0)
                 oidscore<-append(oidscore,oid+1);oid<-oid+1;
                 ips<-append(ips,0.25);

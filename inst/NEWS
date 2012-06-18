@@ -1,3 +1,10 @@
+CHANGES IN VERSION 1.13.5
+
+BUG FIXES in 1.13.5
+
+  * Fixed problem "Error in data.frame(...)" in findAdducts when using polarity = negative
+
+
 2012-06-12 <ckuhl@ipb-halle.de>
  * Bugfix in findIsotopes, clears 'vec' must be sorted non-decreasingly error
 2012-06-11 <ckuhl@ipb-halle.de>
