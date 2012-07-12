@@ -290,11 +290,15 @@ checkOidCausality <- function(hypothese,rules){
     hyp.nmol <- which(hypothese[, "massgrp"] == hyp & hypothese[, "nmol"] > 1)
 
     for(hyp.nmol.idx in hyp.nmol){
-      if(length(indi <- which(hypothese[, "mass"] == hypothese[hyp.nmol.idx, "mass"] & abs(hypothese[, "charge"]) == hypothese[, "nmol"])) > 1){
-        #check if [M+H] [2M+2H]... annotate the same molecule
-        massdiff <- rules[hypothese[indi, "ruleID"], "massdiff"] / rules[hypothese[indi, "ruleID"], "charge"]
-        if(length(indi_new <- which(duplicated(massdiff))) > 0){
-          hypothese[hyp.nmol.idx, "check"] <- 0;
+      if(length(indi <- which(hypothese[, "mass"] == hypothese[hyp.nmol.idx, "mass"] & 
+        abs(hypothese[, "charge"]) == hypothese[, "nmol"])) > 1){
+        if(hyp.nmol.idx %in% indi){
+          #check if [M+H] [2M+2H]... annotate the same molecule
+          massdiff <- rules[hypothese[indi, "ruleID"], "massdiff"] / 
+            rules[hypothese[indi, "ruleID"], "charge"]
+          if(length(indi_new <- which(duplicated(massdiff))) > 0){
+            hypothese[hyp.nmol.idx, "check"] <- 0;
+          }
         }
       }
     }

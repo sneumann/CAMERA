@@ -1,3 +1,9 @@
+CHANGES IN VERSION 1.13.6
+
+BUG FIXES in 1.13.6
+
+  * Fixed problem in findAdducts where higher nM+x annotations were erroneous deleted
+
 CHANGES IN VERSION 1.13.5
 
 BUG FIXES in 1.13.5

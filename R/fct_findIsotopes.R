@@ -125,7 +125,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
             int.available <- all(!is.na(c(int.c12, int.c13)))
             if (int.available){
               theo.mass <- spectra[j, 1] * charge; #theoretical mass
-              numC      <- round(theo.mass / 12); #max. number of C in molecule
+              numC      <- abs(round(theo.mass / 12)); #max. number of C in molecule
               inten.max <- int.c12 * numC * 0.011; #highest possible intensity
               inten.min <- int.c12 * 1    * 0.011; #lowest possible intensity
               if((int.c13 < inten.max && int.c13 > inten.min) || !params$filter){
