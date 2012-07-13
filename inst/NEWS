@@ -3,6 +3,7 @@ CHANGES IN VERSION 1.13.6
 BUG FIXES in 1.13.6
 
   * Fixed problem in findAdducts where higher nM+x annotations were erroneous deleted
+  * Fixed problem in combinexsAnnos, which produces a "subscript out of bounds " error
 
 CHANGES IN VERSION 1.13.5
 
