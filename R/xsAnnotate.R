@@ -1563,6 +1563,7 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
   
   #for every pseudospectra
   for(i in seq(along=ps.match)){
+    percentOutput(npeaks.global, length(ps.match[[i]]), ncl, lp)
     #check for match
     if(is.null(ps.match[[i]])){
       #no corresponding match in neg sample
@@ -1615,9 +1616,9 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
       }
 
       na.ini.neg <- which(!is.na(m.neg));#index of non NA values
-    if(length(na.ini.neg) < 1){
-      next;
-    }
+      if(length(na.ini.neg) < 1){
+        next;
+      }
       #get all m/z hypotheses (if exists)
       if(length(index <- which(annoGrp.pos[, 4] == ps.match[[i]][j])) > 0){
         masslist.neg <- annoGrp.pos[index, 2];
@@ -1654,18 +1655,18 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
     for(ii in 1:nrow(result.matrix)){
       if(length(index <- which(annoID.pos[, "id"] == result.matrix[ii, 1] )) > 0){
         #Peak has annotation(s)
-        if(all(annoID.pos[index, "rule_id"] == ruleset[result.matrix[ii,4], "ID.pos"])){
+        if(all(annoID.pos[index, "ruleID"] == ruleset[result.matrix[ii,4], "ID.pos"])){
           #Peak has only one annotation and could be verified
           mass <- 2;
           endresult <- rbind(endresult, c(i, result.matrix[ii, 1], result.matrix[ii, 3],
                                           result.matrix[ii, 2], mass, result.matrix[ii, 4]));
-          grp2save  <- c(grp2save, annoID.pos[index, "grp_id"]);
+          grp2save  <- c(grp2save, annoID.pos[index, "grpID"]);
         }else{
           #Peak has more than one annotation or verfication goes wrong
-          grp.save <- which(annoID.pos[index, "rule_id"] == ruleset[result.matrix[ii, 4], "ID.pos"]);
+          grp.save <- which(annoID.pos[index, "ruleID"] == ruleset[result.matrix[ii, 4], "ID.pos"]);
           if(length(grp.save) > 0 ){
             #Save verified annotation and remove from index
-            grp2save  <- c(grp2save, annoID.pos[index[grp.save], "grp_id"]);
+            grp2save  <- c(grp2save, annoID.pos[index[grp.save], "grpID"]);
             index <- index[-grp2save];
             mass <- 2;
             endresult <- rbind(endresult, c(i, result.matrix[ii, 1], result.matrix[ii, 3],
@@ -1677,7 +1678,7 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
                                             result.matrix[ii, 2], mass, result.matrix[ii, 4]));
           }  
           #delete all other hypotheses
-          grp2del  <- c(grp2del, annoID.pos[index, "grp_id"]);
+          grp2del  <- c(grp2del, annoID.pos[index, "grpID"]);
         }
       }else{
         #Peak has no annotation
@@ -1687,7 +1688,6 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
                                         result.matrix[ii, 2], mass, result.matrix[ii, 4]));
       }
     }
-    percentOutput(npeaks.global, length(ps.match[[i]]), length(ps.match), lp)
   }#end for i loop
 
   #Remove grp2del groups, if they are in grp2save
@@ -1719,7 +1719,7 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
         if(endresult[i, 5] == 1){
           old.grpid <- old.grpid + 1;
           rule.ID <- ruleset[endresult[i,6], "ID.pos"];
-          annoID.pos  <- rbind(annoID.pos, c(endresult[i, "peak.pos"], old.grpid, rule.ID))
+          annoID.pos  <- rbind(annoID.pos, c(endresult[i, "peak.pos"], old.grpid, rule.ID, NA))
           mass <- (xsa.pos@groupInfo[endresult[i,"peak.pos"],"mz"]*rules.pos[rule.ID,"charge"] - rules.pos[rule.ID,"massdiff"]) / rules.pos[rule.ID,"nmol"];
           annoGrp.pos <- rbind(annoGrp.pos, c(old.grpid,mass,2,endresult[i,1]))
         }
@@ -1754,7 +1754,7 @@ combinexsAnnos <- function(xsa.pos, xsa.neg, pos=TRUE, tol=2, ruleset=NULL){
         if(endresult[i, 5] == 1){
           old.grpid <- old.grpid + 1;
           rule.ID <- ruleset[endresult[i,6],"ID.neg"];
-          annoID.neg  <- rbind(annoID.neg,  c(endresult[i,"peak.neg"],old.grpid,rule.ID))
+          annoID.neg  <- rbind(annoID.neg,  c(endresult[i,"peak.neg"],old.grpid,rule.ID,NA))
           mass <- (xsa.neg@groupInfo[endresult[i,"peak.neg"],"mz"]* abs(rules.neg[rule.ID,"charge"]) - rules.neg[rule.ID,"massdiff"]) / rules.neg[rule.ID,"nmol"];
           annoGrp.neg <- rbind(annoGrp.neg, c(old.grpid,mass,2,endresult[i,1]))
         }
