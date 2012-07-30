@@ -529,14 +529,8 @@ setMethod("findIsotopes", "xsAnnotate",
   ncl <- sum(sapply(object@pspectra, length));
 
   # get mz,rt and intensity values from peaktable
-  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
-    ##one sample case
-    cat("Generating peak matrix!\n");
-    imz  <- object@groupInfo[, "mz"];
-    irt  <- object@groupInfo[, "rt"];
-    mint <- object@groupInfo[, intval, drop=FALSE];
-  }else{
-    ##multiple sample
+  if(nrow(groups(object@xcmsSet)) > 0){
+    ##multiple sample or grouped single sample
     if(is.na(object@sample[1])){
       index <- 1:length(object@xcmsSet@filepaths);
     }else{
@@ -544,15 +538,16 @@ setMethod("findIsotopes", "xsAnnotate",
     }
     cat("Generating peak matrix!\n");
     mint     <- groupval(object@xcmsSet,value=intval)[,index,drop=FALSE];
-    peakmat  <- object@xcmsSet@peaks;
-    groupmat <- groups(object@xcmsSet);
-    
-    imz <- groupmat[, "mzmed"];
-    irt <- groupmat[, "rtmed"];
-    int.val <- c();
-    nsample <- length(object@sample);
+    imz <- object@groupInfo[, "mz", drop=FALSE];
+    irt <- object@groupInfo[, "rt", drop=FALSE];
+  }else{
+    ##one sample case
+    cat("Generating peak matrix!\n");
+    imz  <- object@groupInfo[, "mz", drop=FALSE];
+    irt  <- object@groupInfo[, "rt", drop=FALSE];
+    mint <- object@groupInfo[, intval, drop=FALSE];      
   }
-
+  
   isotope   <- vector("list", length(imz));
     
   isomatrix <- matrix(ncol=5, nrow=0);
@@ -1801,7 +1796,7 @@ getPeaks_selection <- function(xs, method="medret", value="into"){
   }
   
   # Testing if xcmsSet is grouped
-  if (nrow(xs@groups) > 0) {
+  if (nrow(xs@groups) > 0 && length(xs@filepaths) > 1) {
     # get grouping information
      groupmat <- groups(xs)
      # generate data.frame for peaktable
