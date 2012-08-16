@@ -1,3 +1,13 @@
+CHANGES IN VERSION 1.13.8
+
+Visible Changes in 1.13.8
+  
+  * Add igraph package to the dependencies
+
+BUG FIXES in 1.13.8
+
+  * Fix for groupCorr with graphMethod="lpc", with a igraph library > 0.6
+
 CHANGES IN VERSION 1.13.7
 
 BUG FIXES in 1.13.7

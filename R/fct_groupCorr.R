@@ -409,9 +409,16 @@ setMethod("calcPC.lpc", "xsAnnotate", function(object, ajc=NULL,
     if(length(index) < 1){
       g <- graph.data.frame(vertices=as.data.frame(pi),d=matrix(nrow=0,ncol=2), directed=FALSE)
     }else{
-      g <- graph.data.frame(vertices=as.data.frame(pi),d=as.data.frame(ajc[index,1:3,drop=FALSE]), directed=FALSE)
+      g <- graph.data.frame(vertices=as.data.frame(pi),
+                            d=as.data.frame(ajc[index,1:3,drop=FALSE]), 
+                            directed=FALSE)
     }
     lpc <- label.propagation.community(g,initial=0:(length(pi)-1))
+    
+    if(is.list(lpc)){
+      #new igraph package
+      lpc <- lpc$membership - 1;
+    }        
     pspectra[[i]] <- pi[which(lpc==0)];
     if(max(lpc) > 0){
       for(ii in 1:max(lpc)){

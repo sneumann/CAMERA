@@ -177,7 +177,7 @@ setMethod("groupComplete", "xsAnnotate", function(object, h=NULL,...) {
   
   rt <- object@xcmsSet@peaks[, c("rtmax","rtmin","rt"),drop=FALSE]
   max.Rt <-  max((rt[, 1]-rt[, 3]), (rt[, 3]-rt[, 2]))
-  distRT <- dist(object@groupInfo[,"rt"],method="manhattan")
+  distRT <- dist(object@groupInfo[,"rt"], method="manhattan")
   if(is.null(h)){
     result <- cutree(hclust(distRT), h=max.Rt/2)    
   }else if(is.numeric(h)){
@@ -809,8 +809,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       object@ruleset <- rules;
       cat("Found and use user-defined ruleset!");
     }
-  }else {
-    #Erkenne polarität
+  }else{
     if(!is.null(polarity)){
       if(polarity %in% c("positive","negative")){
         if(is.null(rules)){
