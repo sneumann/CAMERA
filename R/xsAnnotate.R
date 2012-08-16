@@ -491,11 +491,12 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
 
 setGeneric("findIsotopes", function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, 
                                     intval=c("maxo","into","intb"),minfrac=0.5, 
-                                    isotopeMatrix=NULL) standardGeneric("findIsotopes"));
+                                    isotopeMatrix=NULL,filter=TRUE) standardGeneric("findIsotopes"));
 
 setMethod("findIsotopes", "xsAnnotate", 
   function(object, maxcharge=3, maxiso=4, ppm=5, mzabs=0.01, 
-                   intval=c("maxo","into","intb"), minfrac=0.5,  isotopeMatrix=NULL){
+                   intval=c("maxo","into","intb"), minfrac=0.5,  isotopeMatrix=NULL,
+           filter=TRUE){
   
   #searches in every pseudospectrum after mass differences, 
   #which matches isotope distances
@@ -549,7 +550,7 @@ setMethod("findIsotopes", "xsAnnotate",
 
   # scaling
   devppm <- ppm / 1000000;
-  filter <- TRUE;
+  filter <- filter;
   #generate parameter list
   params <- list(maxiso=maxiso, maxcharge=maxcharge, devppm=devppm, mzabs=mzabs, IM=isotopeMatrix, minfrac=minfrac, filter=filter)
   
