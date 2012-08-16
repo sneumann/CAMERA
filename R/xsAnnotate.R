@@ -161,7 +161,7 @@ setMethod("show", "xsAnnotate", function(object){
 setGeneric("groupComplete", function(object,...)
   standardGeneric("groupComplete"))
 
-setMethod("groupComplete", "xsAnnotate", function(object, ...) {
+setMethod("groupComplete", "xsAnnotate", function(object, h=NULL,...) {
   
   sample    <- object@sample;
   pspectra  <- list();
@@ -177,20 +177,26 @@ setMethod("groupComplete", "xsAnnotate", function(object, ...) {
   
   rt <- object@xcmsSet@peaks[, c("rtmax","rtmin","rt"),drop=FALSE]
   max.Rt <-  max((rt[, 1]-rt[, 3]), (rt[, 3]-rt[, 2]))
-
-  
   distRT <- dist(object@groupInfo[,"rt"],method="manhattan")
-  result <- cutree(hclust(distRT), h=max.Rt/2)
+  if(is.null(h)){
+    result <- cutree(hclust(distRT), h=max.Rt/2)    
+  }else if(is.numeric(h)){
+    result <- cutree(hclust(distRT), h=h)
+  } else {
+    stop("h must be numeric!\n")
+  }
+  
+
   for(i in unique(result)){
     index <- which(result == i)
-    pspectra[[length(pspectra)+1]] <- i
+    pspectra[[length(pspectra)+1]] <- index
   }
   psSamples <- rep(sample, length(pspectra))
 
   object@pspectra  <- pspectra;
   object@psSamples <- psSamples;
   cat("Created", length(object@pspectra), "pseudospectra.\n")
-  
+  return(object)
 })
 
 ###xsAnnotate generic Methods###
