@@ -158,6 +158,41 @@ setMethod("show", "xsAnnotate", function(object){
 
 ###End Constructor###
 
+setGeneric("groupComplete", function(object,...)
+  standardGeneric("groupComplete"))
+
+setMethod("groupComplete", "xsAnnotate", function(object, ...) {
+  
+  sample    <- object@sample;
+  pspectra  <- list();
+  psSamples <- NA;
+  
+  #generate distance matrix
+  nPeaks <- nrow(object@groupInfo)
+  
+  distMat <- matrix(NA, nrow=nPeaks, ncol=nPeaks)
+
+  # First Part of Score
+  # Remove peaks combination which are to far away
+  
+  rt <- object@xcmsSet@peaks[, c("rtmax","rtmin","rt"),drop=FALSE]
+  max.Rt <-  max((rt[, 1]-rt[, 3]), (rt[, 3]-rt[, 2]))
+
+  
+  distRT <- dist(object@groupInfo[,"rt"],method="manhattan")
+  result <- cutree(hclust(distRT), h=max.Rt/2)
+  for(i in unique(result)){
+    index <- which(result == i)
+    pspectra[[length(pspectra)+1]] <- i
+  }
+  psSamples <- rep(sample, length(pspectra))
+
+  object@pspectra  <- pspectra;
+  object@psSamples <- psSamples;
+  cat("Created", length(object@pspectra), "pseudospectra.\n")
+  
+})
+
 ###xsAnnotate generic Methods###
 setGeneric("groupFWHM", function(object, sigma=6, perfwhm=0.6, intval="maxo") 
   standardGeneric("groupFWHM"))
@@ -368,7 +403,8 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
       pdata <- object@groupInfo
       EIC <- CAMERA:::getEICs(xraw, pdata, maxscans)
       
-      res[[1]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, pval=pval, psg_list=psg_list);
+      res[[1]] <- calcCiS(object, EIC=EIC, corval=cor_eic_th, 
+                          pval=pval, psg_list=psg_list);
     }else if(is.na(object@sample[1])){
       #Autoselect sample path for EIC correlation    
       index <- rep(0, nrow(object@groupInfo));
