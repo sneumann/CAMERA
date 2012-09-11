@@ -96,6 +96,11 @@ setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75,
     
     #Find peaks with have correlation higher corr_threshold and p <= 0.05
     index <- which(( res$r > corval) & (res$P <= pval))
+    if( (length(index) + cnt)  >= nrow(resMat)){
+      #resize resMat
+      resMat <- rbind(resMat,create.matrix(min(length(index)+1,100000),4));
+    }
+    
     if(length(index) > 0){
      for( x in 1:(length(index))){
       col <- index[x] %/% npi + 1;
