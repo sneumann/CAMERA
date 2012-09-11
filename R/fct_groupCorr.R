@@ -98,7 +98,7 @@ setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75,
     index <- which(( res$r > corval) & (res$P <= pval))
     if( (length(index) + cnt)  >= nrow(resMat)){
       #resize resMat
-      resMat <- rbind(resMat,create.matrix(min(length(index)+1,100000),4));
+      resMat <- rbind(resMat, create.matrix(max(length(index)+1,100000),4));
     }
     
     if(length(index) > 0){
@@ -164,11 +164,7 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
     for(i in 1:npspectra){
       pi  <- object@pspectra[[i]];
       npi <- length(pi);
-      if( ((npi^2)/2 + cnt)  >= nrow(resMat)){
-        #resize resMat
-        size <- max(100000, ((npi^2)/2 + 10000))
-        resMat <- rbind(resMat,create.matrix(as.integer(size),4));
-      }
+      
 
       #percent output
       npeaks.global <- npeaks.global + length(pi);
@@ -198,6 +194,11 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
       
       #Find peaks with have correlation higher corr_threshold and p <= 0.05
       index <- which(( res$r > corval) & (res$P <= pval))
+      if((length(index) + cnt)  >= nrow(resMat)){
+        #resize resMat
+        size <- max(100000, (cnt+length(index) + 10000))
+        resMat <- rbind(resMat,create.matrix(as.integer(size),4));
+      }
       if(length(index) > 0){
         for( x in 1:(length(index))){
           col <- index[x] %/% npi + 1;

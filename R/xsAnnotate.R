@@ -1368,16 +1368,34 @@ findNeutralLossSpecs <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
     stop ("Parameter object is no xsAnnotate object\n")
   }
   
-  if(is.numeric(mzdiff) && mzdiff <= 0) {
+  if(is.null(mzdiff)){
+    stop ("Parameter mzdiff must be set\n")
+  }
+  
+  if(!is.numeric(mzdiff) || any(mzdiff <= 0)) {
     stop ("Parameter mzdiff must be a positive numeric value\n")
   }
   
-  if(is.numeric(mzabs) && mzabs < 0) {
+  if(!is.numeric(mzabs) || mzabs < 0) {
     stop ("Parameter mzabs must be a positive numeric value\n")
   }
   
-  if(is.numeric(mzppm) && mzppm < 0) {
+  if(!is.numeric(mzppm) || mzppm < 0) {
     stop ("Parameter mzppm must be a positive numeric value\n")
+  }
+  
+  # get mz values from peaklist
+  imz    <- object@groupInfo[, "mz"];
+  
+  #get Isotopes
+  isotopes  <- object@isotopes;
+  #Remove recognized isotopes from annotation m/z vector
+  for(x in seq(along = isotopes)){
+    if(!is.null(isotopes[[x]])){
+      if(isotopes[[x]]$iso != 0){
+        imz[x] <- NA;
+      }
+    }
   }
   
   #Calculate mzrange
@@ -1386,12 +1404,21 @@ findNeutralLossSpecs <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
 
   
   hits <- sapply(1:length(object@pspectra), function(j) {
-    spec  <-  getpspectra(object, j)
+    spec  <-  object@pspectra[[j]]
 
-    mz  <-  spec[,1] #mz vector
+    mz  <-  CAMERA:::naOmit(imz[spec]) #mz vector
     nl  <-  as.matrix(dist(mz, method="manhattan")) #distance matrix
-      
-    length(which(nl > nlmin & nl < nlmax)) > 0 #Test of match
+    hit <- FALSE;
+    for(x in seq_along(mz)){
+      mzadd <- mz[x]*mzppm*10^-6
+      for(y in seq_along(nlmin)){
+        if(any(which(nl[x,] > (nlmin[y]-mzadd) & nl[x,] < (nlmax[y] + mzadd)))){
+          hit <- TRUE;
+          break;
+        }
+      }
+    }
+    hit
   })
   return(hits)
 }
@@ -1409,15 +1436,19 @@ findNeutralLoss <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
     stop ("Parameter object is no xsAnnotate object\n")
   }
   
-  if(is.numeric(mzdiff) && mzdiff <= 0) {
+  if(is.null(mzdiff)){
+    stop ("Parameter mzdiff must be set\n")
+  }
+  
+  if(!is.numeric(mzdiff) || any(mzdiff <= 0)) {
     stop ("Parameter mzdiff must be a positive numeric value\n")
   }
   
-  if(is.numeric(mzabs) && mzabs < 0) {
+  if(!is.numeric(mzabs) || mzabs < 0) {
     stop ("Parameter mzabs must be a positive numeric value\n")
   }
   
-  if(is.numeric(mzppm) && mzppm < 0) {
+  if(!is.numeric(mzppm) || mzppm < 0) {
     stop ("Parameter mzppm must be a positive numeric value\n")
   }
   
@@ -1428,52 +1459,79 @@ findNeutralLoss <- function(object, mzdiff=NULL, mzabs=0, mzppm=10) {
   #Create tempory xcmsSet object to store the peak matches
   xs <- new("xcmsSet");
 
-  peaks <- matrix(ncol=11, nrow=0);
-  
-  colnames(peaks) <- c("mz", "mzmin", "mzmax", "rt", "rtmin", "rtmax",
-                       "into", "intb", "maxo", "sn", "sample");
+  peaks <- matrix(ncol=ncol(object@groupInfo)+1, nrow=0);
+ 
   sampnames(xs) <- c("NeutralLoss")
   sampclass(xs) <- c("NeutralLoss")
 
+  # get mz values from peaklist
+  imz    <- object@groupInfo[, "mz"];
+  
+  #get Isotopes
+  isotopes  <- object@isotopes;
+  #Remove recognized isotopes from annotation m/z vector
+  for(x in seq(along = isotopes)){
+    if(!is.null(isotopes[[x]])){
+      if(isotopes[[x]]$iso != 0){
+        imz[x] <- NA;
+      }
+    }
+  }
+  
   #Loop over all pseudospectra
   for(j in seq(along = object@pspectra)) {
     
     #get specific pseudospectrum j
-    spec  <-  getpspectra(object, j)
-    lastcol <- ncol(spec);
+    spec  <-  object@pspectra[[j]]
+    #lastcol <- ncol(spec);
     
     #get mz values
-    mz  <-  spec[,1] 
+    mz  <-  imz[spec] 
     
     #generate distance matrix
     nl  <-  as.matrix(dist(mz, method="manhattan"))
     
-    #look for hits
-    hits <- which(nl > nlmin & nl < nlmax, arr.ind = TRUE)
-
+    hits <- c();
+    for(x in seq_along(mz)){
+      mzadd <- mz[x]*mzppm*10^-6
+      if(is.na(mzadd)){
+        next;
+      }
+      for(y in seq_along(nlmin)){
+        if(length( index <- which(nl[x,] > (nlmin[y]-mzadd) & 
+          nl[x,] < (nlmax[y] + mzadd))) > 0 ){
+          #found hit
+          hits <- rbind(hits,cbind(x,index))
+        }
+      }
+    }
+    if(is.null(hits)){
+      next;
+    }
+    ## Remove hit from lower diagonal matrix
+    index <- which(apply(hits,1, function(x) x[1] > x[2]))
+    if(length(index) > 0){
+      hits <- hits[-index,,drop=FALSE]
+    }
+    # Remove duplicated
+    hits <- unique(hits)
     # loop over all hits
     for (f in seq_len(nrow(hits))) {
       # hit f
-      hit <- as.vector( hits[f,])
+      hit <- hits[f,]
         
-      ## Remove hit from lower diagonal matrix
-      if (hit[1] > hit[2]) {
-        next;
-      }
       
+
       #For each peak-pair save the greater peak(higher mz value) to peak table
       if (mz[hit[1]] > mz[hit[2]]) {
-        newpeak <- spec[hit[1],c(1:10,lastcol), drop=FALSE]
+        newpeak <- object@groupInfo[spec[hit[1]],, drop=FALSE]
       } else {
-        newpeak <- spec[hit[2],c(1:10,lastcol), drop=FALSE]
-      }
-        
-      rownames(newpeak) <- as.character(j)
-      peaks <- rbind(peaks, newpeak)
+        newpeak <- object@groupInfo[spec[hit[2]],, drop=FALSE]
+      }  
+      peaks <- rbind(peaks, cbind(newpeak,j))
     }
   }
-  colnames(peaks) <- c("mz", "mzmin", "mzmax", "rt", "rtmin", "rtmax",
-                       "into", "intb", "maxo", "sn", "pseudospectrum");
+  colnames(peaks) <- c(colnames(object@groupInfo),"compound spectrum");
   #Store peaks into the xcmsSet
   peaks(xs) <- as.matrix(peaks)
   invisible(xs)
