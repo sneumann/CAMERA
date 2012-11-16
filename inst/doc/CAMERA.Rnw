@@ -121,7 +121,7 @@ The \Rclass{xcmsSet} was created as shown in section \ref{preprocess}.
 \begin{verbatim}
   # Create an xsAnnotate object
   an   <- xsAnnotate(xs)
-  # Group after RT
+  # Group based on RT
   anF  <- groupFWHM(an, perfwhm = 0.6)
   # Annotate isotopes
   anI  <- findIsotopes(anF, mzabs = 0.01)
