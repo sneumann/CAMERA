@@ -1,3 +1,9 @@
+CHANGES IN VERSION 1.15.1
+
+BUG FIXES IN 1.15.1
+  
+  * Fix in findIsotopes, where sometime peak with huge m/z differences where annotated as isotopes
+
 CHANGES IN VERSION 1.13.9
 
 VISIBLE CHANGES in 1.13.9
