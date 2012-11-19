@@ -79,11 +79,32 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     hits <- t(apply(IM, 1, function(x){ findInterval(MI[1:max.index], x)}))
     rownames(hits) <- c(1:nrow(hits))
     colnames(hits) <- c(1:ncol(hits))
+    hits[which(hits==0)] <-NA
+    hits <- hits[, -1, drop=FALSE]
+    hits.iso <- hits%/%2 + 1;
     
     
     #check occurence of first isotopic peak
-    hit <- apply(hits, 1, function(x) any(x==1))
-    #drop nonhits
+    for(iso in 1:min(params$maxiso,ncol(hits.iso))){
+      hit <- apply(hits.iso,1, function(x) any(CAMERA:::naOmit(x)==iso))
+      hit[which(is.na(hit))] <- TRUE
+      if(all(hit)) break;
+      hits.iso[!hit,] <- t(apply(hits.iso[!hit,,drop=FALSE],1, function(x) {
+        if(!all(is.na(x))){
+          ini <- which(x > iso)
+          if(!is.infinite(ini) && length(ini) > 0){
+            x[min(ini):ncol(hits.iso)] <- NA  
+          }
+        }
+        x
+      }))
+    }
+    
+    #set NA to 0
+    hits[which(is.na(hits.iso))] <- 0
+    #check if any isotope is found
+    hit <- apply(hits, 1, function(x) sum(x)>0)
+    #drop nonhits  
     hits <- hits[hit, , drop=FALSE]
     
     #if no first isotopic peaks exists, next
@@ -121,7 +142,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
           isotopePeak <- hits[iso,isohits[[iso]][candidate]]%/%2 + 1;
           if(isotopePeak == 1){
             #first isotopic peak, check C13 rule
-            int.c13 <- int[isohits[[iso]][candidate]+j-1, sample.index];
+            int.c13 <- int[isohits[[iso]][candidate]+j, sample.index];
             int.available <- all(!is.na(c(int.c12, int.c13)))
             if (int.available){
               theo.mass <- spectra[j, 1] * charge; #theoretical mass
@@ -139,7 +160,7 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
             } 
           } else {
             #x isotopic peak
-            int.cx <- int[isohits[[iso]][candidate]+j-1, sample.index];
+            int.cx <- int[isohits[[iso]][candidate]+j, sample.index];
             int.available <- all(!is.na(c(int.c12, int.cx)))
             if (int.available) {
               intrange <- c((int.c12 * params$IM[isotopePeak,"intmin"]/100),
@@ -189,13 +210,13 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
             isohits[[charge]] <- isohits[[charge]][-index]
           }
         }
-      }
+      }#end if
       
       for(isotope in 1:ncol(candidate.ratio)){
         if(candidate.ratio[charge, isotope] >= params$minfrac){
           isomatrix <- rbind(isomatrix, 
                              c(spectra[j, 2],
-                               spectra[isohits[[charge]][isotope]+j-1, 2], 
+                               spectra[isohits[[charge]][isotope]+j, 2], 
                                isotope, as.numeric(row.names(hits)[charge]), 0))
         } else{
           break;
