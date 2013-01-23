@@ -199,7 +199,7 @@ setMethod("groupComplete", "xsAnnotate", function(object, h=NULL,...) {
   return(object)
 })
 
-setGeneric("groupDen", function(object,...)
+setGeneric("groupDen", function(object, bw=5, ...)
   standardGeneric("groupDen"))
 
 setMethod("groupDen", "xsAnnotate", function(object, bw=5, ...) {
@@ -1389,7 +1389,7 @@ setMethod("annotate", "xcmsSet", function(object, sample=NA, nSlaves=1, sigma=6,
 })
 
 ##Screen for mass differences
-findKentrickMasses <- function(object, masses=c(14, 14.01565), maxHomologue=4, 
+findKendrickMasses <- function(object, masses=c(14, 14.01565), maxHomologue=4, 
                                error=0.002, time=60, intval="maxo",
                                plot=FALSE) {
 
