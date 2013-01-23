@@ -17,8 +17,18 @@ importFrom("utils", "flush.console", "object.size", "read.table")
 importClassesFrom(Biobase, "Versioned")
 importFrom(Biobase, validMsg)
 
-export("annotate","xsAnnotate","getpspectra","annotateDiffreport","getIsotopeCluster","findNeutralLossSpecs","findNeutralLoss", 
-"cleanParallel","combinexsAnnos", "findKendrickMasses")
+export("annotate",
+       "annotateDiffreport",
+       "cleanParallel",
+       "combinexsAnnos",
+       "getIsotopeCluster",
+       "getpspectra",
+       "findKendrickMasses",
+       "findNeutralLoss", 
+       "findNeutralLossSpecs",
+       "pspec2metfrag",
+       "pspec2metfusion",
+       "xsAnnotate")
 exportClasses("xsAnnotate")
 exportMethods("groupFWHM")
 exportMethods("findIsotopes")
