@@ -153,6 +153,157 @@ setMethod("plotEICs", "xsAnnotate", function(object,
   }
 })
 
+setGeneric("plotPeakEICs", function(object,
+                                pspec=1:length(object@pspectra),
+                                maxlabel=0, sleep=0,
+                                ...) standardGeneric("plotEICs"))
+
+setMethod("plotPeakEICs", "xsAnnotate", function(object,
+                                             samples=min(object@psSamples):max(object@psSamples),
+                                             maxlabel=0, sleep=0, method="bin"){
+  #Which different samples need to be addressed for extracting raw data
+  if (!all(samples %in% object@psSamples)){
+    stop ("Parameter samples must be within the number of samples.\n");
+  }
+      
+  xeic  <- new("xcmsEIC");
+  xeic@rtrange <- matrix(nrow=nrow(object@groupInfo), ncol=2)
+  xeic@mzrange <- matrix(nrow=nrow(object@groupInfo), ncol=2)
+  #iterator for ps-grp
+  pcpos <- 1;
+  #one second overlap
+  rtmargin <- 1; 
+  
+  for (a in seq(along=samples)) { ## sample-wise EIC collection
+    #read rawData into one xcmsRaw
+    xraw <- xcmsRaw(object@xcmsSet@filepaths[samples[a]], profmethod=method)
+    
+    ## getting ALL peaks from the current sample (not that bad)
+    peaks <- CAMERA:::getPeaks(object@xcmsSet, a)  
+    eic   <- sapply (peaks, function(pks) {
+      pidx <- object@pspectra[[pc]]
+      pks <- peaks[pidx, , drop=FALSE]
+      gks <- object@groupInfo[pidx, , drop=FALSE]
+      
+      nap <- which(is.na(pks[, 1]))
+      pks[nap, ] <- cbind(matrix(nrow=length(nap), ncol=ncol(pks), 0))
+
+      eic <- xcms:::getEIC(xraw, rtrange=pks[, c("rtmin", "rtmax"), drop=FALSE],
+                           mzrange=pks[, c("mzmin", "mzmax"), drop=FALSE])
+      #write resulting bounding box into xcmsEIC
+      xeic@rtrange[pcpos, ] <<- bbox[c("rtmin","rtmax")]
+      xeic@mzrange[pcpos, ] <<- bbox[c("mzmin","mzmax")]  
+      eic@eic[[1]]
+    })
+    xeic@eic <- c(xeic@eic, eic)
+  }
+  names(xeic@eic) <- paste("Pseudospectrum ", pspec, sep="")
+  
+  if(maxlabel > 0){
+    col <- rainbow(maxlabel);
+  } else {
+    col <- c();
+  }
+  
+  ##
+  ## Loop through all pspectra
+  ##
+  
+  for (ps in seq(along=pspec)) {
+    EIC <- xeic@eic[[ps]];
+    pidx <- object@pspectra[[pspec[ps]]];
+    peaks <- CAMERA:::getPeaks(object@xcmsSet,object@psSamples[pspec[ps]])[pidx,,drop=FALSE]
+    grps <- object@groupInfo[pidx, ]
+    nap <- which(is.na(peaks[, 1]))
+    naps <- rep(FALSE, nrow(peaks))
+    
+    if(length(nap) > 0){  
+      naps[nap] <- TRUE;
+      peaks[nap,] <- cbind(grps[nap,c(1:6), drop=FALSE], matrix(nrow=length(nap), ncol=5,0))
+    }
+    
+    main <- paste("Pseudospectrum ", pspec[ps], sep="")
+    
+    ## Calculate EICs and plot ranges
+    neics     <- length(pidx)
+    lmaxlabel <- min(maxlabel, neics)
+    eicidx <- 1:neics
+    maxint <- numeric(length(eicidx))
+    
+    for (j in eicidx) {
+      maxint[j] <- max(EIC[[j]][, "intensity"])
+    }
+    o  <- order(maxint, decreasing = TRUE)
+    rt <- xeic@rtrange[ps, ];    
+    rt.min <- round(mean(peaks[, "rtmin"]), digits=3);
+    rt.med <- round(peaks[o[1], "rt"], digits=3);
+    rt.max <- round(mean(peaks[, "rtmax"]), digits=3);
+    ## Open Plot
+    
+    plot(0, 0, type = "n", xlim = rt, ylim = c(0, max(maxint)),xaxs='i',
+         xlab = "Retention Time (seconds)", ylab = "Intensity",
+         main = paste("Extracted Ion Chromatograms for ", main,"\nTime: From",rt.min,"to",rt.max,", mean",rt.med))
+    
+    ## Plot Peak and surrounding
+    lcol <- rgb(0.6, 0.6, 0.6);
+    lcol <- c(col, rep(lcol, max(nrow(peaks) - maxlabel, 0)));
+    cnt  <- 1;
+    for (j in eicidx[o]) {
+      pts <- xeic@eic[[ps]][[j]]
+      points(pts, type = "l", col = lcol[cnt]);
+      cnt <- cnt + 1;
+      peakrange <- peaks[,c("rtmin","rtmax"), drop=FALSE]
+      ptsidx <- pts[,"rt"] >= peakrange[j,1] & pts[,"rt"] <= peakrange[j,2]
+      if (naps[j]){ 
+        points(pts[ptsidx, ], type = "l", col = col[j], lwd=1.3, lty=3)
+      } else {
+        points(pts[ptsidx, ], type = "l", col = col[j], lwd=1.3)
+      }
+    }
+    ## Plot Annotation Legend
+    pspectrum <- getpspectra(object, grp=pspec[ps])
+    mz <- pspectrum[o, "mz"];
+    #Check adduct annotation
+    if (lmaxlabel > 0 & "adduct" %in% colnames(pspectrum)) {
+      adduct <- sub("^ ", "", pspectrum[o, "adduct"]) #Remove Fronting Whitespaces
+      mass   <- sapply(strsplit(adduct, " "), function(x) {x[2]})
+      adduct <- sapply(strsplit(adduct, " "), function(x) {x[1]})
+      umass <- unique(na.omit(mass[1:maxlabel]));
+      adduct[is.na(adduct)] <- "";
+      test <- vector("list",length=length(mz));
+      mz <- format(pspectrum[o[1:lmaxlabel], "mz"], digits=5);
+      
+      if(length(umass) > 0){
+        for(i in 1:length(umass)){
+          ini <- which(mass==umass[i]);
+          for(ii in 1:length(ini)){
+            firstpart  <- strsplit(adduct[ini[ii]], "M")[[1]][1]
+            secondpart <- strsplit(adduct[ini[ii]], "M")[[1]][2]
+            masspart   <- mz[ini[ii]];
+            test[[ini[ii]]] <- substitute(paste(masspart, " ", firstpart, M[i], secondpart), 
+                                          list(firstpart=firstpart, i=i, secondpart=secondpart,
+                                               masspart = masspart))
+          }
+        }
+      }
+      
+      for(i in seq(along=lmaxlabel)){
+        if(is.null(test[[i]])){
+          test[[i]] <- mz[i];
+        }
+      }
+      
+      leg <- as.expression(test[1:lmaxlabel]);  
+      legend("topright", legend=leg, col=lcol, lty=1)
+    }
+    
+    if (sleep > 0) {
+      Sys.sleep(sleep)
+    }
+  }
+})
+
+
 
 setGeneric("plotPsSpectrum", function(object, pspec=1:length(object@pspectra), log=FALSE,
                        value="into", maxlabel=0, title=NULL,mzrange = numeric(),
