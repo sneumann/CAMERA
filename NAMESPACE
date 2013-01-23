@@ -29,6 +29,7 @@ export("annotate",
        "pspec2metfrag",
        "pspec2metfusion",
        "xsAnnotate")
+
 exportClasses("xsAnnotate")
 exportMethods("groupFWHM")
 exportMethods("findIsotopes")
