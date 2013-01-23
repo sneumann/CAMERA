@@ -1388,6 +1388,90 @@ setMethod("annotate", "xcmsSet", function(object, sample=NA, nSlaves=1, sigma=6,
   return(xa);
 })
 
+findKentrickMasses <- function(object , masses=c(14,14.01565), nHomologue=4, 
+                               error=0.002, filter=TRUE) {
+  ##Screen for mass differences
+########Variables########
+filename.Input  <- ""
+filename.Output <- ""
+
+#Mass Difference in Da
+#nominal Mass (14 for CH2)
+nominalMass <- 14 
+exactMass   <- 14.01565
+
+#max differenze is maxHomologue x nominalMass
+maxHomologue <- 4
+
+#Error in Da for matching Kendrick mass defect
+error <- 0.002 
+
+#filter rt, higher mass must have higher retetion time
+filter <- TRUE
+######End Variables######
+
+#Read data file
+data <- read.delim(filename.Input, sep=",")
+
+if(any(sapply(data[, 1], is.na))){
+  stop("No NA values allowed!")
+}
+
+#sorting after mass(first column)
+data.sorted <- data[order(data[, 1]), ]
+
+kendrickMass <- data.sorted[, 1] * nominalMass/exactMass;
+kendrickMassDefect <- ceiling(kendrickMass) - kendrickMass
+kendrickMass <- ceiling(kendrickMass)
+
+#generate index vector
+allCandidates <- 1:length(kendrickMassDefect);
+
+#generate result list;
+results <- list();
+
+# while loop
+while(length(allCandidates) > 0){
+  difference <- kendrickMass[allCandidates] - kendrickMass[allCandidates[1]]
+  index <- which(difference %% nominalMass == 0 & difference > 0 & 
+    difference <= maxHomologue*nominalMass)
+  
+  if(length(index) < 1){
+    allCandidates <- allCandidates[-1, drop=FALSE]
+    next;
+  }
+  
+  if(filter){
+    index <- index[which(data.sorted[allCandidates[index], 2] >= data.sorted[allCandidates[1], 2])]
+    if(length(index) < 1){
+      allCandidates <- allCandidates[-1, drop=FALSE]
+      next;
+    }
+  }
+  
+  index.Kendrick <- CAMERA:::fastMatch(kendrickMassDefect[allCandidates[index]],
+                                       kendrickMassDefect[allCandidates[1]], 
+                                       tol=error)
+  if(any(hit <- !sapply(index.Kendrick, is.null))){
+    hits <- c(1, index[which(hit)])
+    results[[length(results)+1]] <- allCandidates[hits];  
+  }
+    allCandidates <- allCandidates[-1, drop=FALSE]
+}
+
+
+resultMatrix <- matrix(NA, nrow=0, ncol=5)
+
+#generate Results
+invisible(lapply(results, function(x){
+   resultMatrix <<- rbind(resultMatrix, cbind(data.sorted[x, ], kendrickMass[x],
+                                              kendrickMassDefect[x]), rep(NA, 5))
+}))
+  
+write.csv(resultMatrix, filename.Output, 
+          row.names=FALSE, na="")
+
+}
 #Find NeutralLossSpecs
 #Test every pseudospectrum in a xsAnnotate object if the peaks match
 #a specific mz difference. Returns a boolean vector, where a hit is marked
