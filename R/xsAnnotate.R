@@ -1388,30 +1388,41 @@ setMethod("annotate", "xcmsSet", function(object, sample=NA, nSlaves=1, sigma=6,
   return(xa);
 })
 
-findKentrickMasses <- function(object , masses=c(14,14.01565), nHomologue=4, 
-                               error=0.002, filter=TRUE) {
-  ##Screen for mass differences
+##Screen for mass differences
+findKentrickMasses <- function(object , masses=c(14,14.01565), maxHomologue=4, 
+                               error=0.002, time=60, intval="maxo") {
+
 ########Variables########
 filename.Input  <- ""
 filename.Output <- ""
 
 #Mass Difference in Da
 #nominal Mass (14 for CH2)
-nominalMass <- 14 
-exactMass   <- 14.01565
+nominalMass <- masses[1]
+exactMass   <- masses[2]
 
-#max differenze is maxHomologue x nominalMass
-maxHomologue <- 4
-
-#Error in Da for matching Kendrick mass defect
-error <- 0.002 
-
-#filter rt, higher mass must have higher retetion time
-filter <- TRUE
 ######End Variables######
 
-#Read data file
-data <- read.delim(filename.Input, sep=",")
+#Read peaktable
+
+if(is.na(object@sample[1]) || length(object@xcmsSet@filepaths) > 1) {
+  gvals    <- groupval(object@xcmsSet)[, index, drop=FALSE];
+  maxo <- 1:nrow(object@groupInfo);
+  invisible(lapply(seq(along=object@pspectra), function(x){
+    peaks <- object@pspectra[[x]];
+    sample <- object@pspectra[x];
+    maxo[peaks] <<- gvals[peaks,sample]
+  }))
+
+}else{
+  maxo    <- object@groupInfo[, intval]; #max intensities of all peaks
+}
+
+#1. Only annotated peaks
+
+#2. All peaks
+data <- cbind(object@groupInfo[, c("mz","rt")],maxo)
+#data <- read.delim(filename.Input, sep=",")
 
 if(any(sapply(data[, 1], is.na))){
   stop("No NA values allowed!")
@@ -1432,31 +1443,33 @@ results <- list();
 
 # while loop
 while(length(allCandidates) > 0){
-  difference <- kendrickMass[allCandidates] - kendrickMass[allCandidates[1]]
-  index <- which(difference %% nominalMass == 0 & difference > 0 & 
-    difference <= maxHomologue*nominalMass)
+  #calculate m/z difference
+  difference.mz <- kendrickMass[allCandidates] - kendrickMass[allCandidates[1]]
+  #calculate rt difference
+  difference.rt <- data.sorted[allCandidates, 2] - data.sorted[allCandidates[1], 2]
+  #calculate remains from division
+  remains <- difference.mz %% nominalMass
+  #calculate quotient from division
+  quotient <- difference.mz %/% nominalMass
   
+  #find candidates with remains = 0 and m/z difference in allowed range
+  index <- which(remains == 0 & difference.mz <= maxHomologue * nominalMass
+                 & difference.rt <= (quotient * time) & difference.rt > 0)
+  
+  #do we have candidates, otherwise next
   if(length(index) < 1){
     allCandidates <- allCandidates[-1, drop=FALSE]
     next;
-  }
-  
-  if(filter){
-    index <- index[which(data.sorted[allCandidates[index], 2] >= data.sorted[allCandidates[1], 2])]
-    if(length(index) < 1){
-      allCandidates <- allCandidates[-1, drop=FALSE]
-      next;
-    }
   }
   
   index.Kendrick <- CAMERA:::fastMatch(kendrickMassDefect[allCandidates[index]],
                                        kendrickMassDefect[allCandidates[1]], 
                                        tol=error)
   if(any(hit <- !sapply(index.Kendrick, is.null))){
-    hits <- c(1, index[which(hit)])
-    results[[length(results)+1]] <- allCandidates[hits];  
+    hits <- c(1, index[which(hit)])  
+    results[[length(results)+1]] <- allCandidates[hits];
   }
-    allCandidates <- allCandidates[-1, drop=FALSE]
+  allCandidates <- allCandidates[-c(1, index[which(hit)]), drop=FALSE]
 }
 
 
@@ -1464,12 +1477,22 @@ resultMatrix <- matrix(NA, nrow=0, ncol=5)
 
 #generate Results
 invisible(lapply(results, function(x){
-   resultMatrix <<- rbind(resultMatrix, cbind(data.sorted[x, ], kendrickMass[x],
-                                              kendrickMassDefect[x]), rep(NA, 5))
+  resultMatrix <<- rbind(resultMatrix, cbind(data.sorted[x, ], kendrickMass[x],
+                                             kendrickMassDefect[x]), rep(NA, 5))
 }))
-  
-write.csv(resultMatrix, filename.Output, 
-          row.names=FALSE, na="")
+
+
+#plot m/z - rt plot
+plot(data.sorted[, 2], data.sorted[, 1], xlab="retention time [s]", 
+     ylab="m/z")
+
+color <- rainbow(length(results))
+index <- 0;
+lapply(results, function(x){
+  index <<- index +1;
+  points( data.sorted[x,2], data.sorted[x, 1], col=color[index],pch=20)
+  lines(data.sorted[x,2],data.sorted[x, 1],col=color[index])
+})
 
 }
 #Find NeutralLossSpecs
