@@ -1389,15 +1389,12 @@ setMethod("annotate", "xcmsSet", function(object, sample=NA, nSlaves=1, sigma=6,
 })
 
 ##Screen for mass differences
-findKentrickMasses <- function(object , masses=c(14,14.01565), maxHomologue=4, 
-                               error=0.002, time=60, intval="maxo") {
+findKentrickMasses <- function(object, masses=c(14, 14.01565), maxHomologue=4, 
+                               error=0.002, time=60, intval="maxo",
+                               plot=FALSE) {
 
 ########Variables########
-filename.Input  <- ""
-filename.Output <- ""
-
 #Mass Difference in Da
-#nominal Mass (14 for CH2)
 nominalMass <- masses[1]
 exactMass   <- masses[2]
 
@@ -1407,23 +1404,21 @@ exactMass   <- masses[2]
 
 if(is.na(object@sample[1]) || length(object@xcmsSet@filepaths) > 1) {
   gvals    <- groupval(object@xcmsSet)[, index, drop=FALSE];
-  maxo <- 1:nrow(object@groupInfo);
+  maxo <- 1:nrow(object@groupInfo)
   invisible(lapply(seq(along=object@pspectra), function(x){
-    peaks <- object@pspectra[[x]];
-    sample <- object@pspectra[x];
+    peaks <- object@pspectra[[x]]
+    sample <- object@pspectra[x]
     maxo[peaks] <<- gvals[peaks,sample]
   }))
 
 }else{
-  maxo    <- object@groupInfo[, intval]; #max intensities of all peaks
+  maxo    <- object@groupInfo[, intval]
 }
 
-#1. Only annotated peaks
+#extract data (m/z, rt and intensities)
+data <- cbind(object@groupInfo[, c("mz","rt")], maxo)
 
-#2. All peaks
-data <- cbind(object@groupInfo[, c("mz","rt")],maxo)
-#data <- read.delim(filename.Input, sep=",")
-
+#check na values
 if(any(sapply(data[, 1], is.na))){
   stop("No NA values allowed!")
 }
@@ -1431,6 +1426,7 @@ if(any(sapply(data[, 1], is.na))){
 #sorting after mass(first column)
 data.sorted <- data[order(data[, 1]), ]
 
+#calculate kendrick masses
 kendrickMass <- data.sorted[, 1] * nominalMass/exactMass;
 kendrickMassDefect <- ceiling(kendrickMass) - kendrickMass
 kendrickMass <- ceiling(kendrickMass)
@@ -1473,28 +1469,33 @@ while(length(allCandidates) > 0){
 }
 
 
-resultMatrix <- matrix(NA, nrow=0, ncol=5)
+resultMatrix <- matrix(NA, nrow=0, ncol=6)
 
 #generate Results
+index <- 1
 invisible(lapply(results, function(x){
-  resultMatrix <<- rbind(resultMatrix, cbind(data.sorted[x, ], kendrickMass[x],
-                                             kendrickMassDefect[x]), rep(NA, 5))
+  resultMatrix <<- rbind(resultMatrix, cbind(index, data.sorted[x, ], kendrickMass[x],
+                                             kendrickMassDefect[x]))
+  index <<- index + 1
 }))
 
-
-#plot m/z - rt plot
-plot(data.sorted[, 2], data.sorted[, 1], xlab="retention time [s]", 
-     ylab="m/z")
-
-color <- rainbow(length(results))
-index <- 0;
-lapply(results, function(x){
-  index <<- index +1;
-  points( data.sorted[x,2], data.sorted[x, 1], col=color[index],pch=20)
-  lines(data.sorted[x,2],data.sorted[x, 1],col=color[index])
-})
-
+if(plot){
+  #plot m/z - rt plot
+  plot(data.sorted[, 2], data.sorted[, 1], xlab="retention time [s]", 
+       ylab="m/z",main=paste("Kendrick Plot\nmz: nominal",masses[1]," exact",
+                         masses[2]))
+  color <- rainbow(length(results))
+  index <- 0;
+  lapply(results, function(x){
+    index <<- index +1;
+    points( data.sorted[x,2], data.sorted[x, 1], col=color[index],pch=20)
+    lines(data.sorted[x,2],data.sorted[x, 1],col=color[index])
+  })  
 }
+colnames(resultMatrix) <- c("Index","mz","rt","int","KMass","KMassDefect")
+  return(invisible(resultMatrix))
+}
+
 #Find NeutralLossSpecs
 #Test every pseudospectrum in a xsAnnotate object if the peaks match
 #a specific mz difference. Returns a boolean vector, where a hit is marked
