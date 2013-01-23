@@ -1,5 +1,6 @@
 \name{pspec2metfrag}
 \alias{pspec2metfrag}
+\alias{pspec2metfusion}
 \title{Export the putative fragments as MetFrag query files}
 \description{
   MetFrag is an in-silico metabolite identification system, which aims
@@ -11,6 +12,7 @@
 }
 \usage{
   pspec2metfrag(object, pspecidx=NULL, filedir=NULL) 
+  pspec2metfusion(object, pspecidx=NULL, filedir=NULL) 
 }
 \arguments{
   \item{object}{an xsAnnotate object}
@@ -19,16 +21,13 @@
 }
 
 \details{
-  For each spectrum,
-
-  for each mass hypothesis,
-
-  remove all non-fragments
-  
+  For each spectrum in pspecidx (or all in the xsAnnotate object),
+  for each [M] mass hypothesis, remove all non-fragment peaks (isotopes,
+  clusters, adducts) and pass them to MetFrag and MetFusion batch query files.
 }
 
 \value{
-  Returns XXX
+  Returns a list 
 }
 
 \examples{
