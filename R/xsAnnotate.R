@@ -199,6 +199,41 @@ setMethod("groupComplete", "xsAnnotate", function(object, h=NULL,...) {
   return(object)
 })
 
+setGeneric("groupDen", function(object,...)
+  standardGeneric("groupDen"))
+
+setMethod("groupDen", "xsAnnotate", function(object, bw=5, ...) {
+  
+  sample    <- object@sample;
+  pspectra  <- list();
+  psSamples <- NA;
+
+  #generate distance matrix
+  nPeaks <- nrow(object@groupInfo)
+  rt <- object@groupInfo[ ,"rt"]  
+  
+  den <- density(rt, bw, from = min(rt)-3*bw, to = max(rt)+3*bw)
+  maxden <- max(den$y)
+  deny <- den$y
+  snum <- 0
+  while (deny[maxy <- which.max(deny)] > 0 ) {
+    grange <- xcms:::descendMin(deny, maxy)
+    deny[grange[1]:grange[2]] <- 0
+    gidx <- which(rt >= den$x[grange[1]] & rt <= den$x[grange[2]])
+    pspectra[[length(pspectra)+1]] <- gidx
+    snum <- snum + length(gidx)
+  }
+  psSamples <- rep(sample, length(pspectra))
+  
+  object@pspectra  <- pspectra;
+  object@psSamples <- psSamples;
+  cat("Created", length(object@pspectra), "pseudospectra.\n")
+  return(object)
+})
+
+
+
+
 ###xsAnnotate generic Methods###
 setGeneric("groupFWHM", function(object, sigma=6, perfwhm=0.6, intval="maxo") 
   standardGeneric("groupFWHM"))
