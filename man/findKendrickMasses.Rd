@@ -21,7 +21,14 @@
 \details{
 }
 \examples{
+  library(CAMERA)
+  library(faahKO)
+  xs   <- group(faahko)
 
+  #With specific selected sample
+  xsa     <- xsAnnotate(xs)
+  #Screen for substance with CH2 differences
+  findKendrickMasses(xsa, masses=c(14, 14.01565), plot=TRUE)
 }
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
 \keyword{methods}

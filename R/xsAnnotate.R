@@ -231,9 +231,6 @@ setMethod("groupDen", "xsAnnotate", function(object, bw=5, ...) {
   return(object)
 })
 
-
-
-
 ###xsAnnotate generic Methods###
 setGeneric("groupFWHM", function(object, sigma=6, perfwhm=0.6, intval="maxo") 
   standardGeneric("groupFWHM"))
@@ -1403,14 +1400,12 @@ exactMass   <- masses[2]
 #Read peaktable
 
 if(is.na(object@sample[1]) || length(object@xcmsSet@filepaths) > 1) {
-  gvals    <- groupval(object@xcmsSet)[, index, drop=FALSE];
-  maxo <- 1:nrow(object@groupInfo)
-  invisible(lapply(seq(along=object@pspectra), function(x){
-    peaks <- object@pspectra[[x]]
-    sample <- object@pspectra[x]
-    maxo[peaks] <<- gvals[peaks,sample]
-  }))
-
+  if(is.na(object@sample[1])){
+    index <- 1:length(object@xcmsSet@filepaths);
+  }else{
+    index <- object@sample;
+  }
+  maxo   <- groupval(object@xcmsSet,value=intval)[, index, drop=FALSE];
 }else{
   maxo    <- object@groupInfo[, intval]
 }
@@ -1468,14 +1463,18 @@ while(length(allCandidates) > 0){
   allCandidates <- allCandidates[-c(1, index[which(hit)]), drop=FALSE]
 }
 
-
-resultMatrix <- matrix(NA, nrow=0, ncol=6)
+if(is.matrix(maxo)){
+  addCol <- ncol(maxo)
+}else{
+  addCol <- 1
+}
+resultMatrix <- matrix(NA, nrow=0, ncol=5+addCol)
 
 #generate Results
 index <- 1
 invisible(lapply(results, function(x){
-  resultMatrix <<- rbind(resultMatrix, cbind(index, data.sorted[x, ], kendrickMass[x],
-                                             kendrickMassDefect[x]))
+  resultMatrix <<- rbind(resultMatrix, cbind(index, kendrickMass[x],
+                                             kendrickMassDefect[x], data.sorted[x, ] ))
   index <<- index + 1
 }))
 
@@ -1492,7 +1491,7 @@ if(plot){
     lines(data.sorted[x,2],data.sorted[x, 1],col=color[index])
   })  
 }
-colnames(resultMatrix) <- c("Index","mz","rt","int","KMass","KMassDefect")
+colnames(resultMatrix)[1:5] <- c("Index","KMass","KMassDefect","mz","rt")
   return(invisible(resultMatrix))
 }
 

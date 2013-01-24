@@ -154,18 +154,21 @@ setMethod("plotEICs", "xsAnnotate", function(object,
 })
 
 setGeneric("plotPeakEICs", function(object,
-                                pspec=1:length(object@pspectra),
+                                    pidx=1:nrow(object@groupInfo),
+                                samples=min(object@psSamples):max(object@psSamples),
                                 maxlabel=0, sleep=0,
                                 ...) standardGeneric("plotPeakEICs"))
 
-setMethod("plotPeakEICs", "xsAnnotate", function(object,
+setMethod("plotPeakEICs", "xsAnnotate", function(object, pidx=1:nrow(object@groupInfo),
                                              samples=min(object@psSamples):max(object@psSamples),
                                              maxlabel=0, sleep=0, method="bin"){
   #Which different samples need to be addressed for extracting raw data
   if (!all(samples %in% object@psSamples)){
     stop ("Parameter samples must be within the number of samples.\n");
   }
-      
+  if (!all(pidx <= nrow(object@groupInfo && pidx > 0))){
+    stop ("Peadindexes must be greater 0 and lower as maximum number of peaks.\n")
+  }
   xeic  <- new("xcmsEIC");
   xeic@rtrange <- matrix(nrow=nrow(object@groupInfo), ncol=2)
   xeic@mzrange <- matrix(nrow=nrow(object@groupInfo), ncol=2)
@@ -187,7 +190,10 @@ setMethod("plotPeakEICs", "xsAnnotate", function(object,
       
       nap <- which(is.na(pks[, 1]))
       pks[nap, ] <- cbind(matrix(nrow=length(nap), ncol=ncol(pks), 0))
-
+      bbox <- c(rtmin = min(pks[, "rtmin"])-rtmargin,
+                rtmax = max(pks[, "rtmax"])+rtmargin,
+                mzmin = min(pks[, "mzmin"]),
+                mzmax = max(pks[, "mzmax"]))
       eic <- xcms:::getEIC(xraw, rtrange=pks[, c("rtmin", "rtmax"), drop=FALSE],
                            mzrange=pks[, c("mzmin", "mzmax"), drop=FALSE])
       #write resulting bounding box into xcmsEIC
