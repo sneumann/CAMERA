@@ -156,7 +156,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
 setGeneric("plotPeakEICs", function(object,
                                 pspec=1:length(object@pspectra),
                                 maxlabel=0, sleep=0,
-                                ...) standardGeneric("plotEICs"))
+                                ...) standardGeneric("plotPeakEICs"))
 
 setMethod("plotPeakEICs", "xsAnnotate", function(object,
                                              samples=min(object@psSamples):max(object@psSamples),

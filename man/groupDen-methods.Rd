@@ -17,7 +17,9 @@
   \item{bw}{bandwidth (standard deviation or half width at half maximum) of gaussian smoothing kernel to apply to the peak density chromatogram}
   \item{...}{Further Arguments, NYI}
 }
-
+\value{
+  Returns a grouped xsAnnotate object. 
+}
 \examples{
  library(CAMERA)
  #Single sample 
@@ -39,5 +41,9 @@
  xsa.grp.auto <- groupDen(xsa.auto)
 }
 
+\details{
+  The grouping strongly depends on the bw parameter. 
+  For an UPLC a good starting point is smaller or around 1.
+}
 \author{Carsten Kuhl <ckuhl@ipb-halle.de>}
 \keyword{methods}
