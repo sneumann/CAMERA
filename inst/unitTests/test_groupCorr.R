@@ -16,15 +16,15 @@ test.grp.lpc <- function() {
                        "5th peak in 5th compound spectra is number 86")
 
     ## groupCORR without groupFWHM
-    anC <- groupCorr(an,graphMethod="lpc") 
-    checkEqualsNumeric(length(anC@pspectra),18,
-                       "lpc created 17 compound spectra")
+    #anC <- groupCorr(an,graphMethod="lpc") 
+    #checkEqualsNumeric(length(anC@pspectra),18,
+    #                   " lpc created 18 compound spectra")
 
     ## groupCORR with groupFWHM
     
     anFC <- groupCorr(anF,graphMethod="lpc") 
     checkEqualsNumeric(length(anFC@pspectra),35,
-                       "lpc created 35 compound spectra")
+                       " lpc created 35 compound spectra")
     
     }
 
