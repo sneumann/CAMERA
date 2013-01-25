@@ -1,6 +1,6 @@
 Package: CAMERA
-Version: 1.15.3
-Date: 2013-01-23
+Version: 1.15.4
+Date: 2013-01-25
 Title: Collection of annotation related methods for mass spectrometry data 
 Author: Carsten Kuhl, Ralf Tautenhahn, Steffen Neumann {ckuhl|sneumann}@ipb-halle.de, rtautenh@scripps.edu
 Maintainer: Carsten Kuhl <ckuhl@ipb-halle.de>
