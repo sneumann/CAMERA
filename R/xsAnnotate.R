@@ -1445,7 +1445,9 @@ while(length(allCandidates) > 0){
   
   #find candidates with remains = 0 and m/z difference in allowed range
   index <- which(remains == 0 & difference.mz <= maxHomologue * nominalMass
-                 & difference.rt <= (quotient * time) & difference.rt > 0)
+                 & abs(difference.rt) <= abs(quotient * time)
+                 & sign(time) * difference.rt > 0
+                 )
   
   #do we have candidates, otherwise next
   if(length(index) < 1){
