@@ -1418,8 +1418,9 @@ if(any(sapply(data[, 1], is.na))){
   stop("No NA values allowed!")
 }
 
+ord <- order(data[, 1])
 #sorting after mass(first column)
-data.sorted <- data[order(data[, 1]), ]
+data.sorted <- data[ord, ]
 
 #calculate kendrick masses
 kendrickMass <- data.sorted[, 1] * nominalMass/exactMass;
@@ -1445,6 +1446,7 @@ while(length(allCandidates) > 0){
   
   #find candidates with remains = 0 and m/z difference in allowed range
   index <- which(remains == 0 & difference.mz <= maxHomologue * nominalMass
+                 & difference.mz > 0
                  & abs(difference.rt) <= abs(quotient * time)
                  & sign(time) * difference.rt > 0
                  )
@@ -1470,12 +1472,12 @@ if(is.matrix(maxo)){
 }else{
   addCol <- 1
 }
-resultMatrix <- matrix(NA, nrow=0, ncol=5+addCol)
+resultMatrix <- matrix(NA, nrow=0, ncol=6+addCol)
 
 #generate Results
 index <- 1
 invisible(lapply(results, function(x){
-  resultMatrix <<- rbind(resultMatrix, cbind(index, kendrickMass[x],
+  resultMatrix <<- rbind(resultMatrix, cbind(index, ord[x],kendrickMass[x],
                                              kendrickMassDefect[x], data.sorted[x, ] ))
   index <<- index + 1
 }))
@@ -1493,7 +1495,8 @@ if(plot){
     lines(data.sorted[x,2],data.sorted[x, 1],col=color[index])
   })  
 }
-colnames(resultMatrix)[1:5] <- c("Index","KMass","KMassDefect","mz","rt")
+
+colnames(resultMatrix)[1:6] <- c("Index","GIndex","KMass","KMassDefect","mz","rt")
   return(invisible(resultMatrix))
 }
 
