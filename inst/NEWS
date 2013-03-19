@@ -1,3 +1,7 @@
+CHANGES IN VERSION 1.15.5
+
+  * MPI Version of findAdducts() should now consume a lot less memory then before
+
 CHANGES IN VERSION 1.15.4
 
   * findKendrickMass() now allows negative retention time windows,
