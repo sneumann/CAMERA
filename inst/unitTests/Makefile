@@ -1,6 +1,6 @@
 TOP=../..
 PKG=${shell cd ${TOP};pwd}
-SUITE=doRUnit.R
+SUITE=../../tests/runTests.R
 R=R
 
 all: inst test
@@ -14,5 +14,5 @@ test: # Run unit tests
 	cd ${TOP}/tests;\
 	${R} --vanilla --slave < ${SUITE}
 
-clean:
-	rm -f report.html  reportSummary.txt  report.txt *~
+# clean:
+#	rm -f report.html  reportSummary.txt  report.txt *~

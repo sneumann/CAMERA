@@ -1,6 +1,6 @@
 ## single sample MPI
 test.anno_single <- function() {
-    if(require("rmpi", quietly=TRUE)){
+    if(require("Rmpi", quietly=TRUE)){
     file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
     xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
     an   <- xsAnnotate(xs,nSlaves=2)
@@ -15,7 +15,7 @@ test.anno_single <- function() {
 
 test.anno_multi <- function() {
     library(faahKO)
-    if(require("rmpi", quietly=TRUE)){         
+    if(require("Rmpi", quietly=TRUE)){         
       filepath <- system.file("cdf", package = "faahKO")
       xsg <- group(faahko)
 
