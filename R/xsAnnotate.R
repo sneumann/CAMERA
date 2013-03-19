@@ -913,42 +913,12 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     }
     
     argList <- list();
+    
     cnt_peak <- 0;
     if(is.null(max_peaks)){
       max_peaks=100;
     }
-    params <- list();
-    
-    for(j in 1:length(pspectra_list)){
-      i <- pspectra_list[j];
-      params$i[[length(params$i)+1]] <- i;
-      cnt_peak <- cnt_peak+length(object@pspectra[[i]]);
-      if(cnt_peak>max_peaks || j == length(pspectra_list)){
-        params$pspectra <-object@pspectra;
-        params$imz <- imz;
-#         params$mint <- mint;
-        params$rules <- rules;
-        params$mzabs <- mzabs;
-        params$devppm <- devppm;
-        params$isotopes <- isotopes;
-        params$quasimolion <- quasimolion;
-        argList[[length(argList)+1]] <- params
-        cnt_peak <- 0;
-        params <- list();
-      }
-    }
-    #Some informationen for the user
-    cat("Parallel mode: There are",length(argList), "tasks.\n")
-    
-    if(is.null(object@runParallel$cluster)){
-      #Use MPI
-      result <- xcmsPapply(argList, annotateGrpMPI)
-    }else{
-      #For snow
-      result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, 
-                                        x=argList, fun=annotateGrpMPI, 
-                                        msgfun=msgfun.snowParallel)
-    }
+    paramsGlobal <- list();
     if("typ" %in% colnames(rules)){
       rules.idx <- which(rules[, "typ"]== "A")
       parent <- TRUE;
@@ -957,6 +927,47 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       rules.idx <- 1:nrow(rules);
       parent <- FALSE;
     }
+    
+    #Add params to env
+    paramsGlobal <- list()
+    paramsGlobal$pspectra <- object@pspectra;
+    paramsGlobal$imz <- imz;
+    paramsGlobal$rules <- rules;
+    paramsGlobal$mzabs <- mzabs;
+    paramsGlobal$devppm <- devppm;
+    paramsGlobal$isotopes <- isotopes;
+    paramsGlobal$quasimolion <- quasimolion;
+    paramsGlobal$parent <- parent;
+    paramsGlobal$rules.idx <- rules.idx;
+    #create params
+    #paramsGlobal <- list2env(params)
+    
+    params <- list();
+    
+    for(j in 1:length(pspectra_list)){
+      i <- pspectra_list[j];
+      params$i[[length(params$i)+1]] <- i;
+      cnt_peak <- cnt_peak+length(object@pspectra[[i]]);
+      if(cnt_peak > max_peaks || j == length(pspectra_list)){
+        argList[[length(argList)+1]] <- params
+        cnt_peak <- 0;
+        params <- list();
+      }
+    }
+    
+    #Some informationen for the user
+    cat("Parallel mode: There are",length(argList), "tasks.\n")
+    
+    if(is.null(object@runParallel$cluster)){
+      #Use MPI
+      result <- xcmsPapply(argList, annotateGrpMPI2, paramsGlobal)
+    }else{
+      #For snow
+      result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, 
+                                        x=argList, fun=annotateGrpMPI, 
+                                        msgfun=msgfun.snowParallel)
+    }
+
     for(ii in 1:length(result)){
       if(length(result[[ii]]) == 0){
         next;
@@ -975,12 +986,14 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
           if(old_massgrp != hypothese[hyp,"massgrp"]) {
             massgrp <- massgrp+1;
             old_massgrp <- hypothese[hyp,"massgrp"];
-            annoGrp <- rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"score"]),i) ) 
+            annoGrp <- rbind(annoGrp,c(massgrp,hypothese[hyp,"mass"],
+                                       sum(hypothese[ which(hypothese[,"massgrp"]==old_massgrp),"score"]),i) ) 
           }
+          
           if(parent){
-            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp,c("ruleID","parent")]))  
+            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp, c("ruleID","parent")]))  
           }else{
-            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp,c("ruleID")],NA))
+            annoID <- rbind(annoID, cbind(peakid, massgrp, hypothese[hyp, c("ruleID")],NA))
           }
           
         }
@@ -1005,6 +1018,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       pspectra_list <- psg_list;
       sum_peaks <- sum(sapply(object@pspectra[psg_list],length));
     }
+    
     if("typ" %in% colnames(rules)){
       rules.idx <- which(rules[, "typ"]== "A")
       parent <- TRUE;

@@ -1,12 +1,28 @@
 ##Functions for findAdducts
 
+annotateGrpMPI2 <- function(params){
+  library(CAMERA);
+  result <- vector(mode="list", length=length(params$i));
+  names(result) <- params$i;
+  for(ii in 1:length(params$i)){
+    res <- CAMERA:::annotateGrp(papply_commondata$pspectra[[params$i[[ii]]]], papply_commondata$imz, 
+                                papply_commondata$rules,papply_commondata$mzabs,papply_commondata$devppm,
+                                papply_commondata$isotopes, papply_commondata$quasimolion,
+                                papply_commondata$rules.idx);
+    if(!is.null(res)){
+      result[[ii]]<-res;
+    }
+  }
+  return(result);
+}
 
 annotateGrpMPI <- function(params){
   library(CAMERA);
-  result <- vector(mode="list",length=length(params$i));
+  result <- vector(mode="list", length=length(params$i));
   names(result) <- params$i;
   for(ii in 1:length(params$i)){
-    res <- CAMERA:::annotateGrp(params$pspectra[[params$i[[ii]]]], params$imz, params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
+    res <- CAMERA:::annotateGrp(params$pspectra[[params$i[[ii]]]], 
+                                params$imz, params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
     if(!is.null(res)){
       result[[ii]]<-res;
     }
