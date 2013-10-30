@@ -679,14 +679,14 @@ setMethod("generateRules2", signature="ruleSet", function (object) {
 ##
 
 calcRules <- function (maxcharge=3, mol=3, nion=2, nnloss=1,
-                       nnadd=1, nh=2, polarity=NULL, lib.loc = .libPaths(), newFragments=FALSE){
+                       nnadd=1, nh=2, polarity=NULL, lib.loc = .libPaths(), multFragments=FALSE){
 
   r <- new("ruleSet")
   r <- setDefaultLists(r, lib.loc=lib.loc)
   r <- readLists(r)  
   r <- setParams(r, maxcharge=maxcharge, mol=mol, nion=nion,
                   nnloss=nnloss, nnadd=nnadd, nh=nh, polarity=polarity, lib.loc = lib.loc)  
-  if(newFragments){
+  if(multFragments){
     r <- generateRules2(r)
   }else{
     r <- generateRules(r)
