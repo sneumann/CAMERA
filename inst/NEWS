@@ -1,3 +1,8 @@
+CHANGES IN VERSION 1.19.1
+
+  * Fixed bug in the generateRules function, where in the negative mode
+    rules with polycharged positve ions are not created
+
 CHANGES IN VERSION 1.15.5
 
   * MPI Version of findAdducts() should now consume a lot less memory then before

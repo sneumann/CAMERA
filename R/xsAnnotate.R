@@ -767,7 +767,7 @@ setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, pol
                                    rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
 setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
                                                 rules=NULL, max_peaks=100, psg_list=NULL){
-  multFragments=FALSE
+  multFragments=FALSE;
   # Scaling ppm factor
   devppm <- ppm / 1000000;
   # counter for % bar
@@ -833,7 +833,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         cat("Ruleset could not read from object! Recalculate\n");
         rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, nh=2,
                            polarity=object@polarity, 
-                           lib.loc= .libPaths(),multFragments=multFragments);
+                           lib.loc= .libPaths(), multFragments=multFragments);
         object@ruleset <- rules;
       }
     }else{ 
