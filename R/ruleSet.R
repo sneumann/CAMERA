@@ -332,15 +332,27 @@ setMethod("generateRules",
                 oid<-3;
                 for(i in 1:nrow(ionlist)){
                   if(ionlist[i,2]>=0){
-                    if(ionlist[i,2]>1) {next;}
-                    name<-append(name,paste("[",str,"M-2H+",ionlist[i,1],"]-",sep=""));
-                    charge <- append(charge,ionlist[i,2]-2);
-                    massdiff<- append(massdiff,ionlist[i,3]-(2*1.007276));
-                    nmol <- append(nmol,k);
-                    quasi <- append(quasi,0);
-                    oidscore<-append(oidscore,oid+i);
-                    ips<-append(ips,0.25);
-                    next;
+                    if(ionlist[i,2] == 1){
+                      name<-append(name,paste("[",str,"M-2H+",ionlist[i,1],"]-",sep=""));
+                      charge <- append(charge,ionlist[i,2]-2);
+                      massdiff<- append(massdiff,ionlist[i,3]-(2*1.007276));
+                      nmol <- append(nmol,k);
+                      quasi <- append(quasi,0);
+                      oidscore<-append(oidscore,oid+i);
+                      ips<-append(ips,0.25);
+                      next;
+                    } else {
+                      if(ionlist[i,2] > maxcharge) {next;}
+                      localCharge <- ionlist[i,2]+1
+                      name<-append(name,paste("[",str,"M-",localCharge,"H+",ionlist[i,1],"]-",sep=""));
+                      charge <- append(charge,ionlist[i,2]-localCharge);
+                      massdiff<- append(massdiff,ionlist[i,3]-(localCharge*1.007276));
+                      nmol <- append(nmol,k);
+                      quasi <- append(quasi,0);
+                      oidscore<-append(oidscore,oid+i);
+                      ips<-append(ips,0.25);
+                      next;
+                    }
                   }
                   if(ionlist[i,2]== -1){
                     name<-append(name,paste("[",str,"M-H+",ionlist[i,1],"]2-",sep=""));
@@ -523,12 +535,14 @@ setMethod("generateRules2", signature="ruleSet", function (object) {
       if(ionlist[i, 2] > 0 & charge == "-"){
         if(ionlist[i, 2] == 1){
           sumcharge <- "";
+          hdiff <- 1;
         }else{
           sumcharge <- ionlist[i, 2];
+          hdiff <- ionlist[i,2]-1;
         }
-        ruleset <- rbind(ruleset, cbind(paste("[", str, "M", charge,"H+", ionlist[i,1], "-H]", sumcharge,
+        ruleset <- rbind(ruleset, cbind(paste("[", str, "M", charge,"H+", ionlist[i,1], "-", sumcharge,"H]", "",
                                                charge, sep=""), k, ionlist[i, 2]*chargeValue, 
-                                        ionlist[i, 3]+massH*(chargeValue-1),
+                                        ionlist[i, 3]-massH*(1+hdiff),
                                         "A", 0, 0.25, tmpionparent));  
       }
         
