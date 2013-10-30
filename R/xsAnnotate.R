@@ -764,11 +764,9 @@ setMethod("findIsotopes", "xsAnnotate",
 })
 
 setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
-                                   rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
+                                   rules=NULL, max_peaks=100, psg_list=NULL, multFragments=FALSE) standardGeneric("findAdducts"));
 setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
-                                                rules=NULL, max_peaks=100, psg_list=NULL){
-  newFragments <- FALSE;
-  
+                                                rules=NULL, max_peaks=100, psg_list=NULL, multFragments=FALSE){
   # Scaling ppm factor
   devppm <- ppm / 1000000;
   # counter for % bar
@@ -834,7 +832,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         cat("Ruleset could not read from object! Recalculate\n");
         rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, nh=2,
                            polarity=object@polarity, 
-                           lib.loc= .libPaths(),newFragments=newFragments);
+                           lib.loc= .libPaths(),multFragments=multFragments);
         object@ruleset <- rules;
       }
     }else{ 
@@ -847,7 +845,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         if(is.null(rules)){
           rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, 
                               nh=2, polarity=polarity, lib.loc= .libPaths(),
-                             newFragments=newFragments);
+                             multFragments=multFragments);
         }else{ cat("Found and use user-defined ruleset!");}
           object@polarity <- polarity;
       }else stop("polarity mode unknown, please choose between positive and negative.")
@@ -857,7 +855,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
         if(is.null(rules)){
           rules <- calcRules(maxcharge=3, mol=3, nion=2, nnloss=1, nnadd=1, 
                              nh=2, polarity=object@xcmsSet@polarity[index], 
-                             lib.loc= .libPaths(), newFragments=newFragments);
+                             lib.loc= .libPaths(), multFragments=multFragments);
         }else{ cat("Found and use user-defined ruleset!");}
         object@polarity <- polarity;
       }else stop("polarity mode in xcmsSet unknown, please define variable polarity.")
