@@ -1,3 +1,11 @@
+CHANGES IN VERSION 1.20.1
+
+  * Added possibility to pass cor_exp_th from annotateDiffreport to groupCorr()
+
+CHANGES IN VERSION 1.20.0
+
+  * Version bump for BioC release
+
 CHANGES IN VERSION 1.19.1
 
   * Fixed bug in the generateRules function, where in the negative mode
