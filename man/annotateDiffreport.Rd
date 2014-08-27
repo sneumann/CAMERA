@@ -19,7 +19,8 @@ annotateDiffreport(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6,
   \item{nSlaves}{xsAnnotate: Use parallel CAMERA mode, require Rmpi}
   \item{sigma}{groupFWHM: multiplier of the standard deviation}
   \item{perfwhm}{groupFWHM: percentage of FWHM width}
-  \item{cor_eic_th}{groupCorr: correlation threshold (0..1)}
+  \item{cor_eic_th}{groupCorr: Correlation threshold for EIC correlation (0..1)}
+  \item{cor_exp_th}{groupCorr: Threshold for intensity correlations across samples (0..1)}
   \item{graphMethod}{groupCorr: Method selection for grouping peaks after correlation analysis into pseudospectra}
   \item{pval}{groupCorr: significant correlation threshold}
   \item{calcCiS}{groupCorr: Use correlation inside samples for peak grouping}
