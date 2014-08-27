@@ -1088,7 +1088,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
 })
 
 annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6,
-  cor_eic_th=0.75, graphMethod="hcs", pval=0.05, calcCiS=TRUE,
+  cor_eic_th=0.75, cor_exp_th=0.75, graphMethod="hcs", pval=0.05, calcCiS=TRUE,
   calcIso=FALSE, calcCaS=FALSE, maxcharge=3, maxiso=4, minfrac=0.5,
   ppm=5, mzabs=0.015, quick=FALSE, psg_list=NULL, rules=NULL,
   polarity="positive", multiplier=3, max_peaks=100, intval="into",
@@ -1157,7 +1157,7 @@ annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.
     
     #Include into psg_list all groups that has been created after groupCorr
     cnt <- length(xa@pspectra);
-    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,psg_list=psg_list)
+    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,cor_exp_th=cor_exp_th,psg_list=psg_list)
     if(!is.null(psg_list)){
       psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
     }
