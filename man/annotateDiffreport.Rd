@@ -7,7 +7,7 @@
 }
 \usage{
 annotateDiffreport(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6,
-  cor_eic_th=0.75, graphMethod="hcs", pval=0.05, calcCiS=TRUE,
+  cor_eic_th=0.75, cor_exp_th = 0.75, graphMethod="hcs", pval=0.05, calcCiS=TRUE,
   calcIso=FALSE, calcCaS=FALSE, maxcharge=3, maxiso=4, minfrac=0.5,
   ppm=5, mzabs=0.015, quick=FALSE, psg_list=NULL, rules=NULL,
   polarity="positive", multiplier=3, max_peaks=100, intval="into",
