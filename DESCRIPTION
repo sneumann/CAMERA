@@ -15,4 +15,4 @@ License: GPL (>= 2)
 ByteCompile: TRUE
 URL: http://msbi.ipb-halle.de/msbi/CAMERA/
 BugReports: https://github.com/sneumann/CAMERA/issues/new
-biocViews: MassSpectrometry
+biocViews: MassSpectrometry, Metabolomics
