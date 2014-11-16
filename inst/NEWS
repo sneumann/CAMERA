@@ -1,3 +1,7 @@
+CHANGES IN VERSION 1.23.1
+
+  * Fix bug in generateRules() with empty neutraladditions
+
 CHANGES IN VERSION 1.20.1
 
   * Added possibility to pass cor_exp_th from annotateDiffreport to groupCorr()
