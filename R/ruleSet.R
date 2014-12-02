@@ -273,9 +273,11 @@ setMethod("generateRules",
               }
               oid<-max(oidscore);
 
-              ## Erzeuge Neutral Addition
+              ## Create Neutral Addition
               index<-which(quasi==1)
-              for(i in 1:nrow(neutraladdition)){
+
+              if (nrow(neutraladdition)>0) {
+              for(i in 1:nrow(neutraladdition)) {
                 if(length(index2<-which(ionlist[,2]>0))>0){
                   for(ii in 1:length(index2)){
                     if(ionlist[index2[ii],2] > 1){
@@ -301,7 +303,8 @@ setMethod("generateRules",
                 ips<-append(ips,0.5);
               }
               oid<-max(oidscore);
-
+              }
+              
               ##Erzeuge Neutral loss
               index<-which(quasi==1)
               for(i in 1:nrow(neutralloss)){
