@@ -1,3 +1,7 @@
+CHANGES IN VERSION 1.23.2
+
+  * Fix bug in generateRules() if no ions matching the polarity are provided explicitly
+
 CHANGES IN VERSION 1.23.1
 
   * Fix bug in generateRules() with empty neutraladditions

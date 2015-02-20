@@ -1,6 +1,6 @@
 TOP=../..
 PKG=${shell cd ${TOP};pwd}
-SUITE=../../tests/runTests.R
+SUITE=./runTests.R
 R=R
 
 all: inst test
