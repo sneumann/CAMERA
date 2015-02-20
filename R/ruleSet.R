@@ -227,7 +227,8 @@ setMethod("generateRules",
                   tmp<-rbind(tmp,t(apply(coeff,1,function(x) {x[i]<-x[i]+1;x[nrow(ionlist)+1]<-1;x})));
                 }
                 coeff<-unique(rbind(coeff,tmp));
-                for(i in 1:nrow(coeff)){
+                i <- 1
+                while (i <= nrow(coeff)){
                   tmpname<-paste("[",str,"M",sep="");
                   tmpcharge<-0;tmpmass<-0;
                   for(ii in 1:(ncol(coeff)-1)){
@@ -269,6 +270,7 @@ setMethod("generateRules",
                       ips <- append(ips,tmpips);
                     }
                   }
+                  i <- i+1
                 }
               }
               oid<-max(oidscore);
@@ -377,8 +379,9 @@ setMethod("generateRules",
                 }
                 coeff<-unique(coeff);
                 coeff<-cbind(coeff,rep(0,nrow(coeff)));
-                coeff<-coeff[-1,]
-                for(i in 1:nrow(coeff)){
+                coeff<-coeff[-1,] ## remove first row
+                i <- 1
+                while (i <= nrow(coeff)){
                   tmpname<-paste("[",str,"M",sep="");
                   tmpcharge<-0;tmpmass<-0;
                   for(ii in 1:(ncol(coeff)-1)){
@@ -415,7 +418,8 @@ setMethod("generateRules",
                     quasi <-append(quasi,0);
                   }
                   ips <-append(ips,tmpips);
-                }
+                  i <- i+1
+                  }
               }
               oid<-max(oidscore);
 
