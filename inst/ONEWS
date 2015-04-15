@@ -1,0 +1,156 @@
+
+2012-06-12 <ckuhl@ipb-halle.de>
+ * Bugfix in findIsotopes, clears 'vec' must be sorted non-decreasingly error
+2012-06-11 <ckuhl@ipb-halle.de>
+ * Version 1.13.4
+ * Add ByteCompile: TRUE
+ * Bugfix for findIsotopes, clears subscript out of bound error
+2012-05-25 <ckuhl@ipb-halle.de>
+ * Version 1.13.2
+ * First changes for improved isotope detection
+2012-04-12 <ckuhl@ipb-halle.de>
+ * Version 1.13.1
+ * Bugfix for findIsotopes to fix not consecutive isotope label like [M]+,[M+2]+ without [M+1]+
+2012-03-19 <ckuhl@ipb-halle.de>
+ * Version 1.11.10
+ * Bugfix in groupCorr, where the function throws an error if argument xraw is not null
+2012-03-19 <ckuhl@ipb-halle.de>
+ * Version 1.11.9
+ * Bugfix in findAdducts, where adduct annotation filtering was to stringent, if ips score is higher 1.5
+2012-02-29 <ckuhl@ipb-halle.de>
+ * Version 1.11.8
+ * Bugfix in findAdducts parallel mode, where wrong psgrp indices were stored in annoGrp
+2012-02-17 <ckuhl@ipb-halle.de>
+ * Version 1.11.7
+ * Bugfix in findAdducts, where the ruleset is not saved within a xsAnnotate object with user defined rules
+ * Changed a general groupCorr behaviour. If no edge is above correlation threshold, all peaks are seperated in pspecs of size 1
+2012-02-15 <ckuhl@ipb-halle.de>
+ * Version 1.11.6
+ * Fix error in groupCorr: If sample is set to something other than 1 or NA, it result in a crash
+2012-02-10 <ckuhl@ipb-halle.de>
+  * Version 1.11.5
+  * Bugfix in groupCorr where parameter cor_eic_th doesn't influence correlation across samples
+  * Add new parameter for groupCorr cor_exp_th
+2011-12-12 <ckuhl@ipb-halle.de>
+  * Version 1.11.4
+  * Add missing Rd page combinexsAnnos
+2011-29-11 <ckuhl@ipb-halle.de>
+  * Version 1.11.3
+  * Add new function combinexsAnnos. It allows checking and reannotation of sample with a coressponding sample from the opposite ion mode
+2011-24-11 <ckuhl@ipb-halle.de>
+  * Version 1.11.2
+  * Bugfix in annotateDiffreport: Since 1.7.7 mismatch of the peaklist from CAMERA and the diffreport function results 
+    in false ordered peaktable
+2011-10-11 <ckuhl@ipb-halle.de>
+  * Version 1.11.1
+  * add the possibility to extract multiple isotope intensity from different samples
+    with getIsotopeCluster
+2011-20-25 <rtautenh@scripps.edu>
+  * Version 1.9.9
+  * added some "drop=FALSE" to fix "Error in isomatrix[, 1] : incorrect number of dimensions" error
+2011-20-10 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.8
+  * Correct rule table extended_adducts_pos.csv (typo in proton mass)
+2011-23-09 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.7
+  * Bugfix in calcIsotopes, causes groupCorr with calcIso to crash with (Error in rbind(resMat ...)
+  * Bugfix in groupCorr with given xcmsRaw
+2011-22-08 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.6
+  * Bugfix in plotEICs (Error in pks[, 1] : incorrect number of dimensions)
+2011-02-08 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.5
+  * Bugfix for findIsotopes if ppm was very high it could occur that one peak is assigned as two or more isotope peaks
+2011-02-08 ckuhl <ckuhl@ipb-halle.de>
+  * Version 1.9.4
+  * Add parameter polarity to xsAnnotate constructor
+  * getPeaklist and getpspectra returns now correct annotation of negative charged ions [M]-
+  * Add snow as additonal possibilty for parallel processing
+  * Add function cleanParallel to clean up with spawned slave processes
+2011-24-05 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findIsotopes, which could cause a crash, if maxiso was higher than 3 
+2011-12-05 ckuhl <ckuhl@ipb-halle.de>
+	* plotPsSpectrum now accepts additional parameters for plot
+2011-28-04 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in getpspectra, which incorrect label isotope peaks
+2011-04-04 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findAdducts, if pseudospectrum mass list has only NA values
+2010-23-11 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findAdducts. Function failed, if run in parallel mode.
+2010-08-11 ckuhl <ckuhl@ipb-halle.de>
+	* Add intval parameter to groupFWHM and findIsotopes
+2010-08-11 ckuhl <ckuhl@ipb-halle.de>
+	* Change getPeaklist to S4 Methods.
+	* Add getPeaklist parameter intval, where the intensity value can be selected
+2010-08-11 ckuhl <ckuhl@ipb-halle.de>
+	* Additional bugfix for findIsotopes. Could occur with 1.7.1, that all isotopes will be deleted.
+2010-01-11 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findIsotopes. Occurs if the first isotope peak, could be assigned from two different monoisotopic peaks.
+	* Reduce slightly the number of found isotopes
+2010-11-10 ckuhl <ckuhl@ipb-halle.de>
+	* Rewrite Vignette
+2010-29-09 ckuhl <ckuhl@ipb-halle.de>
+    	* Add function findNeutralLoss and findNeutralLossSpecs
+2010-20-09 ckuhl <ckuhl@ipb-halle.de>
+        * Add function getIsotopeCluster for retrival of isotope cluster
+2010-11-06 ckuhl <ckuhl@ipb-halle.de>
+	* Speed up in findAdducts
+	* Fix unit tests
+2010-05-03 ckuhl <ckuhl@ipb-halle.de>
+	* Fix bug in findIsotopes, crashed with dim error
+2010-04-20 ckuhl <ckuhl@ipb-halle.de>
+        * Fix bug in annotate function
+2010-04-19 ckuhl <ckuhl@ipb-halle.de>
+	* Last changes for the next BioC release
+	* Rewrite of the vignette
+2010-03-17 ckuhl <ckuhl@ipb-halle.de>
+	* Hugh changes in CAMERA for working with multiple sample
+	* Add check constrains in groupCorr for isotopes and primary adducts
+2009-11-24 ckuhl <ckuhl@ipb-halle.de>
+        * Add experimental parallel mode with MPI
+2009-11-20 ckuhl <ckuhl@ipb-halle.de>
+        * Fix bug in setting ruletable
+2009-08-26 ckuhl <ckuhl@ipb-halle.de>
+        * add nSlaves as argument to findAdducts (for parallel annotation with MPI)
+2009-08-24 ckuhl	<ckuhl@ipb-halle.de>
+	* small bugfixes in getPeaklist
+	* add neutral losses to rule set
+2009-08-12 Steffen Neumann <sneumann@@ipb-halle.de>
+	* Fixed plotEICs for 1 peak groups
+2009-08-04 ckuhl	<ckuhl@ipb-halle.de>
+	* Add ips Score to annoGrp
+2009-06-03 Steffen Neumann <sneumann@@ipb-halle.de>
+        * Add adduct labels to plotPeaks()
+        * Add adduct labels to plotEICs()
+2009-05-22 Steffen Neumann <sneumann@@ipb-halle.de>
+        * Add first visualisation function plotEICs() and plotPeaks()
+2009-05-06 ckuhl    <ckuhl@ipb-halle.de>
+        * bump for devel 2.5
+2009-03-30 ckuhl    <ckuhl@ipb-halle.de>
+        * add combine_xsanno
+        * small refactoring
+        * changes in scoring schemata
+2009-03-18 ckuhl	<ckuhl@ipb-halle.de>
+	* after groupCorr every peak is now member of a group
+        * bugfix: remove xM-xH clones
+        * remove dependency on Hmisc
+2009-03-10 ckuhl	<ckuhl@ipb-halle.de>
+	* speed-up of findAdducts
+2009-02-24 ckuhl        <ckuhl@ipb-halle.de>
+        * refactoring findAdducts
+        * add methods for pos/neg polarity comparison
+2009-02-20 ckuhl        <ckuhl@ipb-halle.de>
+        * replace na.omit with naOmit
+2009-02-18 ckuhl	<ckuhl@ipb-halle.de>
+	* add neutral losses into ruleset
+	* other bugfixes
+2009-01-19 ckuhl	<ckuhl@ipb-halle.de>
+	* Change isotope nomination
+	* add lists for fragments, ions and neutral losses
+2008-10-15  ckuhl	<ckuhl@ipb-halle.de>
+	* Lot of bugfixes and speed up the correlation
+2008-10-13  ckuhl	<ckuhl@ipb-halle.de>
+	* First build for version 0.1.1
+2007-10-12  sneumann  <sneumann@ipb-halle.de>
+	* Inital release & collection of stuff
+
