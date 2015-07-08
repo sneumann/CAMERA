@@ -2,7 +2,6 @@ useDynLib(CAMERA)
 
 import("methods")
 import("xcms")
-import("igraph")
 
 importFrom("RBGL", "highlyConnSG")
 importFrom("graph", "ftM2graphNEL")
@@ -12,6 +11,7 @@ importFrom("graphics", "legend", "plot", "points", "strheight", "text")
 importFrom("grDevices", "rgb")
 importFrom("stats", "cor.test")
 importFrom("utils", "flush.console", "object.size", "read.table")
+importFrom("igraph", "graph.data.frame", "label.propagation.community")
 
 
 importClassesFrom(Biobase, "Versioned")

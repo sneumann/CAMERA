@@ -1,3 +1,11 @@
+CHANGES IN VERSION 1.25.1
+-------------------------
+
+BUG FIXES
+
+    o Fix the import of the igraph methods, because it also exported a groups function. Solves the error "Error in x$membership : $ operator not defined for this S4 class"
+
+
 CHANGES IN VERSION 1.23.2
 -------------------------
 
