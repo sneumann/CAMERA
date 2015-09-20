@@ -1,3 +1,9 @@
+CHANGES IN VERSION 1.25.2
+-------------------------
+
+USER VISIBLE CHANGES:
++ Disabled Rmpi support and usage on Windows
+
 CHANGES IN VERSION 1.25.1
 -------------------------
 

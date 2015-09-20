@@ -56,7 +56,7 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1, polarity=NULL){
     rmpi = "Rmpi"
     opt.warn <- options("warn")$warn
     options("warn" = -1) 
-    if (require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
+    if ((Sys.info()["sysname"] != "Windows") && require(rmpi,character.only=TRUE) && !is.null(nSlaves)) {
       if (is.loaded('mpi_initialize')) {
         #test if not already slaves are running!
         if(mpi.comm.size() >0){ 
