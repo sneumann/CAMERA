@@ -320,7 +320,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
 ##
 ## Loop through all requested pspectra
 ##
-  if(is.na(object@sample)){
+  if (length(object@sample)<1) {
     gvals <- groupval(object@xcmsSet);
     peakmat <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
