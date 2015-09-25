@@ -9,7 +9,8 @@ test.anno_single <- function() {
     file  <- system.file('rules/primary_adducts_pos.csv', package = "CAMERA")
     rules <- read.csv(file)
     anFA <- findAdducts(anI,polarity="positive",rules=rules)
-    checkEqualsNumeric(length(unique(anFA@annoID[,1])),30)    
+    checkEqualsNumeric(length(unique(anFA@annoID[,1])),30)
+    cleanParallel(an)
 #  }
 }
 
@@ -28,19 +29,22 @@ test.anno_multi <- function() {
       xsaFI <- findIsotopes(xsaC)
       xsaFA <- findAdducts(xsaFI, polarity="positive",rules=rules)
       checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),20)
-
+    cleanParallel(xsa)
+    
       xsa <- xsAnnotate(xsg, sample=c(1:8),nSlaves=2)
       xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
       xsaC <- groupCorr(xsaF)
       xsaFI <- findIsotopes(xsaC)
       xsaFA <- findAdducts(xsaFI, polarity="positive",rules=rules)
       checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),28)
-
+    cleanParallel(xsa)
+    
       xsa <- xsAnnotate(xsg, sample=NA,nSlaves=2)
       xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
       xsaC <- groupCorr(xsaF)
       xsaFI <- findIsotopes(xsaC)
       xsaFA <- findAdducts(xsaFI, polarity="positive",rules=rules)
       checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),16)
+    cleanParallel(xsa)
 #    }
 }
