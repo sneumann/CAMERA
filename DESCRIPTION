@@ -3,7 +3,7 @@ Version: 1.25.2
 Date: 2015-09-20
 Title: Collection of annotation related methods for mass spectrometry data 
 Author: Carsten Kuhl, Ralf Tautenhahn, Steffen Neumann {ckuhl|sneumann}@ipb-halle.de, rtautenh@scripps.edu
-Maintainer: Carsten Kuhl <ckuhl@ipb-halle.de>
+Maintainer: Steffen Neumann <sneumann@ipb-halle.de>
 Depends: R (>= 2.1.0), methods, Biobase, xcms (>= 1.13.5), igraph
 Imports: methods, xcms, RBGL, graph, graphics, grDevices, stats, utils, Hmisc, igraph
 Suggests: faahKO, RUnit, BiocGenerics
