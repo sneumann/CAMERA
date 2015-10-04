@@ -964,7 +964,8 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
       #For snow
       result <- xcms:::xcmsClusterApply(cl=object@runParallel$cluster, 
                                         x=argList, fun=annotateGrpMPI, 
-                                        msgfun=msgfun.snowParallel)
+                                        msgfun=msgfun.snowParallel,
+                                        paramsGlobal)
     }
 
     for(ii in 1:length(result)){
