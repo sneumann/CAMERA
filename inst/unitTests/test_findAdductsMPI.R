@@ -3,7 +3,9 @@ test.anno_single <- function() {
 #    if(require("Rmpi", quietly=TRUE)){
     file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
     xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
-    an   <- xsAnnotate(xs,nSlaves=2)
+    #an   <- xsAnnotate(xs,nSlaves=2)
+    an   <- xsAnnotate(xs)
+
     anF  <- groupFWHM(an)
     anI  <- findIsotopes(anF)
     file  <- system.file('rules/primary_adducts_pos.csv', package = "CAMERA")
@@ -15,7 +17,10 @@ test.anno_single <- function() {
 }
 
 test.anno_multi <- function() {
+#    library(igraph)
     library(faahKO)
+#    library(CAMERA)
+#    library(RUnit)
 #    if(require("Rmpi", quietly=TRUE)){         
       filepath <- system.file("cdf", package = "faahKO")
       xsg <- group(faahko)
@@ -23,15 +28,19 @@ test.anno_multi <- function() {
       file  <- system.file('rules/primary_adducts_pos.csv', package = "CAMERA")
       rules <- read.csv(file)
 
-      xsa <- xsAnnotate(xsg, sample=1,nSlaves=2)
-      xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
+      #xsa <- xsAnnotate(xsg, sample=1,nSlaves=2)
+      xsa <- xsAnnotate(xsg, sample=1)
+
+xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
       xsaC <- groupCorr(xsaF)
       xsaFI <- findIsotopes(xsaC)
       xsaFA <- findAdducts(xsaFI, polarity="positive",rules=rules)
       checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),20)
     cleanParallel(xsa)
     
-      xsa <- xsAnnotate(xsg, sample=c(1:8),nSlaves=2)
+      #xsa <- xsAnnotate(xsg, sample=c(1:8),nSlaves=2)
+      xsa <- xsAnnotate(xsg, sample=c(1:8))
+
       xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
       xsaC <- groupCorr(xsaF)
       xsaFI <- findIsotopes(xsaC)
@@ -39,7 +48,8 @@ test.anno_multi <- function() {
       checkEqualsNumeric(length(unique(xsaFA@annoID[,1])),28)
     cleanParallel(xsa)
     
-      xsa <- xsAnnotate(xsg, sample=NA,nSlaves=2)
+      #xsa <- xsAnnotate(xsg, sample=NA,nSlaves=2)
+      xsa <- xsAnnotate(xsg, sample=NA)
       xsaF <- groupFWHM(xsa, sigma=6, perfwhm=0.6)
       xsaC <- groupCorr(xsaF)
       xsaFI <- findIsotopes(xsaC)
