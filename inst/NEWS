@@ -1,3 +1,9 @@
+CHANGES IN VERSION 1.25.3
+-------------------------
+BUG FIXES
+
+    o Fix parallel processing with SNOW
+
 CHANGES IN VERSION 1.25.2
 -------------------------
 

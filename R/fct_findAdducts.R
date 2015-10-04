@@ -16,13 +16,20 @@ annotateGrpMPI2 <- function(params){
   return(result);
 }
 
-annotateGrpMPI <- function(params){
+annotateGrpMPI <- function(params, globalParams){
   library(CAMERA);
+
   result <- vector(mode="list", length=length(params$i));
   names(result) <- params$i;
   for(ii in 1:length(params$i)){
-    res <- CAMERA:::annotateGrp(params$pspectra[[params$i[[ii]]]], 
-                                params$imz, params$rules,params$mzabs,params$devppm,params$isotopes,params$quasimolion);
+    res <- CAMERA:::annotateGrp(globalParams$pspectra[[params$i[[ii]]]],
+                                globalParams$imz,
+                                globalParams$rules,
+                                globalParams$mzabs,
+                                globalParams$devppm,
+                                globalParams$isotopes,
+                                globalParams$quasimolion,
+                                globalParams$rules.idx);
     if(!is.null(res)){
       result[[ii]]<-res;
     }
