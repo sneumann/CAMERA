@@ -1,3 +1,16 @@
+CHANGES IN VERSION 1.27.2
+-------------------------
+BUG FIXES
+
+    o Fix imports in DESCRIPTION to avoid igraph overwriting xcms::group()
+
+CHANGES IN VERSION 1.25.3
+-------------------------
+BUG FIXES
+
+    o Disabled Rmpi support and usage in the unit tests, 
+      which lead to timeouts on BioC build farm
+
 CHANGES IN VERSION 1.25.3
 -------------------------
 BUG FIXES
