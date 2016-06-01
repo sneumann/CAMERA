@@ -1,3 +1,5 @@
 language: r
 r: bioc-devel
 bioc_packages: mzR","faahKO","xcms
+sudo: true
+apt_packages: libnetcdf-dev
