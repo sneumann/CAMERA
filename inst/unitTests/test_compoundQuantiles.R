@@ -8,14 +8,11 @@ test.compoundQuantiles <- function() {
   ## instantiate
   o <- compoundQuantiles()
   
-  ## check validity
-  checkException(validity(o), "compoundQuantiles object is valid")
-  
   ## check general properties
-  checkTrue(length(o@o@elementSet) > 0, "There is at least one element supported")
-  checkTrue(length(o@o@isotopeSet) > 0, "There is at least one isotope supported")
+  checkTrue(length(o@elementSet) > 0, "There is at least one element supported")
+  checkTrue(length(o@isotopeSet) > 0, "There is at least one isotope supported")
   checkTrue((o@maxCompoundMass - o@minCompoundMass) > 0, "There is a mass interval supported")
-  checkTrue(length(o@o@quantileSet) > 0, "There is at least one quantile supported")
+  checkTrue(length(o@quantileSet) > 0, "There is at least one quantile supported")
   
   ## examples
   compoundMass <- 503

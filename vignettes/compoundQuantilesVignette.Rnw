@@ -1,3 +1,6 @@
+%\VignetteIndexEntry{Isotope pattern validation with CAMERA}
+%\VignetteKeywords{CAMERA}\\
+%\VignettePackage{CAMERA}\\
 
 \documentclass[a4paper,12pt]{article}
 \usepackage{hyperref}
