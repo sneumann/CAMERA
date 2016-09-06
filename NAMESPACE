@@ -29,9 +29,9 @@ export("annotate",
        "pspec2metfrag",
        "pspec2metfusion",
        "xsAnnotate", 
+       "compoundQuantiles",
        "compoundLibraries", 
        "massWindowSizes")
-
 
 exportClasses("xsAnnotate")
 exportClasses("compoundQuantiles")
