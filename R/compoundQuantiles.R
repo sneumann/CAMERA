@@ -80,7 +80,6 @@ compoundQuantiles <- setClass(
 ##' @exportClass compoundQuantiles
 ##' @author Hendrik Treutler
 ##' @examples
-##' library(compoundQuantiles)
 ##' cpObj <- compoundQuantiles(compoundLibrary = "kegg")
 compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
   ######################################################
@@ -247,7 +246,6 @@ compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' library(compoundQuantiles)
 ##' compoundLibraries()
 compoundLibraries <- function() {
   ## get parent folder
@@ -275,7 +273,6 @@ compoundLibraries <- function() {
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' library(compoundQuantiles)
 ##' massWindowSizes(libraryName = "kegg")
 massWindowSizes <- function(libraryName = "kegg") {
   ## get parent folder
@@ -321,7 +318,6 @@ setGeneric(
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' library(compoundQuantiles)
 ##' cpObj <- compoundQuantiles(compoundLibrary = "kegg")
 ##' 
 ##' compoundMass <- 503
@@ -377,7 +373,6 @@ setGeneric(
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' library(compoundQuantiles)
 ##' cpObj <- compoundQuantiles(compoundLibrary = "kegg")
 ##' 
 ##' compoundMass <- 503
@@ -461,8 +456,6 @@ setMethod(f="getIsotopeProportion", signature="compoundQuantiles", definition=fu
 ##' @examples
 ##' example()
 example <- function() {
-  ## attach
-  library(compoundQuantiles)
   ## instantiate
   cpObj <- compoundQuantiles(compoundLibrary = "kegg")
   
