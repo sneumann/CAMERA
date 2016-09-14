@@ -16,7 +16,6 @@ Vector of supported mass window sizes
 Returns the set of supported mass window sizes for the given compound database
 }
 \examples{
-library(compoundQuantiles)
 massWindowSizes(libraryName = "kegg")
 }
 \author{

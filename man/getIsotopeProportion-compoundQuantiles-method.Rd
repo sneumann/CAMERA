@@ -26,7 +26,6 @@ The isotope proportion
 Returns the proportion of the intensities of isotope1 versus isotope2 for a compound of the given mass for the given quantile
 }
 \examples{
-library(compoundQuantiles)
 cpObj <- compoundQuantiles(compoundLibrary = "kegg")
 
 compoundMass <- 503

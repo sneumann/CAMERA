@@ -1,8 +1,6 @@
 \name{findIsotopesWithValidation}
 \docType{methods}
-\alias{findIsotopes}
 \alias{findIsotopesWithValidation}
-\alias{findIsotopes,xsAnnotate-method}
 \title{Deconvolute/Annotate LC/ESI-MS data}
 \description{
  Annotate validated isotope clusters for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes. Validation of isotope clusters is based on statistics of the KEGG database implemented in S4 class object \code{compoundQuantiles}.
@@ -14,7 +12,6 @@
 \arguments{
   \item{object}{the \code{xsAnnotate} object}
   \item{maxcharge}{max. number of the isotope charge}
-  \item{maxiso}{max. number of the isotope peaks}
   \item{ppm}{ppm error for the search}
   \item{mzabs}{allowed variance for the search}
   \item{intval}{choose intensity values for C12/C13 check. Allowed values are into, maxo, intb }
@@ -40,6 +37,6 @@
   Submitted to Metabolites 2016, Special Issue "Bioinformatics and Data Analysis".
 }
 \seealso{
-  \code{\link{findIsotopes-methods}}
+  \code{\link{findIsotopes}}
 }
 \keyword{methods}

@@ -23,7 +23,6 @@ The number of atoms
 Returns the number of atoms the specified element in a compound of the specified mass for the specified quantile
 }
 \examples{
-library(compoundQuantiles)
 cpObj <- compoundQuantiles(compoundLibrary = "kegg")
 
 compoundMass <- 503

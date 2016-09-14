@@ -96,7 +96,7 @@ compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
   ######################################################
   ## fetch data file paths
   lib.loc=.libPaths()
-  folder  <- system.file("data", package = "compoundQuantiles", lib.loc=lib.loc)
+  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
   
   ## lib path
   regExPattern <- paste("^library_", compoundLibrary, "__maxDa_[0-9]+$", sep = "")
@@ -249,14 +249,15 @@ compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
 ##' compoundLibraries()
 compoundLibraries <- function() {
   ## get parent folder
-  ## TODO
   lib.loc <- .libPaths()
-  folder  <- system.file("data", package = "compoundQuantiles", lib.loc=lib.loc)
-  #folder <- "/home/htreutle/Data/MsStatistics/Compounds/"
+  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
   
   ## get library folders
   regExPattern <- "^library_[a-zA-Z]+__maxDa_[0-9]+$"
   folderNames <- list.files(path = folder, pattern = regExPattern, all.files = FALSE, full.names = FALSE, recursive = FALSE, ignore.case = FALSE, include.dirs = TRUE, no.. = FALSE)
+  
+  if(length(folderNames) == 0)
+    return(character())
   
   ## get library names
   firstSplitOfFolderNames  <- strsplit(x = folderNames, split = c("__"))
@@ -278,7 +279,7 @@ massWindowSizes <- function(libraryName = "kegg") {
   ## get parent folder
   ## TODO
   lib.loc <- .libPaths()
-  folder  <- system.file("data", package = "compoundQuantiles", lib.loc=lib.loc)
+  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
   #folder <- "/home/htreutle/Data/MsStatistics/Compounds/"
   
   ## get library folders
