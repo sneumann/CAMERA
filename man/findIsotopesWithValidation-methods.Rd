@@ -6,7 +6,7 @@
  Annotate validated isotope clusters for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes. Validation of isotope clusters is based on statistics of the KEGG database implemented in S4 class object \code{compoundQuantiles}.
 }
 \usage{
-  findIsotopes(object, maxcharge=3, ppm=5, mzabs=0.01, intval=c("maxo","into","intb"), validateIsotopePatterns = TRUE)
+  findIsotopesWithValidation(object, maxcharge=3, ppm=5, mzabs=0.01, intval=c("maxo","into","intb"), validateIsotopePatterns = TRUE)
 }
 
 \arguments{

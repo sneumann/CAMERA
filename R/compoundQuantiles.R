@@ -80,7 +80,7 @@ compoundQuantiles <- setClass(
 ##' @exportClass compoundQuantiles
 ##' @author Hendrik Treutler
 ##' @examples
-##' cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+##' cpObj <- compoundQuantiles()
 compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
   ######################################################
   ## create new object
@@ -274,7 +274,7 @@ compoundLibraries <- function() {
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' massWindowSizes(libraryName = "kegg")
+##' massWindowSizes()
 massWindowSizes <- function(libraryName = "kegg") {
   ## get parent folder
   ## TODO
@@ -319,7 +319,7 @@ setGeneric(
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+##' cpObj <- compoundQuantiles()
 ##' 
 ##' compoundMass <- 503
 ##' quantileLow   <- 0.05
