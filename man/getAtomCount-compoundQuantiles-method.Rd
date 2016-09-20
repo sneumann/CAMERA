@@ -3,6 +3,7 @@
 \docType{methods}
 \name{getAtomCount}
 \alias{getAtomCount}
+\alias{getAtomCount,compoundQuantiles-method}
 \title{The number of atoms of the given element}
 \usage{
 \S4method{getAtomCount}{compoundQuantiles}(object, element, mass, quantile)

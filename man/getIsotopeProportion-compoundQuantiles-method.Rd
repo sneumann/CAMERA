@@ -3,6 +3,7 @@
 \docType{methods}
 \name{getIsotopeProportion}
 \alias{getIsotopeProportion}
+\alias{getIsotopeProportion,compoundQuantiles-method}
 \title{The proportion of the intensities of two isotope peaks}
 \usage{
 \S4method{getIsotopeProportion}{compoundQuantiles}(object, isotope1, isotope2,

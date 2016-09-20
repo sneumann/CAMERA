@@ -1,7 +1,7 @@
 \name{findIsotopes}
 \docType{methods}
 \alias{findIsotopes}
-\alias{xsAnnotate-method}
+\alias{findIsotopes,xsAnnotate-method}
 \title{Deconvolute/Annotate LC/ESI-MS data}
 \description{
  Annotate isotope peaks for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes.

@@ -1,6 +1,7 @@
 \name{findIsotopesWithValidation}
 \docType{methods}
 \alias{findIsotopesWithValidation}
+\alias{findIsotopesWithValidation,xsAnnotate-method}
 \title{Deconvolute/Annotate LC/ESI-MS data}
 \description{
  Annotate validated isotope clusters for a xsAnnotate object. Returns a xsAnnotate object with annotated isotopes. Validation of isotope clusters is based on statistics of the KEGG database implemented in S4 class object \code{compoundQuantiles}.
