@@ -16,7 +16,7 @@ Vector of supported mass window sizes
 Returns the set of supported mass window sizes for the given compound database
 }
 \examples{
-massWindowSizes(libraryName = "kegg")
+massWindowSizes()
 }
 \author{
 Hendrik Treutler

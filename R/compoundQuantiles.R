@@ -1,21 +1,26 @@
 #########################################################################################
 ## Class compoundQuantiles
-## 
-## The user is able to get the expected number of atoms of element e (C, N, ...) 
-## for a compound of mass m for a q-quantile.
-## I.e. getAtomCount(object = compoundQuantiles(), element = e, mass = m, quantile = q) returns the number of atoms
-## of element e in a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
-## (sorted ascending by the possible number of atoms of element e for compounds of such mass).
-## 
-## The user is able to get the expected proportion between the intensities of two isotope peaks
-## for a compound of mass m for a q-quantile.
-## I.e. getIsotopeProportion(object = compoundQuantiles(), isotope1 = i1, isotope2 = i2, mass = m, quantile = q) returns the
-## isotope proportion i1 / i2 for a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
-## (sorted ascending by the possible isotope proportions for compounds of such mass).
-## 
 
-#' definition of S4 class "compoundQuantiles"
-#' @export
+##' Definition of S4 class "compoundQuantiles"
+##'
+##' Class \code{compoundQuantiles} encapsulates compound statistics from different databases.
+##' 
+##' The user is able to get the expected number of atoms of element e (C, N, ...) 
+##' for a compound of mass m for a q-quantile.
+##' I.e. getAtomCount(object = compoundQuantiles(), element = e, mass = m, quantile = q) returns the number of atoms
+##' of element e in a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
+##' (sorted ascending by the possible number of atoms of element e for compounds of such mass).
+##' 
+##' The user is able to get the expected proportion between the intensities of two isotope peaks
+##' for a compound of mass m for a q-quantile.
+##' I.e. getIsotopeProportion(object = compoundQuantiles(), isotope1 = i1, isotope2 = i2, mass = m, quantile = q) returns the
+##' isotope proportion i1 / i2 for a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
+##' (sorted ascending by the possible isotope proportions for compounds of such mass).
+##'
+##' @name compoundQuantiles-class
+##' @rdname compoundQuantiles-class
+##' @author Hendrik Treutler
+##' @exportClass compoundQuantiles
 compoundQuantiles <- setClass(
   # Set the name for the class
   "compoundQuantiles",
@@ -77,7 +82,6 @@ compoundQuantiles <- setClass(
 ##' @param massWindowSize the mass window size for grouping compounds; see massWindowSizes(compoundLibrary = "kegg") for a list of supported databases for e.g. the database kegg
 ##' @return the compoundQuantiles object
 ##' @export
-##' @exportClass compoundQuantiles
 ##' @author Hendrik Treutler
 ##' @examples
 ##' cpObj <- compoundQuantiles()
