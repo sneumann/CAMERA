@@ -2,6 +2,7 @@
 % Please edit documentation in R/compoundQuantiles.R
 \docType{methods}
 \name{getAtomCount,compoundQuantiles-method}
+\alias{getAtomCount}
 \alias{getAtomCount,compoundQuantiles-method}
 \title{The number of atoms of the given element}
 \usage{

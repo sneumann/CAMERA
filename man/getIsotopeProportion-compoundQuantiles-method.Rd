@@ -2,6 +2,7 @@
 % Please edit documentation in R/compoundQuantiles.R
 \docType{methods}
 \name{getIsotopeProportion,compoundQuantiles-method}
+\alias{getIsotopeProportion}
 \alias{getIsotopeProportion,compoundQuantiles-method}
 \title{The proportion of the intensities of two isotope peaks}
 \usage{

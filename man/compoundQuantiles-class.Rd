@@ -40,7 +40,7 @@
     \item{\link{getAtomCount}}{
       \code{signature(object = "xsAnnotate")}: returns the number of atoms of the specified element for the given quantile and mass window index
     }
-    \item{\link{getIsotopeProportion}}{
+    \item{\link{getIsotopeProportion,compoundQuantiles-method}}{
       \code{signature(object = "xsAnnotate")}: returns the isotope ratio of the specified isotope for the given quantile and mass window index relative to the monoisotopic peak
     }
   }
@@ -51,5 +51,7 @@
 }
 \seealso{
   \code{\link{compoundQuantiles}}
+  \code{\link{getAtomCount}}
+  \code{\link{getIsotopeProportion}}
 }
 \keyword{classes}
