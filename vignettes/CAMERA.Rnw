@@ -103,7 +103,7 @@ Both methods separate peaks into different groups, which we define as
 depending on the molecules amount and ionizability.
 Afterwards the exposure of the ion species can be performed with:
 \begin{enumerate}
- \item annotation of possible isotopes (\Rfunction{findIsotopes})
+ \item annotation of possible isotopes (\Rfunction{findIsotopes}, \Rfunction{findIsotopesWithValidation})
  \item annotation of adducts and calculating hypothetical masses for the group
 (\Rfunction{findAdducts})
 \end{enumerate}
@@ -451,6 +451,22 @@ the expected isotopes within one cluster and their charges.
  an   <- xsAnnotate(xs)
  an   <- groupFWHM(an)
  an   <- findIsotopes(an)
+\end{verbatim}
+
+\subsection{Function findIsotopesWithValidation}
+\label{sec:findIsotopesWithValidation}
+For a provided xsAnnotate, CAMERA can identify isotope peaks within every
+pseudospectra. In particular, putative isotope clusters are validated and deconvoluted based on database statistics of the KEGG database. The function \Rfunction{findIsotopesWithValidation} takes as parameter
+\Rfunarg{maxcharge} and \Rfunarg{maxiso} that controls the maximum number of
+the expected isotopes within one cluster and their charges.
+
+\begin{verbatim}
+ library(CAMERA)
+ file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+ xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
+ an   <- xsAnnotate(xs)
+ an   <- groupFWHM(an)
+ an   <- findIsotopesWithValidation(an)
 \end{verbatim}
 
 \subsection{Function findNeutralLoss}

@@ -1,0 +1,116 @@
+%\VignetteIndexEntry{Isotope pattern validation with CAMERA}
+%\VignetteKeywords{CAMERA}\\
+%\VignettePackage{CAMERA}\\
+
+\documentclass[a4paper,12pt]{article}
+\usepackage{hyperref}
+\usepackage[table]{xcolor}
+\setlength{\parindent}{0cm}
+
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textit{#1}}}
+\newcommand{\Rclass}[1]{{\textit{#1}}}
+\newcommand{\Rmethod}[1]{{\textit{#1}}}
+\newcommand{\Rfunarg}[1]{{\textit{#1}}}
+\newcommand{\RobjectSlot}[1]{{\textit{#1}}}
+\newcommand{\Rvariable}[1]{{\textit{#1}}}
+
+\usepackage{varioref}
+\labelformat{figure}{\figurename~#1}
+\labelformat{table}{\tablename~#1}
+
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{Atom count expectations with \Robject{compoundQuantiles}}
+\author{Hendrik Treutler}
+\maketitle
+
+\section{Introduction}
+
+TODO
+
+\section{Usage}
+
+{\small
+\begin{verbatim}
+  ## attach
+  library("compoundQuantiles")
+  ## instantiate
+  cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+  
+  ## meta information
+  print(paste("Available libraries = {", paste(compoundLibraries(), collapse = ", "), "}", sep = ""))
+  print(paste("Compound library = ", cpObj@compoundLibrary, sep = ""))
+  print(paste("Available mass window sizes = {", paste(massWindowSizes(cpObj@compoundLibrary), collapse = ", "), "}", sep = ""))
+  print(paste("Mass window size = ", cpObj@massWindowSize, sep = ""))
+  print(paste("Elements = {", paste(cpObj@elementSet, collapse = ", "), "}", sep = ""))
+  print(paste("Isotopes = {", paste(cpObj@isotopeSet, collapse = ", "), "}", sep = ""))
+  print(paste("Mass interval = [", cpObj@minCompoundMass, ", ", cpObj@maxCompoundMass, "] Da; #mass windows = ", cpObj@numberOfMassWindows, " a ", cpObj@massWindowSize, "Da", sep = ""))
+  print(paste("Quantile levels = {", paste(cpObj@quantileSet, collapse = ", "), "}", sep = ""))
+  
+  ## examples
+  compoundMass <- 503
+  quantileLow   <- 0.05
+  quantileHigh  <- 0.95
+  
+  ## example for element count
+  element <- "C"
+  countLow  <- getAtomCount(object = cpObj, element = element, mass = compoundMass, quantile = quantileLow)
+  countHigh <- getAtomCount(object = cpObj, element = element, mass = compoundMass, quantile = quantileHigh)
+  
+  print(paste("The ", (quantileHigh - quantileLow) * 100, "\% confidence interval for the number of atoms of element ", element, " in a compound with mass ", compoundMass, " is [", countLow, ", ", countHigh, "]", sep = ""))
+  
+  ## example for isotope proportion
+  isotope1 <- 0
+  isotope2 <- 1
+  propLow  <- getIsotopeProportion(object = cpObj, isotope1 = isotope1, isotope2 = isotope2, mass = compoundMass, quantile = quantileLow)
+  propHigh <- getIsotopeProportion(object = cpObj, isotope1 = isotope1, isotope2 = isotope2, mass = compoundMass, quantile = quantileHigh)
+  
+  print(paste("The ", (quantileHigh - quantileLow) * 100, "\% confidence interval for the proportion of isotopes ", isotope1, " / ", isotope2, " in a compound with mass ", compoundMass, " is [", propLow, ", ", propHigh, "]", sep = ""))
+\end{verbatim}
+}
+
+In the above example, we create an S4 object \Robject{o} of class \Rclass{compoundQuantiles}. The instantiation causes the preparation of the raw data. 
+
+Next, we print meta information by addressing the corresponding slots of object \Robject{o}. E.g. the set of available quantiles is kept by slot \RobjectSlot{quantileSet}. 
+
+In the given example use case, we define the parameters of interest. I.e. the mass of the compound (\Rfunarg{compoundMass}) is $503$Da, the element (\Rfunarg{element}) is carbon, and the quantiles (\Rfunarg{quantileLow} and \Rfunarg{quantileHigh}) are 5\% and 95\% and thus border a 90\% confidence interval.
+
+The defined parameters are assigned to the method \Rmethod{getAtomCount}, which returns the expected number of atoms (\Rvariable{countLow} and \Rvariable{countHigh}) of the given element in a compound of the given mass for the given quantiles. Terminatory, we print the result summed up.
+
+The output of the given R snippet is as follows.
+
+{\small
+\begin{verbatim}
+  [1] "Available libraries = {chebi, kegg, knapsack, LipidMaps, pubchem}"
+  [1] "Compound library = kegg"
+  [1] "Available mass window sizes = {10, 25, 50, 100, 250}"
+  [1] "Mass window size = 50"
+  [1] "Elements = {Br, Cl, C, F, H, I, N, O, P, Si, S, Unknown}"
+  [1] "Isotopes = {1, 2, 3, 4, 5}"
+  [1] "Mass interval = [0, 1050] Da; #mass windows = 21 a 50Da"
+  [1] "Quantiles = {5e-06, 0.999995, 1e-05, 0.99999, 5e-05, 0.99995, 1e-04, 0.9999, 5e-04, 0.9995, 0.001, 0.999, 0.005, 0.995, 0.01, 0.99, 0.025, 0.975, 0.05, 0.95, 0.1, 0.9, 0.5}"
+  [1] "The 90\% confidence interval for the number of atoms of element C in a compound with mass 503 is [12, 37]"
+  [1] "The 90\% confidence interval for the proportion of isotopes 0 / 1 in a compound with mass 503 is [2.59590178697724, 6.92217595633345]"
+\end{verbatim}
+}
+
+%\begin{thebibliography}{t1}
+%
+%\bibitem{annobird07} Ralf Tautenhahn, Christoph B\"ottcher, Steffen
+%  Neumann : Annotation of LC/ESI--MS Mass Signals, BIRD 2007 Proc. of
+%  BIRD 2007 -- 1st International Conference on Bioinformatics Research
+%  and Development, 2007.
+%  \url{http://www.springerlink.com/content/473l404001787974/}
+%  and \url{http://msbi.ipb-halle.de/~rtautenh/bird07.pdf}
+%
+%\bibitem{Smith06XCMSProcessingmass}
+%Smith,~C.; Want,~E.; O'Maille,~G.; Abagyan,~R.; Siuzdak,~G. \emph{Anal Chem}
+%  \textbf{2006}, \emph{78}, 779--787\relax
+%
+%\end{thebibliography}
+
+\end{document}
