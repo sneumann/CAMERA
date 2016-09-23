@@ -14,6 +14,8 @@
 ## (sorted ascending by the possible isotope proportions for compounds of such mass).
 ## 
 
+#' definition of S4 class "compoundQuantiles"
+#' @export
 compoundQuantiles <- setClass(
   # Set the name for the class
   "compoundQuantiles",
