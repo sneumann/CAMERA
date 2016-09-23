@@ -18,8 +18,7 @@ the compoundQuantiles object
 constructor of class compoundQuantiles
 }
 \examples{
-library(compoundQuantiles)
-cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+cpObj <- compoundQuantiles()
 }
 \author{
 Hendrik Treutler
