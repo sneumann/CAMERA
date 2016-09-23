@@ -179,7 +179,7 @@ findIsotopesForPS <- function(peakIndeces, mzValues, intValues, snValues, maxcha
     return(list())
   
   ## calculate allowed m/z errors for the given masses; at least mzabs
-  mzErrors <- devppm * spectrum[, "mz"]
+  mzErrors <- devppm * spectrum[, "mz"] / 1E6
   mzErrors[mzErrors < mzabs] <- mzabs
   
   ###################################################################################################

@@ -1,21 +1,26 @@
 #########################################################################################
 ## Class compoundQuantiles
-## 
-## The user is able to get the expected number of atoms of element e (C, N, ...) 
-## for a compound of mass m for a q-quantile.
-## I.e. getAtomCount(object = compoundQuantiles(), element = e, mass = m, quantile = q) returns the number of atoms
-## of element e in a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
-## (sorted ascending by the possible number of atoms of element e for compounds of such mass).
-## 
-## The user is able to get the expected proportion between the intensities of two isotope peaks
-## for a compound of mass m for a q-quantile.
-## I.e. getIsotopeProportion(object = compoundQuantiles(), isotope1 = i1, isotope2 = i2, mass = m, quantile = q) returns the
-## isotope proportion i1 / i2 for a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
-## (sorted ascending by the possible isotope proportions for compounds of such mass).
-## 
 
-#' definition of S4 class "compoundQuantiles"
-#' @export
+##' Definition of S4 class "compoundQuantiles"
+##'
+##' Class \code{compoundQuantiles} encapsulates compound statistics from different databases.
+##' 
+##' The user is able to get the expected number of atoms of element e (C, N, ...) 
+##' for a compound of mass m for a q-quantile.
+##' I.e. getAtomCount(object = compoundQuantiles(), element = e, mass = m, quantile = q) returns the number of atoms
+##' of element e in a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
+##' (sorted ascending by the possible number of atoms of element e for compounds of such mass).
+##' 
+##' The user is able to get the expected proportion between the intensities of two isotope peaks
+##' for a compound of mass m for a q-quantile.
+##' I.e. getIsotopeProportion(object = compoundQuantiles(), isotope1 = i1, isotope2 = i2, mass = m, quantile = q) returns the
+##' isotope proportion i1 / i2 for a compound of mass m in the lowest-(q*100)% of a sorted set of compounds
+##' (sorted ascending by the possible isotope proportions for compounds of such mass).
+##'
+##' @name compoundQuantiles-class
+##' @rdname compoundQuantiles-class
+##' @author Hendrik Treutler
+##' @exportClass compoundQuantiles
 compoundQuantiles <- setClass(
   # Set the name for the class
   "compoundQuantiles",
@@ -77,10 +82,9 @@ compoundQuantiles <- setClass(
 ##' @param massWindowSize the mass window size for grouping compounds; see massWindowSizes(compoundLibrary = "kegg") for a list of supported databases for e.g. the database kegg
 ##' @return the compoundQuantiles object
 ##' @export
-##' @exportClass compoundQuantiles
 ##' @author Hendrik Treutler
 ##' @examples
-##' cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+##' cpObj <- compoundQuantiles()
 compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
   ######################################################
   ## create new object
@@ -96,7 +100,7 @@ compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
   ######################################################
   ## fetch data file paths
   lib.loc=.libPaths()
-  folder  <- system.file("data", package = "compoundQuantiles", lib.loc=lib.loc)
+  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
   
   ## lib path
   regExPattern <- paste("^library_", compoundLibrary, "__maxDa_[0-9]+$", sep = "")
@@ -249,14 +253,15 @@ compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
 ##' compoundLibraries()
 compoundLibraries <- function() {
   ## get parent folder
-  ## TODO
   lib.loc <- .libPaths()
-  folder  <- system.file("data", package = "compoundQuantiles", lib.loc=lib.loc)
-  #folder <- "/home/htreutle/Data/MsStatistics/Compounds/"
+  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
   
   ## get library folders
   regExPattern <- "^library_[a-zA-Z]+__maxDa_[0-9]+$"
   folderNames <- list.files(path = folder, pattern = regExPattern, all.files = FALSE, full.names = FALSE, recursive = FALSE, ignore.case = FALSE, include.dirs = TRUE, no.. = FALSE)
+  
+  if(length(folderNames) == 0)
+    return(character())
   
   ## get library names
   firstSplitOfFolderNames  <- strsplit(x = folderNames, split = c("__"))
@@ -273,12 +278,12 @@ compoundLibraries <- function() {
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' massWindowSizes(libraryName = "kegg")
+##' massWindowSizes()
 massWindowSizes <- function(libraryName = "kegg") {
   ## get parent folder
   ## TODO
   lib.loc <- .libPaths()
-  folder  <- system.file("data", package = "compoundQuantiles", lib.loc=lib.loc)
+  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
   #folder <- "/home/htreutle/Data/MsStatistics/Compounds/"
   
   ## get library folders
@@ -318,7 +323,7 @@ setGeneric(
 ##' @export
 ##' @author Hendrik Treutler
 ##' @examples
-##' cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+##' cpObj <- compoundQuantiles()
 ##' 
 ##' compoundMass <- 503
 ##' quantileLow   <- 0.05

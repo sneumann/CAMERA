@@ -13,7 +13,6 @@ Vector of supported compound databases
 Returns a set of supported compound databases
 }
 \examples{
-library(compoundQuantiles)
 compoundLibraries()
 }
 \author{
