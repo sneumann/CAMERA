@@ -2,6 +2,7 @@
 % Please edit documentation in R/compoundQuantiles.R
 \docType{methods}
 \name{getAtomCount,compoundQuantiles-method}
+\alias{getAtomCount}
 \alias{getAtomCount,compoundQuantiles-method}
 \title{The number of atoms of the given element}
 \usage{
@@ -14,17 +15,16 @@
 
 \item{mass}{The mass of the compound specified in atomic units (=dalton)}
 
-\item{quantile}{The quantile for the number of atoms}
+\item{quantile}{The quantile level for the number of atoms}
 }
 \value{
 The number of atoms
 }
 \description{
-Returns the number of atoms the specified element in a compound of the specified mass for the specified quantile
+Returns the number of atoms the specified element in a compound of the specified mass for the specified quantile level
 }
 \examples{
-library(compoundQuantiles)
-cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+cpObj <- compoundQuantiles()
 
 compoundMass <- 503
 quantileLow   <- 0.05

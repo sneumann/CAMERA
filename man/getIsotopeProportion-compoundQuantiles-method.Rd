@@ -2,6 +2,7 @@
 % Please edit documentation in R/compoundQuantiles.R
 \docType{methods}
 \name{getIsotopeProportion,compoundQuantiles-method}
+\alias{getIsotopeProportion}
 \alias{getIsotopeProportion,compoundQuantiles-method}
 \title{The proportion of the intensities of two isotope peaks}
 \usage{
@@ -17,16 +18,15 @@
 
 \item{mass}{The mass of the compound specified in atomic units (=dalton)}
 
-\item{quantile}{The quantile for the isotope proportion}
+\item{quantile}{The quantile level for the isotope proportion}
 }
 \value{
 The isotope proportion
 }
 \description{
-Returns the proportion of the intensities of isotope1 versus isotope2 for a compound of the given mass for the given quantile
+Returns the proportion of the intensities of isotope1 versus isotope2 for a compound of the given mass for the given quantile level
 }
 \examples{
-library(compoundQuantiles)
 cpObj <- compoundQuantiles(compoundLibrary = "kegg")
 
 compoundMass <- 503
