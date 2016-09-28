@@ -1,7 +1,7 @@
 
-setGeneric("findIsotopesWithValidation", function(object, maxcharge=3, ppm=5, mzabs=0.01, intval=c("maxo","into","intb"), validateIsotopePatterns = TRUE) standardGeneric("findIsotopesWithValidation"));
+setGeneric("findIsotopesWithValidation", function(object, maxcharge=3, ppm=5, mzabs=0.01, intval=c("maxo","into","intb"), validateIsotopePatterns = TRUE, database="kegg") standardGeneric("findIsotopesWithValidation"));
 
-setMethod("findIsotopesWithValidation", "xsAnnotate", function(object, maxcharge=3, ppm=5, mzabs=0.01, intval=c("maxo","into","intb"), validateIsotopePatterns = TRUE)
+setMethod("findIsotopesWithValidation", "xsAnnotate", function(object, maxcharge=3, ppm=5, mzabs=0.01, intval=c("maxo","into","intb"), validateIsotopePatterns = TRUE, database="kegg")
 {
   #searches in every pseudospectrum mass differences, which match isotope distances
   
@@ -19,6 +19,9 @@ setMethod("findIsotopesWithValidation", "xsAnnotate", function(object, maxcharge
     stop("Invalid argument 'mzabs'. Must be numeric and not negative.\n")
   ## test intval
   intval <- match.arg(intval)
+  ## test database
+  if(!(database %in% compoundLibraries()))
+    stop("Invalid argument 'database'. Must be one of compoundLibraries().\n")
   
   ################################################################################################
   ## init  
@@ -87,7 +90,7 @@ setMethod("findIsotopesWithValidation", "xsAnnotate", function(object, maxcharge
     ## calculate isotopes
     isoMatrixForPS.list <- findIsotopesForPS(
       peakIndeces, mzValues[peakIndeces], intValues[peakIndeces], snValues[peakIndeces],
-      maxcharge=maxcharge, devppm=devppm, mzabs=mzabs, validateIsotopePatterns=validateIsotopePatterns
+      maxcharge=maxcharge, devppm=devppm, mzabs=mzabs, validateIsotopePatterns=validateIsotopePatterns, database=database
     )
     
     if(length(isoMatrixForPS.list) == 0)
@@ -139,7 +142,7 @@ setMethod("findIsotopesWithValidation", "xsAnnotate", function(object, maxcharge
   return(object)
 })
 
-findIsotopesForPS <- function(peakIndeces, mzValues, intValues, snValues, maxcharge, devppm, mzabs, validateIsotopePatterns = TRUE){
+findIsotopesForPS <- function(peakIndeces, mzValues, intValues, snValues, maxcharge, devppm, mzabs, validateIsotopePatterns = TRUE, database){
   ## peakIndeces  - peak indeces
   ## mzValues     - m/z vector, contains all m/z values from specific pseudospectrum
   ## intValues    - int vector, see above
@@ -295,7 +298,7 @@ findIsotopesForPS <- function(peakIndeces, mzValues, intValues, snValues, maxcha
   validatedResultChains <- list()
   validatedChainCharges <- list()
   ## for validation
-  cpObj <- compoundQuantiles(compoundLibrary = "kegg")
+  cpObj <- compoundQuantiles(compoundLibrary = database)
   maximumIsotopeNumber <- max(cpObj@isotopeSet)
   
   ## available quantiles:
