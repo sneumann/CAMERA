@@ -30,7 +30,10 @@
 
 \section{Introduction}
 
-TODO
+In [1] we propose an approach for the exhaustive detection and mass-specific validation of isotope clusters. In this approach we perform an targeted peak picking for the detection of isotopoloue features and we perform a mass-specific validation of putative isotope clusters. We validate putative isotope clusters in a mass-specific manner on basis of database statistics. Here, we compute quantiles for the ratio between the isotopes of database-specific sets of substances resulting in confidence intervals of isotope ratios. We check whether the ratios between the peaks of a putative isotope cluster are within the calculated confidence intervals and deconvolute the putative isotope cluster otherwise.
+
+There are at least four cases for which the validation of isotope clusters can be beneficial as follows. 
+First, valid isotope clusters can be verified which strengthens the trust in the data. Second, multiple coeluting substances with mass differences of a few dalton can result in isobaric ion species and thus in overlapping isotope clusters. These are potentially misinterpreted as a single isotope cluster affecting downstream analyses. This necessitates the deconvolution of the overlapping isotope cluster into at least two valid isotope clusters. Third, substances can be affected by hydrogen loss. This leads to mass differences similar to isotope peaks and can result in a small trailing peak which is potentially misinterpreted as monoisotopic peak of the putative isotope cluster. This may result in the assumption of a wrong monoisotopic mass and may even lead to the rejection of the entire isotope cluster on the basis of failed intensity-checks. Although this small trailing peak corresponds to the same substance, it needs to be removed from the isotope cluster in order to allow more precise molecular formula predictions. Fourth, the intensity of small peaks is systematically underestimated by some mass spectrometers which leads to distorted ratios between different isotope peaks as reported previously in Boecker \emph{et al.} 2009. This intensity bias would lead to distorted molecular formula predictions and the removal of these underestimated peaks from the isotope cluster allows more precise molecular formula predictions. 
 
 \section{Usage}
 
@@ -97,6 +100,8 @@ The output of the given R snippet is as follows.
   [1] "The 90\% confidence interval for the proportion of isotopes 0 / 1 in a compound with mass 503 is [2.59590178697724, 6.92217595633345]"
 \end{verbatim}
 }
+
+[1] Submitted to Metabolites journal, specieal issue ``Bioinformatics and Data Analysis''.
 
 %\begin{thebibliography}{t1}
 %
