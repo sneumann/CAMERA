@@ -6,6 +6,7 @@
 \usepackage{hyperref}
 \usepackage[table]{xcolor}
 \setlength{\parindent}{0cm}
+\usepackage[utf8]{inputenc}
 
 \newcommand{\Robject}[1]{{\texttt{#1}}}
 \newcommand{\Rfunction}[1]{{\texttt{#1}}}
