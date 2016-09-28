@@ -6,6 +6,7 @@
 \usepackage{hyperref}
 \usepackage[table]{xcolor}
 \setlength{\parindent}{0cm}
+\usepackage[utf8]{inputenc}
 
 \newcommand{\Robject}[1]{{\texttt{#1}}}
 \newcommand{\Rfunction}[1]{{\texttt{#1}}}
@@ -73,7 +74,6 @@ In the above example, we create an \Rclass{xcmsSet} object with example data usi
 Next, we create an \Rclass{xsAnnotate} object and create pseudospectra. On basis of the pseudospectra, we perform the proposed isotope detection routine with mass-specific isotope cluster validation.
 
 Finally, an annotated peak table is extracted.
-}
 
 [1] Submitted to Metabolites journal, specieal issue ``Bioinformatics and Data Analysis''.
 
