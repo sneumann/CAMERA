@@ -187,8 +187,8 @@ findIsotopesForPS <- function(peakIndeces, mzValues, intValues, snValues, maxcha
   isotopeDifference <- 1.0033548378
   expectedDistances <- isotopeDifference / 1:maxcharge
   hitsForCharge_c_p1_p2 <- array(
-    dim = c(maxcharge, numberOfPeaksHere - 1, numberOfPeaksHere - 1),
-    dimnames = c("charge", "peak1", "peak2")
+    dim = c(maxcharge, numberOfPeaksHere - 1, numberOfPeaksHere - 1)#,
+    #dimnames = c("charge", "peak1", "peak2")
   )
   
   for(peakIdx in 1:(numberOfPeaksHere - 1)){
