@@ -3,6 +3,13 @@ CHANGES IN VERSION 1.29.2
 
 BUG FIXES
 
+    o Fix build issues and Vignette encoding (again)
+
+CHANGES IN VERSION 1.29.2
+-------------------------
+
+BUG FIXES
+
     o Fix build issues and Vignette encoding
 
 CHANGES IN VERSION 1.29.1
