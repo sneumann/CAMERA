@@ -100,10 +100,10 @@ compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
   ######################################################
   ## fetch data file paths
   lib.loc=.libPaths()
-  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
+  folder  <- system.file("quantiles", package = "CAMERA", lib.loc=lib.loc)
   
   ## lib path
-  regExPattern <- paste("^library_", compoundLibrary, "__maxDa_[0-9]+$", sep = "")
+  regExPattern <- paste("^lib_", compoundLibrary, "__maxDa_[0-9]+$", sep = "")
   path <- list.files(path = folder, pattern = regExPattern, all.files = FALSE, full.names = TRUE, recursive = FALSE, ignore.case = FALSE, include.dirs = TRUE, no.. = FALSE)[[1]]
   folderName <- tail(x = strsplit(x = path, split = c("/"))[[1]], n = 1)
   
@@ -254,10 +254,10 @@ compoundQuantiles <- function(compoundLibrary = "kegg", massWindowSize = 50) {
 compoundLibraries <- function() {
   ## get parent folder
   lib.loc <- .libPaths()
-  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
+  folder  <- system.file("quantiles", package = "CAMERA", lib.loc=lib.loc)
   
   ## get library folders
-  regExPattern <- "^library_[a-zA-Z]+__maxDa_[0-9]+$"
+  regExPattern <- "^lib_[a-zA-Z]+__maxDa_[0-9]+$"
   folderNames <- list.files(path = folder, pattern = regExPattern, all.files = FALSE, full.names = FALSE, recursive = FALSE, ignore.case = FALSE, include.dirs = TRUE, no.. = FALSE)
   
   if(length(folderNames) == 0)
@@ -283,11 +283,11 @@ massWindowSizes <- function(libraryName = "kegg") {
   ## get parent folder
   ## TODO
   lib.loc <- .libPaths()
-  folder  <- system.file("data", package = "CAMERA", lib.loc=lib.loc)
+  folder  <- system.file("quantiles", package = "CAMERA", lib.loc=lib.loc)
   #folder <- "/home/htreutle/Data/MsStatistics/Compounds/"
   
   ## get library folders
-  regExPattern <- paste("^library_", libraryName, "__maxDa_[0-9]+$", sep = "")
+  regExPattern <- paste("^lib_", libraryName, "__maxDa_[0-9]+$", sep = "")
   paths <- list.files(path = folder, pattern = regExPattern, all.files = FALSE, full.names = TRUE, recursive = FALSE, ignore.case = FALSE, include.dirs = TRUE, no.. = FALSE)
   
   if(length(paths) != 1)
