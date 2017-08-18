@@ -45,6 +45,7 @@ exportMethods("show")
 exportMethods("plotEICs")
 exportMethods("plotPsSpectrum")
 exportMethods("getPeaklist")
+exportMethods("getReducedPeaklist")
 exportMethods("getAllPeakEICs")
 exportMethods("calcPC",
 	      "calcPC.lpc",

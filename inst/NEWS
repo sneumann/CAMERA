@@ -1,3 +1,12 @@
+CHANGES IN VERSION 1.33.1
+-------------------------
+
+NEW FEATURES:
+
+    o allow matchedfilter alternative intval in getPeaklist (J. Stanstrup)
+    o pass intval from Groupcorr to calcCaS (J. Stanstrup)
+    o getReducedPeaklist returns just one intensity per pspec (K. Peters) 
+
 CHANGES IN VERSION 1.29.2
 -------------------------
 
