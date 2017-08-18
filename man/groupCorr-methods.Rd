@@ -22,7 +22,8 @@
   \item{psg_list}{Vector of pseudospectra indices. The correlation analysis will be only done for those groups}
   \item{xraw}{Optional xcmsRaw object, which should be used for raw data extraction}
   \item{cor_exp_th}{Threshold for intensity correlations across samples}
-  \item{intval}{Selection of the intensity values that should be used in the correlation analysis. Can be into, maxo or intb.}
+  \item{intval}{Selection of the intensity values (such as "into") that should be used in the correlation analysis.
+  See \code{\link{getPeaklist}} for all allowed values.}
   \item{...}{Additional parameter}
 }
 \details{
