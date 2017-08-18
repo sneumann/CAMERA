@@ -364,12 +364,12 @@ setMethod("groupFWHM", "xsAnnotate", function(object, sigma=6, perfwhm=0.6, intv
 
 setGeneric("groupCorr",function(object, cor_eic_th=0.75, pval=0.05, graphMethod="hcs", 
                                 calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, 
-                                xraw=NULL, cor_exp_th=0.75, ...) standardGeneric("groupCorr"));
+                                xraw=NULL, cor_exp_th=0.75, intval="into", ...) standardGeneric("groupCorr"));
 
 setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05, 
                                              graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, 
                                              calcCaS = FALSE, psg_list=NULL, xraw=NULL,
-                                             cor_exp_th=0.75) {
+                                             cor_exp_th=0.75, intval="into") {
   
   if (!is.numeric(cor_eic_th) || cor_eic_th < 0 || cor_eic_th > 1){
     stop ("Parameter cor_eic_th must be numeric and between 0 and 1.\n");
@@ -483,7 +483,7 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   
   # Check if sample size > 3 and calcCaS was selected
   if( length(object@xcmsSet@filepaths) > 3 && calcCaS){
-    res[[length(res)+1]] <- calcCaS(object, corval=cor_exp_th, pval=pval);
+    res[[length(res)+1]] <- calcCaS(object, corval=cor_exp_th, pval=pval, intval=intval);
   }else if(length(object@xcmsSet@filepaths) <= 3 && calcCaS){
     cat("Object has to contain more than 3 samples to calculate correlation accros samples!\n");
   }

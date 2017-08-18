@@ -9,7 +9,7 @@
 \usage{
   groupCorr(object,cor_eic_th=0.75, pval=0.05, graphMethod="hcs",
   calcIso = FALSE, calcCiS = TRUE, calcCaS = FALSE, psg_list=NULL, xraw=NULL, 
-  cor_exp_th=0.75, ...)
+  cor_exp_th=0.75, intval="into", ...)
 }
 \arguments{
   \item{object}{The \code{xsAnnotate} object}
@@ -22,6 +22,8 @@
   \item{psg_list}{Vector of pseudospectra indices. The correlation analysis will be only done for those groups}
   \item{xraw}{Optional xcmsRaw object, which should be used for raw data extraction}
   \item{cor_exp_th}{Threshold for intensity correlations across samples}
+  \item{intval}{Selection of the intensity values (such as "into") that should be used in the correlation analysis.
+  See \code{\link{getPeaklist}} for all allowed values.}
   \item{...}{Additional parameter}
 }
 \details{
