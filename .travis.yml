@@ -1,6 +1,9 @@
 language: r
 r: bioc-devel
 warnings_are_errors: false
-bioc_packages: mzR","faahKO","xcms
+bioc_packages: 
+    - mzR
+    - faahKO
+    - xcms
 sudo: true
 apt_packages: libnetcdf-dev
