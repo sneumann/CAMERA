@@ -11,7 +11,8 @@
 }
 \arguments{
   \item{object}{ xsAnnotate object}
-  \item{intval}{ Choose intensity values. Allowed values are into, maxo, intb, intf, maxf}
+  \item{intval}{ Choose intensity values. Allowed values are into, maxo, intb, intf,
+maxf, area, depending on the feature detection algorithm used.}
 }
 \details{
   This function extract the peaktable from an xsAnnotate object, containing three additional columns (isotopes, adducts, pseudospectrum) with represents the annotation results. For a grouped xcmsSet it returns the grouped peaktable.
