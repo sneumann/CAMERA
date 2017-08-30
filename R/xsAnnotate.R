@@ -1262,7 +1262,7 @@ getpspectra <- function(object, grp=NULL){
 setGeneric("getPeaklist", function(object, intval="into") standardGeneric("getPeaklist"))
 setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
   
-  if (! intval %in% colnames(peaks(object(xcmsSet)))) {
+  if (! intval %in% colnames(peaks(object@xcmsSet))) {
        stop("unknown intensity value!")
   }
 
@@ -1362,37 +1362,37 @@ setGeneric("getReducedPeaklist", function(object, method = "median", intval = "i
 setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median", intval = "into", default.adduct.info = "first", mzrt.range = FALSE, npeaks.sum = FALSE, cleanup = FALSE) {
   # Get Peaklist from object
   peaklist <- getPeaklist(object=object, intval=intval)
-    
+  
   # Remove isotopes information
   peaklist <- peaklist[,-which(colnames(peaklist)=="isotopes")]
   
   # Matrix with samples intensities
-  subset_samp <- c((ncol(peaklist)-nrow(object@xcmsSet@phenoData)) : (ncol(peaklist)-2))
-    
+  subset_samp <- c((ncol(peaklist)-nrow(object@xcmsSet@phenoData)-1) : (ncol(peaklist)-1-1))
+  
   # Create reduced peak list
   peaklist_reduced <- by(data=peaklist, INDICES=peaklist$pcgroup, FUN=function(plist) {
     if (nrow(plist) > 1) {
       # Subset intensities
       pl.tab <- plist[, subset_samp]
-            
+      
       ## Select appropriate mz/rt information
-            
+      
       # Select default (first) adduct
       if (default.adduct.info == "first") {
         pl.max <- 1
       }
-            
+      
       # Select adduct that has maximum intensities
       if (default.adduct.info == "maxint") {
         pl.max <- apply(X=pl.tab, MARGIN=1, FUN=function(x) { sum(x, na.rm=TRUE) } )
         pl.max <- which(pl.max==max(pl.max))[1]
       }
-            
+      
       # Select adduct that has most peaks
       if (default.adduct.info == "maxpeaks") {
         pl.max <- which(plist$npeaks==max(plist$npeaks))[1]
       }
-            
+      
       # Take lowest/highest values of mzmin, mzmax & rtmin, rtmax
       if (mzrt.range == TRUE) {
         plist[pl.max, "mzmin"] <- min(plist$mzmin)
@@ -1400,29 +1400,29 @@ setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median"
         plist[pl.max, "rtmin"] <- min(plist$rtmin)
         plist[pl.max, "rtmax"] <- max(plist$rtmax)
       }
-            
+      
       # Sum up all peaks found
       if (npeaks.sum == TRUE) {
         plist[pl.max, "npeaks"] <- sum(plist$npeaks)
       }
-            
+      
       ## Selection methods
-            
+      
       # Sum intensities of all adducts per sample
       if (method == "sum") {
         pl.met <- apply(X=pl.tab, MARGIN=2, FUN=function(x) { sum(x, na.rm=TRUE) } )
       }
-                
+        
       # Median intensities of all adducts per sample
       if (method == "median") {
         pl.met <- apply(X=pl.tab, MARGIN=2, FUN=function(x) { median(x, na.rm=TRUE) } )
       }
-                    
+          
       # Only take the adduct line where intensities are highest
       if (method == "maxint") {
         pl.met <- pl.max
       }
-            
+      
       # PCA of all adducts per samples
       if (method == "pca") {
         pl.tab[is.na(pl.tab)] <- 0
@@ -1431,52 +1431,64 @@ setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median"
         pl.met[pl.met==0] <- NA
         pl.met <- pl.met + (abs(min(pl.met, na.rm=T)) * 2)
       }
-            
-            
+      
+      
       # Determine putative neutral adduct mass
       plist[pl.max, "adduct"] <- na.omit(as.numeric(unique(gsub('.* ', '', plist$adduct))))[1]
-           
+      
       # Return line with max intensity
       plist[pl.max, subset_samp] <- pl.met
       plist <- plist[pl.max,]
     }
-        
+    
     # Otherwise using default putative neutral mass of adduct
     if ( (is.na(plist$adduct)) || (plist$adduct == "") ) plist$adduct <- as.numeric(plist$mz)
-        
+    
     # Return object
     plist
   } )
-    
+  
   # Fix type
   peaklist_reduced <- lapply(X=peaklist_reduced, FUN=function(x) {
     x <- as.numeric(x)
     x
   } )
-    
+  
   # Unlist
   peaklist_reduced <- data.frame(matrix(as.numeric(unlist(peaklist_reduced)), nrow=length(peaklist_reduced), byrow=TRUE))
   colnames(peaklist_reduced) <- colnames(peaklist)
-    
+  
   # Sort
   peaklist_reduced <- peaklist_reduced[order(peaklist_reduced$pcgroup, decreasing=FALSE),]
   rownames(peaklist_reduced) <- peaklist_reduced$pcgroup
-    
+  
   # Cleanup values in peak list
   if (cleanup == TRUE) {
     # Remove NAs & negative abundances in features
     pl.tmp <- peaklist_reduced[, subset_samp]
     pl.tmp[is.na(pl.tmp)] <- 0
     pl.tmp[pl.tmp < 0] <- 0
-    peaklist_reduced[, subset_samp] <- pl.tmp
-        
+    
+    # Remove rows with only zeros
+    rm_cc <- c()
+    for (i in 1:nrow(pl.tmp)) {
+      if (sum(pl.tmp[i,]) == 0) rm_cc <- c(rm_cc, i)
+    }
+    if (length(rm_cc) > 0) pl.tmp <- pl.tmp[-c(rm_cc),]
+    
     # Remove constant features (rows)
     #http://stackoverflow.com/questions/15068981/removal-of-constant-columns-in-r
-    peaklist_reduced <- peaklist_reduced[!apply(pl.tmp, MARGIN=1, function(x) max(x,na.rm=TRUE) == min(x,na.rm=TRUE)),]
-  }
+    pl.tmp <- pl.tmp[!apply(pl.tmp, MARGIN=1, function(x) max(x,na.rm=TRUE) == min(x,na.rm=TRUE)),]
     
+    # Write back changes
+    rm_row <- which(!(rownames(peaklist_reduced) %in% rownames(pl.tmp)))
+    if (length(rm_row) > 0) peaklist_reduced <- peaklist_reduced[-c(rm_row),]
+    
+    peaklist_reduced[, subset_samp] <- pl.tmp
+  }
+  
   # Return data frame
-  return(invisible(as.data.frame(peaklist_reduced)))
+  return(peaklist_reduced)
 })
 
 setGeneric("annotate", function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6, cor_eic_th=0.75, graphMethod="hcs",
