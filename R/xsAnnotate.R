@@ -1488,7 +1488,7 @@ setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median"
   }
   
   # Return data frame
-  return(peaklist_reduced)
+  return(invisible(as.data.frame(peaklist_reduced)))
 })
 
 setGeneric("annotate", function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6, cor_eic_th=0.75, graphMethod="hcs",
