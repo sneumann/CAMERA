@@ -1262,7 +1262,7 @@ getpspectra <- function(object, grp=NULL){
 setGeneric("getPeaklist", function(object, intval="into") standardGeneric("getPeaklist"))
 setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
   
-  if (! intval %in% colnames(peaks(object(xcmsSet)))) {
+  if (! intval %in% colnames(peaks(object@xcmsSet))) {
        stop("unknown intensity value!")
   }
 
