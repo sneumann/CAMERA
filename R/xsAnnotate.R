@@ -1367,13 +1367,17 @@ setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median"
   peaklist <- peaklist[,-which(colnames(peaklist)=="isotopes")]
   
   # Matrix with samples intensities
-  subset_samp <- c((ncol(peaklist)-nrow(object@xcmsSet@phenoData)-1) : (ncol(peaklist)-1-1))
+  if (nrow(object@xcmsSet@phenoData) <= 1) {
+    subset_samp <- c((which(colnames(peaklist)=="sample")) : (ncol(peaklist)-1-1))
+  } else {
+    subset_samp <- c((ncol(peaklist)-nrow(object@xcmsSet@phenoData)-1) : (ncol(peaklist)-1-1))
+  }
   
   # Create reduced peak list
   peaklist_reduced <- by(data=peaklist, INDICES=peaklist$pcgroup, FUN=function(plist) {
     if (nrow(plist) > 1) {
       # Subset intensities
-      pl.tab <- plist[, subset_samp]
+      pl.tab <- as.data.frame(plist[, subset_samp])
       
       ## Select appropriate mz/rt information
       
