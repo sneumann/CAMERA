@@ -1377,7 +1377,7 @@ setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median"
   peaklist_reduced <- by(data=peaklist, INDICES=peaklist$pcgroup, FUN=function(plist) {
     if (nrow(plist) > 1) {
       # Subset intensities
-      pl.tab <- as.data.frame(plist[, subset_samp])
+      pl.tab <- plist[, subset_samp, drop=FALSE]
       
       ## Select appropriate mz/rt information
       
