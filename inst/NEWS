@@ -1,3 +1,10 @@
+CHANGES IN VERSION 1.33.2
+-------------------------
+
+BUG FIXES
+
+    o Fix getPeaklist, updated getReducedPeaklist(), Thanks to Kristian Peters
+
 CHANGES IN VERSION 1.33.1
 -------------------------
 
