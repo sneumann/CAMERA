@@ -370,6 +370,9 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
                                              graphMethod="hcs", calcIso = FALSE, calcCiS = TRUE, 
                                              calcCaS = FALSE, psg_list=NULL, xraw=NULL,
                                              cor_exp_th=0.75, intval="into") {
+  if (! (calcCiS || calcCaS)) {
+    stop ("At least one of calcCiS or calcCaS has to be TRUE.\n");
+  }
   
   if (!is.numeric(cor_eic_th) || cor_eic_th < 0 || cor_eic_th > 1){
     stop ("Parameter cor_eic_th must be numeric and between 0 and 1.\n");
