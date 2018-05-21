@@ -93,9 +93,10 @@ setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75,
     #Set lower triangle to NA
     res$r[lower.tri(res$r,diag = TRUE)] <- NA;
     res$P[lower.tri(res$P,diag = TRUE)] <- NA;
+    res$n[lower.tri(res$n,diag = TRUE)] <- NA;
     
-    #Find peaks with have correlation higher corr_threshold and p <= 0.05
-    index <- which(( res$r > corval) & (res$P <= pval))
+    #Find peaks with have correlation higher corr_threshold and p <= 0.05 and > 3 comparisons
+    index <- which(( res$r > corval) & (res$P <= pval) & (res$n > 3))
     if( (length(index) + cnt)  >= nrow(resMat)){
       #resize resMat
       resMat <- rbind(resMat, create.matrix(max(length(index)+1,100000),4));
@@ -191,9 +192,10 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
       #Set lower triangle to NA
       res$r[lower.tri(res$r,diag = TRUE)] <- NA;
       res$P[lower.tri(res$P,diag = TRUE)] <- NA;
+      res$n[lower.tri(res$n,diag = TRUE)] <- NA;
       
-      #Find peaks with have correlation higher corr_threshold and p <= 0.05
-      index <- which(( res$r > corval) & (res$P <= pval))
+      #Find peaks with have correlation higher corr_threshold and p <= 0.05 and > 3 comparisons
+      index <- which(( res$r > corval) & (res$P <= pval) & (res$n > 3))
       if((length(index) + cnt)  >= nrow(resMat)){
         #resize resMat
         size <- max(100000, (cnt+length(index) + 10000))
@@ -597,9 +599,10 @@ calcCL3 <- function(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th,
     #Set lower triangle to NA
     res$r[lower.tri(res$r,diag = TRUE)] <- NA;
     res$P[lower.tri(res$P,diag = TRUE)] <- NA;
+    res$n[lower.tri(res$n,diag = TRUE)] <- NA;
     
-    #Find peaks with have correlation higher corr_threshold and p <= 0.05
-    index <- which(( res$r > cor_eic_th) & (res$P <= 0.05))
+    #Find peaks with have correlation higher corr_threshold and p <= 0.05 and > 3 comparisons
+    index <- which(( res$r > cor_eic_th) & (res$P <= 0.05) & (res$n > 3))
     if(length(index) > 0){
      for( x in 1:(length(index))){
       col <- index[x] %/% npi + 1;
