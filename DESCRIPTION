@@ -1,5 +1,5 @@
 Package: CAMERA
-Version: 1.39.0
+Version: 1.39.1
 Date: 2017-09-26
 Title: Collection of annotation related methods for mass spectrometry data 
 Author: Carsten Kuhl, Ralf Tautenhahn, Hendrik Treutler, Steffen Neumann {ckuhl|htreutle|sneumann}@ipb-halle.de, rtautenh@scripps.edu
@@ -15,5 +15,5 @@ License: GPL (>= 2)
 ByteCompile: TRUE
 URL: http://msbi.ipb-halle.de/msbi/CAMERA/
 BugReports: https://github.com/sneumann/CAMERA/issues/new
-biocViews: MassSpectrometry, Metabolomics
+biocViews: ImmunoOncology, MassSpectrometry, Metabolomics
 RoxygenNote: 5.0.1
