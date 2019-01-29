@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{Isotope pattern validation with CAMERA}
+%\VignetteIndexEntry{Atom count expectations with compoundQuantiles}
 %\VignetteKeywords{CAMERA}\\
 %\VignettePackage{CAMERA}\\
 
