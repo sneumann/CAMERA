@@ -8,7 +8,7 @@
 }
 \usage{
  findAdducts(object, ppm=5, mzabs=0.015, multiplier=3, 
- polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL)
+ polarity=NULL, intval="maxo", rules=NULL, max_peaks=100, psg_list=NULL)
 }
 
 \arguments{
@@ -17,6 +17,7 @@
   \item{mzabs}{allowed variance for the search}
   \item{multiplier}{highest number(n) of allowed clusterion [nM+ion] }
   \item{polarity}{Which polarity mode was used for measuring of the ms sample}
+  \item{intval}{choose intensity values. Allowed values are into, maxo, intb }  
   \item{rules}{personal ruleset or with NULL standard ruleset will be calculated}
   \item{max_peaks}{If run in parralel mode, this number defines how much peaks will be calculated in every thread }
   \item{psg_list}{Vector of pseudospectra indices. The correlation analysis will be only done for those groups}
