@@ -764,9 +764,9 @@ setMethod("findIsotopes", "xsAnnotate",
 })
 
 setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
-                                   rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
+                                   rules=NULL, max_peaks=100, psg_list=NULL, intval="maxo") standardGeneric("findAdducts"));
 setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
-                                                rules=NULL, max_peaks=100, psg_list=NULL){
+                                                rules=NULL, max_peaks=100, psg_list=NULL, intval="maxo"){
   multFragments=FALSE;
   # Scaling ppm factor
   devppm <- ppm / 1000000;
@@ -775,8 +775,6 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
 
   # get mz values from peaklist
   imz    <- object@groupInfo[, "mz"];
-  #TODO: Change intensity choosing?
-  intval <- "maxo"; #max. intensity
 
   #number of pseudo-spectra
   npspectra <- length(object@pspectra);

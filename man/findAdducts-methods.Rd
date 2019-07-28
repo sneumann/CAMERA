@@ -8,7 +8,7 @@
 }
 \usage{
  findAdducts(object, ppm=5, mzabs=0.015, multiplier=3, 
- polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL)
+ polarity=NULL, rules=NULL, max_peaks=100, psg_list=NULL, intval="maxo")
 }
 
 \arguments{
@@ -20,6 +20,7 @@
   \item{rules}{personal ruleset or with NULL standard ruleset will be calculated}
   \item{max_peaks}{If run in parralel mode, this number defines how much peaks will be calculated in every thread }
   \item{psg_list}{Vector of pseudospectra indices. The correlation analysis will be only done for those groups}
+  \item{intval}{choose intensity values. Allowed values are into, maxo, intb }  
 }
 \details{
   Adducts (and fragments) are annotated for a xsAnnotate object. For every pseudospectra group, generated bei groupFWHM and groupCorr, all possible Adducts are calculated and mapped to the peaks. If at least two adducts match, a possible molecule-mass for the group can be calculated. After the annotation every masshypothese is checked against the charge of the calculated isotopes. It is recommend to call findIsotopes() before the annotation step.
