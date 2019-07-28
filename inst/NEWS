@@ -1,3 +1,10 @@
+CHANGES IN VERSION 1.41.1
+-------------------------
+
+NEW FEATURES:
+
+    o allow findAdducts alternative intval (thanks to Sunil Dhakad)
+
 CHANGES IN VERSION 1.39.2
 -------------------------
 
