@@ -763,10 +763,10 @@ setMethod("findIsotopes", "xsAnnotate",
   return(object);
 })
 
-setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, intval="maxo",
-                                   rules=NULL, max_peaks=100, psg_list=NULL) standardGeneric("findAdducts"));
+setGeneric("findAdducts", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
+                                   rules=NULL, max_peaks=100, psg_list=NULL, intval="maxo") standardGeneric("findAdducts"));
 setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, multiplier=3, polarity=NULL, 
-                                                intval="maxo", rules=NULL, max_peaks=100, psg_list=NULL){
+                                                rules=NULL, max_peaks=100, psg_list=NULL, intval="maxo"){
   multFragments=FALSE;
   # Scaling ppm factor
   devppm <- ppm / 1000000;
