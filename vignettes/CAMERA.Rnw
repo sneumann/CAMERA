@@ -330,7 +330,7 @@ For other parameters see the manpage of \Rfunction{annotateDiffreport}.
 \subsection{Visualisation of the Results}
 For a graphical presentation of the annotation result CAMERA provides the
 function \Rfunction{plotEICs} to visualize the raw data and the function
-\Rfunction{plotPsSpectrum} to plot all peaks of a speudospectrum.
+\Rfunction{plotPsSpectrum} to plot all peaks of a pseudospectrum.
 The next example show the use of both functions.
 <<EICPspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 12, height = 8,results=hide>>=
 library(CAMERA)
