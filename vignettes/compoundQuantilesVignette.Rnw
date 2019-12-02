@@ -46,14 +46,30 @@ First, valid isotope clusters can be verified which strengthens the trust in the
   cpObj <- compoundQuantiles(compoundLibrary = "kegg")
   
   ## meta information
-  print(paste("Available libraries = {", paste(compoundLibraries(), collapse = ", "), "}", sep = ""))
+  print(paste("Available libraries = {",
+              paste(compoundLibraries(),
+                    collapse = ", "), "}",
+		    sep = ""))
   print(paste("Compound library = ", cpObj@compoundLibrary, sep = ""))
-  print(paste("Available mass window sizes = {", paste(massWindowSizes(cpObj@compoundLibrary), collapse = ", "), "}", sep = ""))
+  print(paste("Available mass window sizes = {",
+              paste(massWindowSizes(cpObj@compoundLibrary),
+	            collapse = ", "), "}",
+		    sep = ""))
   print(paste("Mass window size = ", cpObj@massWindowSize, sep = ""))
-  print(paste("Elements = {", paste(cpObj@elementSet, collapse = ", "), "}", sep = ""))
-  print(paste("Isotopes = {", paste(cpObj@isotopeSet, collapse = ", "), "}", sep = ""))
-  print(paste("Mass interval = [", cpObj@minCompoundMass, ", ", cpObj@maxCompoundMass, "] Da; #mass windows = ", cpObj@numberOfMassWindows, " a ", cpObj@massWindowSize, "Da", sep = ""))
-  print(paste("Quantile levels = {", paste(cpObj@quantileSet, collapse = ", "), "}", sep = ""))
+  print(paste("Elements = {", paste(cpObj@elementSet,
+                                    collapse = ", "), "}",
+				    sep = ""))
+  print(paste("Isotopes = {", paste(cpObj@isotopeSet,
+                                    collapse = ", "), "}",
+				    sep = ""))
+  print(paste("Mass interval = [",
+              cpObj@minCompoundMass, ", ",
+              cpObj@maxCompoundMass, "] Da; #mass windows = ",
+	      cpObj@numberOfMassWindows, " a ",
+	      cpObj@massWindowSize, "Da", sep = ""))
+  print(paste("Quantile levels = {",
+              paste(cpObj@quantileSet, collapse = ", "),
+	      "}", sep = ""))
   
   ## examples
   compoundMass <- 503
@@ -62,18 +78,35 @@ First, valid isotope clusters can be verified which strengthens the trust in the
   
   ## example for element count
   element <- "C"
-  countLow  <- getAtomCount(object = cpObj, element = element, mass = compoundMass, quantile = quantileLow)
-  countHigh <- getAtomCount(object = cpObj, element = element, mass = compoundMass, quantile = quantileHigh)
+  countLow  <- getAtomCount(object = cpObj, element = element,
+                            mass = compoundMass, quantile = quantileLow)
+  countHigh <- getAtomCount(object = cpObj, element = element,
+                            mass = compoundMass, quantile = quantileHigh)
   
-  print(paste("The ", (quantileHigh - quantileLow) * 100, "\% confidence interval for the number of atoms of element ", element, " in a compound with mass ", compoundMass, " is [", countLow, ", ", countHigh, "]", sep = ""))
+  print(paste("The ", (quantileHigh - quantileLow) * 100,
+              "\% confidence interval for the number of atoms of element ",
+	      element, " in a compound with mass ", compoundMass, " is [",
+	      countLow, ", ", countHigh, "]", sep = ""))
   
   ## example for isotope proportion
   isotope1 <- 0
   isotope2 <- 1
-  propLow  <- getIsotopeProportion(object = cpObj, isotope1 = isotope1, isotope2 = isotope2, mass = compoundMass, quantile = quantileLow)
-  propHigh <- getIsotopeProportion(object = cpObj, isotope1 = isotope1, isotope2 = isotope2, mass = compoundMass, quantile = quantileHigh)
+  propLow  <- getIsotopeProportion(object = cpObj,
+                                   isotope1 = isotope1,
+                                   isotope2 = isotope2,
+				   mass = compoundMass,
+				   quantile = quantileLow)
+  propHigh <- getIsotopeProportion(object = cpObj,
+                                   isotope1 = isotope1,
+				   isotope2 = isotope2,
+				   mass = compoundMass,
+				   quantile = quantileHigh)
   
-  print(paste("The ", (quantileHigh - quantileLow) * 100, "\% confidence interval for the proportion of isotopes ", isotope1, " / ", isotope2, " in a compound with mass ", compoundMass, " is [", propLow, ", ", propHigh, "]", sep = ""))
+  print(paste("The ", (quantileHigh - quantileLow) * 100,
+              "\% confidence interval for the proportion of isotopes ",
+	      isotope1, " / ", isotope2, " in a compound with mass ",
+	      compoundMass, " is [", propLow, ", ", propHigh, "]",
+	      sep = ""))
 \end{verbatim}
 }
 
@@ -96,9 +129,13 @@ The output of the given R snippet is as follows.
   [1] "Elements = {Br, Cl, C, F, H, I, N, O, P, Si, S, Unknown}"
   [1] "Isotopes = {1, 2, 3, 4, 5}"
   [1] "Mass interval = [0, 1050] Da; #mass windows = 21 a 50Da"
-  [1] "Quantiles = {5e-06, 0.999995, 1e-05, 0.99999, 5e-05, 0.99995, 1e-04, 0.9999, 5e-04, 0.9995, 0.001, 0.999, 0.005, 0.995, 0.01, 0.99, 0.025, 0.975, 0.05, 0.95, 0.1, 0.9, 0.5}"
-  [1] "The 90\% confidence interval for the number of atoms of element C in a compound with mass 503 is [12, 37]"
-  [1] "The 90\% confidence interval for the proportion of isotopes 0 / 1 in a compound with mass 503 is [2.59590178697724, 6.92217595633345]"
+  [1] "Quantiles = {5e-06, 0.999995, 1e-05, 0.99999, 5e-05, 0.99995,
+  1e-04, 0.9999, 5e-04, 0.9995, 0.001, 0.999, 0.005, 0.995, 0.01, 0.99,
+  0.025, 0.975, 0.05, 0.95, 0.1, 0.9, 0.5}"
+  [1] "The 90\% confidence interval for the number of atoms of element C
+  in a compound with mass 503 is [12, 37]"
+  [1] "The 90\% confidence interval for the proportion of isotopes 0 / 1
+  in a compound with mass 503 is [2.59590178697724, 6.92217595633345]"
 \end{verbatim}
 }
 
