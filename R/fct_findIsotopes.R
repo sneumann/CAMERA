@@ -38,12 +38,9 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
   int     <- int[order(spectra[, 1]), , drop=FALSE]
   spectra <- spectra[order(spectra[, 1]), ];    
   cnt     <- nrow(spectra);
-  #isomatrix <- matrix(NA, ncol=5, nrow=0)
-  #colnames(isomatrix) <- c("mpeak", "isopeak", "iso", "charge", "intrinsic")
   
   #calculate error
   error.ppm <- params$devppm * mz;
-  #error.abs <- ),1, function(x) x + params$mzabs*rbind(1,2,3)));
   
   #for every peak in pseudospectrum
   for ( j in 1:(length(mz) - 1)){
@@ -114,8 +111,6 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     
     #getting max. isotope cluster length
     #TODO: unique or not????
-    #isolength <- apply(hits, 1, function(x) length(which(unique(x) %% 2 !=0)))
-    #isohits - for each charge, length of peak within intervals
     isohits   <- lapply(1:nrow(hits), function(x) which(hits[x, ] %% 2 !=0))
     isolength <- sapply(isohits, length)
 
@@ -133,10 +128,6 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
     for(iso in 1:length(isohits)){
       for(candidate in 1:length(isohits[[iso]])){
         for(sample.index in c(1:ncol(int))){
-          #Test if C12 Peak is NA
-          if(!is.na(int[j, sample.index])){              
-            #candidate.matrix[maxIso, 1] <- candidate.matrix[maxIso, 1] + 1
-          }
           charge <- as.numeric(row.names(hits)[iso])
           int.c12 <- int[j, sample.index]
           isotopePeak <- hits[iso,isohits[[iso]][candidate]]%/%2 + 1;
