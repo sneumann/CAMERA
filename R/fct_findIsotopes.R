@@ -55,6 +55,8 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
         }
         
         ## IM - isotope matrix (column diffs(min,max) per charge, row num. isotope)
+        ## STN: isn't it rather:
+        ## IM - isotope matrix (column diffs(min,max) per ISOTOPE, row num. charge state)
         IM <- t(sapply(1:params$maxcharge,function(x){
             mzmin <- (params$IM[, "mzmin"]) / x;
             mzmax <- (params$IM[, "mzmax"]) / x;
@@ -85,11 +87,20 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
         for(iso in 1:min(params$maxiso,ncol(hits.iso))){
             hit <- apply(hits.iso,1, function(x) any(CAMERA:::naOmit(x)==iso))
             hit[which(is.na(hit))] <- TRUE
-            if(all(hit)) break;
+            if(all(hit))
+                break;
             hits.iso[!hit,] <- t(apply(hits.iso[!hit,,drop=FALSE],1, function(x) {
                 if(!all(is.na(x))){
                     ini <- which(x > iso)
-                    if(!is.infinite(ini) && length(ini) > 0){
+
+                    ## Here the following condition was previously:
+                    ## if(!is.infinite(ini) && length(ini) > 0){
+                    ##
+                    ## The fix for issue #44 assumes the follwoing:
+                    ## "There is at least one hit" Not sure why
+                    ## ini as return value of which() would contain inf at all
+
+                    if(!is.infinite(ini)[1] & length(ini) > 0){
                         x[min(ini):ncol(hits.iso)] <- NA  
                     }
                 }
@@ -213,8 +224,8 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
                     break;
                 }
             }
-        }#end for charge
-    }#end for j
+        }# for(charge in 1:nrow(candidate.matrix)){
+    }# end for ( j in 1:(length(mz) - 1)){
     
     return(isomatrix)
 }

@@ -15,7 +15,7 @@ extractfragments <- function(object, pspecidx=NULL) {
     sp <- getpspectra(object, grp=pspec)
     rt <- median(sp[, "rt"])
     peakID <- object@pspectra[[pspec]]
-    if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
+    if(object@sample == 1 & length(sampnames(object@xcmsSet)) == 1){
         #single sample
         #intIdx <- intVal;
         intIdx <- "maxo";

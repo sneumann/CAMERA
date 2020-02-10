@@ -9,7 +9,7 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1, polarity=NULL){
   
   object  <- new("xsAnnotate");
   
-  if(length(sampnames(xs)) > 1 && !nrow(xs@groups) > 0) {  
+  if(length(sampnames(xs)) > 1 & !nrow(xs@groups) > 0) {  
       # more than one sample
       # checking alignment
       stop ('First argument must be a xcmsSet with group information or contain only one sample.') 
@@ -19,7 +19,7 @@ xsAnnotate <- function(xs=NULL, sample=NA, nSlaves=1, polarity=NULL){
   if(length(sample) > 1){
     #example sample <- c(1,2,3,4,5)
   
-    if(all(sample < length(xs@filepaths) && sample > 0)){
+    if(all(sample <= length(xs@filepaths)) & all(sample > 0)){
       #all sample values are in allowed range
       object@sample <- sample;
     }else{
@@ -785,7 +785,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo)); 
   }
 
-  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
+  if(object@sample == 1 & length(sampnames(object@xcmsSet)) == 1){
     ##one sample case
     mint <- object@groupInfo[, intval];
   }else{
@@ -1266,7 +1266,7 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
 
   #generate peaktable
   #Check if xcmsSet contains only one sample
-  if(object@sample == 1 && length(sampnames(object@xcmsSet)) == 1){
+  if(object@sample == 1 & length(sampnames(object@xcmsSet)) == 1){
     #intval is here ignored since all intensity values are already contained
     peaktable <- object@groupInfo;
   }else {
