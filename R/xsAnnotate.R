@@ -785,7 +785,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
     object@pspectra[[1]] <- seq(1:nrow(object@groupInfo)); 
   }
 
-  if(object@sample == 1 & length(sampnames(object@xcmsSet)) == 1){
+  if(object@sample[1] == 1 & length(sampnames(object@xcmsSet)) == 1){
     ##one sample case
     mint <- object@groupInfo[, intval];
   }else{
@@ -1266,7 +1266,7 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
 
   #generate peaktable
   #Check if xcmsSet contains only one sample
-  if(object@sample == 1 & length(sampnames(object@xcmsSet)) == 1){
+  if(object@sample[1] == 1 & length(sampnames(object@xcmsSet)) == 1){
     #intval is here ignored since all intensity values are already contained
     peaktable <- object@groupInfo;
   }else {

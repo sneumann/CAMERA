@@ -1,3 +1,11 @@
+CHANGES IN VERSION 1.43.2
+-------------------------
+
+BUG FIXES
+
+    o Change several && causing failure
+      with _R_CHECK_LENGTH_1_CONDITION_ and _R_CHECK_LENGTH_1_CONDITION_
+
 CHANGES IN VERSION 1.43.1
 -------------------------
 
