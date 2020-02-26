@@ -162,12 +162,12 @@ That's all for the simple sample approach. Please note that every method
 has additional parameters, that are not explicitly mentioned here. Also if your
 analysis doesn't need annotations, only a separation into groups, then simply
 stop after groupCorr. The grouping results are stored in the list
-\Rfunarg{object@pspectra}, which saves the peakindexes as elements for every group.
+\Rfunarg{object@pspectra}, which saves the peak indices as elements for every group.
 
 \begin{verbatim}
- #xsa is here the result from findAdducts
- peak.idx <- xsa@pspectra[[1]]
- #print the indexes of all peaks from pseudospectrum 1
+ # anIC here is the result of groupCorr
+ peak.idx <- anIC@pspectra[[1]]
+ #print the indices of all peaks from pseudospectrum 1
  cat(peak.idx)
 \end{verbatim}
 
@@ -202,9 +202,9 @@ write.csv(getPeaklist(xsaFA),file="result_CAMERA.csv")
 
 Similar to the single sample experiment we group according to retention time, 
 group according to EIC correlation and finally annotate isotopes and adducts.
-The main difference between our first example is the sample selection.
-The sample parameter set either one specific sample (sample=x),
-a subset (sample=c(x:y)) or all samples (sample=c(1:nSamples)), 
+The main difference from our first example is the sample selection.
+The sample parameter sets either one specific sample (sample=x),
+a subset (sample=c(x:y)), or all samples (sample=c(1:nSamples)), 
 where nSamples is the number of samples in the xcmsSet,
 as selection for the correlation analysis. Since the runtime increases with every sample, CAMERA includes a
 automatic selection method (sample=NA), where in groupFWHM a representative sample is chosen for every created pseudospectrum.
@@ -334,7 +334,8 @@ function \Rfunction{plotEICs} to visualize the raw data and the function
 The next example show the use of both functions.
 <<EICPspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 12, height = 8,results=hide>>=
 library(CAMERA)
-file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+file <- system.file('mzdata/MM14.mzdata', 'mzdata/MM13.mzdata', package = "CAMERA")
+file = system.file(dir('mzdata'), package = 'CAMERA')
 xs   <- xcmsSet(file, method="centWave",ppm=30, peakwidth=c(5,10))
 an   <- xsAnnotate(xs)
 an   <- groupFWHM(an)
@@ -359,7 +360,7 @@ plotPsSpectrum(an, pspec=2, maxlabel=5)
 \begin{center}
 \includegraphics{CAMERA-Pspec1}
 \end{center}
-\caption{\label{EICpspec2} Spectra.}
+\caption{\label{EICpspec2} Spectrum.}
 \end{figure}
 
 %
@@ -415,7 +416,7 @@ After the peak grouping into pseudospectra with \Rfunction{groupCorr} or
 \Rfunction{findAdducts}. For every pseudospectra all possible adducts are
 calculated based on a provided rule table. As default CAMERA calculate its own
 table, which contains every possible combination from the standard ions
-H, Na, K, NH4 and CL, depending on your ionization mode.
+H, Na, K, NH4 and Cl, depending on your ionization mode.
 
 Additional CAMERA contains four precalculated rule tables: primary\_adducts\_pos,
 primary\_adducts\_neg, extended\_adducts\_pos, extended\_adducts\_neg
