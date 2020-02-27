@@ -21,6 +21,7 @@
 
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 \title{LC-MS Peak Annotation and Identification with \Rpackage{CAMERA}}
 \author{Carsten Kuhl, Ralf Tautenhahn and Steffen Neumann}
 \maketitle
@@ -334,8 +335,7 @@ function \Rfunction{plotEICs} to visualize the raw data and the function
 The next example show the use of both functions.
 <<EICPspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 12, height = 8,results=hide>>=
 library(CAMERA)
-file <- system.file('mzdata/MM14.mzdata', 'mzdata/MM13.mzdata', package = "CAMERA")
-file = system.file(dir('mzdata'), package = 'CAMERA')
+file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
 xs   <- xcmsSet(file, method="centWave",ppm=30, peakwidth=c(5,10))
 an   <- xsAnnotate(xs)
 an   <- groupFWHM(an)
