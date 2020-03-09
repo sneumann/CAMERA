@@ -1387,12 +1387,12 @@ setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median"
       # Select adduct that has maximum intensities
       if (default.adduct.info == "maxint") {
         pl.max <- apply(X=pl.tab, MARGIN=1, FUN=function(x) { sum(x, na.rm=TRUE) } )
-        pl.max <- which(pl.max==max(pl.max))[1]
+        pl.max <- as.numeric(which.max(pl.max)[[1]])
       }
       
       # Select adduct that has most peaks
       if (default.adduct.info == "maxpeaks") {
-        pl.max <- which(plist$npeaks==max(plist$npeaks))[1]
+        pl.max <- which.max(pl.tab$npeaks)[[1]]
       }
       
       # Take lowest/highest values of mzmin, mzmax & rtmin, rtmax
@@ -1422,7 +1422,7 @@ setMethod("getReducedPeaklist", "xsAnnotate", function(object, method = "median"
           
       # Only take the adduct line where intensities are highest
       if (method == "maxint") {
-        pl.met <- pl.max
+        pl.met <- pl.tab[pl.max,]
       }
       
       # PCA of all adducts per samples
