@@ -811,16 +811,12 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
 
     #na flag, stores if sample contains NA peaks
     na.flag <- 0;
-    maxscans <- 0;
-
-    if (file.exists(filepaths(object@xcmsSet)[1])) { 
-      xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
-      xraw@scantime <- object@xcmsSet@rt$corrected[[1]]
-      maxscans <- length(xraw@scantime)
-    } else {
-      stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
-    }
-
+    # for approximation
+    maxscans <- max(sapply(object@xcmsSet@rt$corrected, length))
+	  rtrange <- range(unlist(object@xcmsSet@rt$corrected), na.rm = TRUE)
+	
+	  rtvec <- seq(rtrange[1], rtrange[2], length.out = maxscans)
+     
     #generate EIC Matrix
     EIC <- create.matrix(nrow(gval),maxscans)
 
@@ -840,13 +836,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
         #read sample
         xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
         xraw@scantime <- object@xcmsSet@rt$corrected[[f]];
-        maxscans.tmp <- length(xraw@scantime);
         scantimes[[f]] <- xraw@scantime
-        if(maxscans.tmp > maxscans){
-          #increase columns of EIC matrix
-          EIC <- cbind(EIC,create.matrix(nrow(gval),maxscans.tmp - maxscans));
-          maxscans <- maxscans.tmp;
-        }
 
         pdata <- as.data.frame(object@xcmsSet@peaks[gval[idx.peaks,f],,drop=FALSE]) # data for peaks from file f
 
@@ -856,7 +846,12 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
         }
 
         #Generate raw data according to peak data
-        EIC[idx.peaks,] <- getEIC4Peaks(xraw,pdata,maxscans)
+        EIC.tmp <- CAMERA:::getEIC4Peaks(xraw, pdata)
+	      EIC.tmp[is.na(EIC.tmp)] <- 0
+	      EIC.tmp <- t(apply(EIC.tmp, 1, function(a) {approx(x = xraw@scantime, y = a, xout = rtvec, rule = 2)$y}))
+	      EIC.tmp[EIC.tmp == 0] <- NA
+	      EIC[idx.peaks, ] <- EIC.tmp
+	      rm(EIC.tmp)
 
       } else {
         stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n')
