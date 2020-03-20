@@ -1,4 +1,9 @@
 ##Functions for findIsotopes
+ISOMAT <- cbind(mzmin = c(1, 0.997, 1, 1, 1, 1, 1, 1),
+                mzmax = rep(1.0040, 8),
+                intmin = c(1, 0.01, 0.001, 0.0001, 0.00001, 0.000001,
+                           0.0000001, 0.00000001),
+                intmax = c(150, 200, 200, 200, 200, 200, 200, 200))
 
 #' @title Calculate an isotope matrix
 #'
@@ -18,12 +23,6 @@ calcIsotopeMatrix <- function(maxiso = 4L){
     ISOMAT[seq_len(maxiso), , drop = FALSE]
 }
 
-ISOMAT <- cbind(mzmin = c(1, 0.997, 1, 1, 1, 1, 1, 1),
-                mzmax = rep(1.0040, 8),
-                intmin = c(1, 0.01, 0.001, 0.0001, 0.00001, 0.000001,
-                           0.0000001, 0.00000001),
-                intmax = c(150, 200, 200, 200, 200, 200, 200, 200))
-
 #' @title Find which peaks are isotopes of each other
 #'
 #' @description
@@ -38,6 +37,11 @@ ISOMAT <- cbind(mzmin = c(1, 0.997, 1, 1, 1, 1, 1, 1),
 #'     peaks. A `matrix` (with number of rows equal to the number of peaks)
 #'     can be provided if intensities are available across several samples.
 #'
+#' @param ipeak optional `integer`, same length than `mz` providing the index
+#'     of the peaks in the original data set. These indices are returned as
+#'     indices of original and isotope peaks in the result matrix. It defaults
+#'     to a sequence from 1 to length of `mz`.
+#' 
 #' @param ppm `numeric(1)` with the relative acceptable difference in m/z
 #'     values. Defaults to `ppm = 5`.
 #'
@@ -60,7 +64,13 @@ ISOMAT <- cbind(mzmin = c(1, 0.997, 1, 1, 1, 1, 1, 1),
 #' @param filter `logical(1)` whether the expected intensity relationship for
 #'     C12/C13 filter should be applied.
 #'
-#' @return `matrix` with 4 columns:
+#' @return
+#'
+#' `matrix` with 4 columns:
+#' - `"mpeak"`: index of the peak.
+#' - `"isopeak"`: index of the peak identified as an isotope of `"mpeak"`.
+#' - `"iso"`: the isotope.
+#' - `"charge"`: the charge of the isotope.
 #'
 #' @md
 findIsotopePeaks <- function(mz, int, ipeak = seq_along(mz),
@@ -73,14 +83,14 @@ findIsotopePeaks <- function(mz, int, ipeak = seq_along(mz),
         int <- matrix(int, ncol = 1)
     if (length(mz) != nrow(int))
         stop("lengths of 'mz' and 'int' have to match.")
-    if (nrow(isoMatrix) != maxiso)
+    if (nrow(isomatrix) != maxiso)
         stop("nrow(isoMatrix) has to be equal to 'maxiso'")
     ## matrix with all important informationen
     mz_idx <- order(mz)
     spectra <- cbind(mz[mz_idx], ipeak[mz_idx])
     int <- int[mz_idx, , drop = FALSE]
     n_spectra <- length(mz)
-    
+
     ## calculate error
     error.ppm <- ppm / 1e6 * mz
     res <- matrix(ncol = 4, nrow = 0)
@@ -128,11 +138,27 @@ findIsotopePeaks <- function(mz, int, ipeak = seq_along(mz),
         hits.iso <- hits%/%2 + 1
         
         for (iso in 1:min(maxiso, ncol(hits.iso))) {
-            hit <- rowSums(hits.iso == iso) > 0
+            hit <- apply(hits.iso,1, function(x) any(CAMERA:::naOmit(x)==iso))
             hit[which(is.na(hit))] <- TRUE
             if (all(hit))
                 break
-            hits.iso[!hit, ][hits.iso[!hit, ] > iso] <- NA 
+            hits.iso[!hit,] <- t(apply(hits.iso[!hit,,drop=FALSE],1, function(x) {
+                if(!all(is.na(x))){
+                    ini <- which(x > iso)
+
+                    ## Here the following condition was previously:
+                    ## if(!is.infinite(ini) && length(ini) > 0){
+                    ##
+                    ## The fix for issue #44 assumes the follwoing:
+                    ## "There is at least one hit" Not sure why
+                    ## ini as return value of which() would contain inf at all
+
+                    if(!is.infinite(ini)[1] & length(ini) > 0){
+                        x[min(ini):ncol(hits.iso)] <- NA  
+                    }
+                }
+                x
+            }))
         }
 
         ## set NA to 0
@@ -193,8 +219,8 @@ findIsotopePeaks <- function(mz, int, ipeak = seq_along(mz),
                         int.cx <- int[isohits[[iso]][candidate]+j, sample.index]
                         int.available <- all(!is.na(c(int.c12, int.cx)))
                         if (int.available) {
-                            intrange <- c((int.c12 * params$IM[isotopePeak,"intmin"]/100),
-                            (int.c12 * params$IM[isotopePeak,"intmax"]/100))
+                            intrange <- c((int.c12 * isomatrix[isotopePeak,"intmin"]/100),
+                            (int.c12 * isomatrix[isotopePeak,"intmax"]/100))
                             ## filter Cx isotopic peaks muss be smaller than c12
                             if (int.cx < intrange[2] && int.cx > intrange[1]) {
                                 candidate.matrix[iso,candidate * 2 - 1] <-
@@ -282,7 +308,8 @@ findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params) {
     ## maxcharge - maximum allowed charge
     ## devppm - scaled ppm error
     ## mzabs - absolut error in m/z
-    res <- findIsotopePeaks(mz, int, ipeak, ppm = params$devppm * 1e6,
+    res <- findIsotopePeaks(mz = mz, int = int, ipeak = ipeak,
+                            ppm = params$devppm * 1e6,
                             tolerance = params$mzabs, maxiso = params$maxiso,
                             maxcharge = params$maxcharge,
                             minfrac = params$minfrac, filter = params$filter)

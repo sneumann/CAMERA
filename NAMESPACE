@@ -12,6 +12,11 @@ importFrom("grDevices", "rgb")
 importFrom("stats", "cor.test")
 importFrom("utils", "flush.console", "object.size", "read.table")
 importFrom("igraph", "graph.data.frame", "label.propagation.community")
+importFrom("graphics", "lines")
+importFrom("grDevices", "rainbow")
+importFrom("stats", "cutree", "density", "dist", "hclust", "median",
+           "na.omit", "prcomp", "pt")
+importFrom("utils", "tail", "write.table")
 
 
 importClassesFrom(Biobase, "Versioned")

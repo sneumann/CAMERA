@@ -24,6 +24,11 @@ findIsotopePeaks(
 peaks. A \code{matrix} (with number of rows equal to the number of peaks)
 can be provided if intensities are available across several samples.}
 
+\item{ipeak}{optional \code{integer}, same length than \code{mz} providing the index
+of the peaks in the original data set. These indices are returned as
+indices of original and isotope peaks in the result matrix. It defaults
+to a sequence from 1 to length of \code{mz}.}
+
 \item{ppm}{\code{numeric(1)} with the relative acceptable difference in m/z
 values. Defaults to \code{ppm = 5}.}
 
@@ -48,6 +53,12 @@ C12/C13 filter should be applied.}
 }
 \value{
 \code{matrix} with 4 columns:
+\itemize{
+\item \code{"mpeak"}: index of the peak.
+\item \code{"isopeak"}: index of the peak identified as an isotope of \code{"mpeak"}.
+\item \code{"iso"}: the isotope.
+\item \code{"charge"}: the charge of the isotope.
+}
 }
 \description{
 \code{findIsotopePeaks} compares diffrences between m/z of the provided peaks to
