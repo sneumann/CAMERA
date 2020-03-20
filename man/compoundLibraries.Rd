@@ -18,4 +18,3 @@ compoundLibraries()
 \author{
 Hendrik Treutler
 }
-

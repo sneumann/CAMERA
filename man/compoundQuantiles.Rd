@@ -23,4 +23,3 @@ cpObj <- compoundQuantiles()
 \author{
 Hendrik Treutler
 }
-

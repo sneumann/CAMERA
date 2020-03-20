@@ -31,7 +31,9 @@ export("annotate",
        "xsAnnotate", 
        "compoundQuantiles",
        "compoundLibraries", 
-       "massWindowSizes")
+       "massWindowSizes",
+       "calcIsotopeMatrix",
+       "findIsotopePeaks")
 
 exportClasses("xsAnnotate")
 exportClasses("compoundQuantiles")

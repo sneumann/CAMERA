@@ -76,13 +76,13 @@ annotateGrp <- function(ipeak, imz, rules, mzabs, devppm, isotopes, quasimolion,
     return(NULL);
   };
   
-  #Entferne Hypothesen, welche gegen OID-Score&Kausalität verstossen!
+  #Entferne Hypothesen, welche gegen OID-Score&Kausalitaet verstossen!
   hypothese <- checkOidCausality(hypothese, rules[rules.idx, ]);
   if(nrow(hypothese) < 2){
     return(NULL);
   };
   
-  #Prüfe IPS-Score
+  #Pruefe IPS-Score
   hypothese <- checkIps(hypothese)
   if(nrow(hypothese) < 2){
     return(NULL)

@@ -21,4 +21,3 @@ massWindowSizes()
 \author{
 Hendrik Treutler
 }
-
