@@ -158,7 +158,7 @@ setMethod("generateRules",
             tmpmass   <- 0;
             tmpips    <- 0;
 
-            ## Molekülionen
+            ## Molekuelionen
             if(polarity=="positive"){
               ## Wasserstoff, hard codiert
               for(k in 1:mol){

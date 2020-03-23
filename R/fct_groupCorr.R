@@ -680,7 +680,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     #select sample f
 #     if(is.na(object@sample)){
 #       if(length(pi)>1){
-#         f <- as.numeric(which.max(apply(peaks[pi,],2,function(x){mean(x,na.rm=TRUE)}))) #errechne höchsten Peaks, oder als mean,median
+#         f <- as.numeric(which.max(apply(peaks[pi,],2,function(x){mean(x,na.rm=TRUE)}))) #errechne hoechsten Peaks, oder als mean,median
 #         psSamples[i] <- f;
 #       }else{
 #         f <- which.max(peaks[pi,]);

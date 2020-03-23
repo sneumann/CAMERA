@@ -1,30 +1,323 @@
 ##Functions for findIsotopes
-calcIsotopeMatrix <- function(maxiso=4){
-  
-  if(!is.numeric(maxiso)){
-    stop("Parameter maxiso is not numeric!\n")  
-  } else if(maxiso < 1 | maxiso > 8){
-    stop(paste("Parameter maxiso must between 1 and 8. ",
-          "Otherwise use your own IsotopeMatrix.\n"),sep="")
-  }
-  
-  isotopeMatrix <- matrix(NA, 8, 4);
-  colnames(isotopeMatrix) <- c("mzmin", "mzmax", "intmin", "intmax")
-  
-  isotopeMatrix[1, ] <- c(1.000, 1.0040, 1.0, 150)
-  isotopeMatrix[2, ] <- c(0.997, 1.0040, 0.01, 200)
-  isotopeMatrix[3, ] <- c(1.000, 1.0040, 0.001, 200)
-  isotopeMatrix[4, ] <- c(1.000, 1.0040, 0.0001, 200)
-  isotopeMatrix[5, ] <- c(1.000, 1.0040, 0.00001, 200)
-  isotopeMatrix[6, ] <- c(1.000, 1.0040, 0.000001, 200)
-  isotopeMatrix[7, ] <- c(1.000, 1.0040, 0.0000001, 200)
-  isotopeMatrix[8, ] <- c(1.000, 1.0040, 0.00000001, 200)  
-  
-  return(isotopeMatrix[1:maxiso, , drop=FALSE])
+ISOMAT <- cbind(mzmin = c(1, 0.997, 1, 1, 1, 1, 1, 1),
+                mzmax = rep(1.0040, 8),
+                intmin = c(1, 0.01, 0.001, 0.0001, 0.00001, 0.000001,
+                           0.0000001, 0.00000001),
+                intmax = c(150, 200, 200, 200, 200, 200, 200, 200))
 
+#' @title Calculate an isotope matrix
+#'
+#' `calcIsotopeMatrix` creates a matrix which is used to identify isotopes.
+#'
+#' @param maxiso `integer(1)` defining the maximum number of isotopes that
+#'     should be searched for.
+#'
+#' @return `matrix` with 4 columns `"mzmin"`, `"mzmax"`, `"intmin"` and
+#'     `"intmax"` defining the lower and upper boundaries for m/z and intensity
+#'     differences expected for isotopes
+#'
+#' @md
+calcIsotopeMatrix <- function(maxiso = 4L){
+    if (maxiso < 1 || maxiso > 8)
+        stop("'maxiso' has to be an integer between 1 and 8.")
+    ISOMAT[seq_len(maxiso), , drop = FALSE]
 }
 
-findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params){
+#' @title Find which peaks are isotopes of each other
+#'
+#' @description
+#'
+#' `findIsotopePeaks` compares diffrences between m/z of the provided peaks to
+#' determine which peaks could be isotopes of each other considering also
+#' the relationship between their intensities.
+#'
+#' @param mz `numeric` with the m/z values of the peaks.
+#'
+#' @param int `numeric` or `matrix` with intensity values for the individual
+#'     peaks. A `matrix` (with number of rows equal to the number of peaks)
+#'     can be provided if intensities are available across several samples.
+#'
+#' @param ipeak optional `integer`, same length than `mz` providing the index
+#'     of the peaks in the original data set. These indices are returned as
+#'     indices of original and isotope peaks in the result matrix. It defaults
+#'     to a sequence from 1 to length of `mz`.
+#' 
+#' @param ppm `numeric(1)` with the relative acceptable difference in m/z
+#'     values. Defaults to `ppm = 5`.
+#'
+#' @param tolerance `numeric(1)` specifying an absolute difference in m/z
+#'     values. Defaults to `tolerance = 0`.
+#'
+#' @param maxiso `integer(1)` with the maximal number of isotopes that should
+#'     be searched for.
+#'
+#' @param maxcharge `integer(1)` with the maximal charge of the expected
+#'     isotopets.
+#'
+#' @param isomatrix `matrix` with isotope relationship definitions, as the
+#'     one returned by [calcIsotopeMatrix()].
+#'
+#' @param minfrac `numeric(1)` defining the proportion of samples which have
+#'     to show the correct C12/C13 ratio, if `int` is a `matrix` with intensity
+#'     values for multiple samples.
+#'
+#' @param filter `logical(1)` whether the expected intensity relationship for
+#'     C12/C13 filter should be applied.
+#'
+#' @return
+#'
+#' `matrix` with 4 columns:
+#' - `"mpeak"`: index of the peak.
+#' - `"isopeak"`: index of the peak identified as an isotope of `"mpeak"`.
+#' - `"iso"`: the isotope.
+#' - `"charge"`: the charge of the isotope.
+#'
+#' @md
+findIsotopePeaks <- function(mz, int, ipeak = seq_along(mz),
+                             ppm = 5, tolerance = 0,
+                             maxiso = 4L, maxcharge = 3L,
+                             isomatrix = calcIsotopeMatrix(maxiso),
+                             minfrac = 0.5,
+                             filter = TRUE) {
+    if (!is.matrix(int))
+        int <- matrix(int, ncol = 1)
+    if (length(mz) != nrow(int))
+        stop("lengths of 'mz' and 'int' have to match.")
+    if (nrow(isomatrix) != maxiso)
+        stop("nrow(isoMatrix) has to be equal to 'maxiso'")
+    ## matrix with all important informationen
+    mz_idx <- order(mz)
+    spectra <- cbind(mz[mz_idx], ipeak[mz_idx])
+    int <- int[mz_idx, , drop = FALSE]
+    n_spectra <- length(mz)
+
+    ## calculate error
+    error.ppm <- ppm / 1e6 * mz
+    res <- matrix(ncol = 4, nrow = 0)
+    colnames(res) <- c("mpeak", "isopeak", "iso", "charge")
+
+    ## for every peak in pseudospectrum
+    for (j in 1:(n_spectra - 1)) {
+        ## create distance matrix
+        MI <- spectra[j:n_spectra, 1] - spectra[j, 1]
+        ## Sum up all possible/allowed isotope distances + error (ppm of peak mz and mzabs)
+        max.index <- max(which(MI < (sum(isomatrix[1:maxiso, "mzmax"]) +
+                                     error.ppm[j] + tolerance)))
+        ## check if one peaks falls into isotope window
+        if (max.index == 1) {
+            ## no promising candidate found, move on
+            next
+        }
+
+        ## IM - isotope matrix (column diffs(min,max) per charge, row num. isotope)
+        ## STN: isn't it rather:
+        ## IM - isotope matrix (column diffs(min,max) per ISOTOPE, row num. charge state)
+        IM <- t(sapply(1:maxcharge, function(x) {
+            mzmin <- (isomatrix[, "mzmin"]) / x
+            mzmax <- (isomatrix[, "mzmax"]) / x
+            error <- (error.ppm[j] + tolerance) / x
+            res <- c(0, 0)
+            for (k in 1:length(mzmin)) {
+                res <- c(res, mzmin[k] + res[2*k-1], mzmax[k] + res[2*k])
+            }
+            res[seq(1, length(res), by = 2)] <- res[seq(1, length(res), by = 2)] - error
+            res[seq(2, length(res), by = 2)] <- res[seq(2, length(res), by = 2)] + error
+            res[-c(1:2)]
+        } ))
+        
+        ## Sort IM to fix bug, with high ppm and mzabs values 
+        ## TODO: Find better solution and give feedback to user!
+        IM <- t(apply(IM, 1, sort))
+        
+        ## find peaks, which m/z value is in isotope interval
+        hits <- t(apply(IM, 1, function(x) findInterval(MI[1:max.index], x)))
+        rownames(hits) <- 1:nrow(hits)
+        colnames(hits) <- 1:ncol(hits)
+        hits[which(hits == 0)] <- NA
+        hits <- hits[, -1, drop = FALSE]
+        hits.iso <- hits%/%2 + 1
+        
+        for (iso in 1:min(maxiso, ncol(hits.iso))) {
+            hit <- apply(hits.iso,1, function(x) any(CAMERA:::naOmit(x)==iso))
+            hit[which(is.na(hit))] <- TRUE
+            if (all(hit))
+                break
+            hits.iso[!hit,] <- t(apply(hits.iso[!hit,,drop=FALSE],1, function(x) {
+                if(!all(is.na(x))){
+                    ini <- which(x > iso)
+
+                    ## Here the following condition was previously:
+                    ## if(!is.infinite(ini) && length(ini) > 0){
+                    ##
+                    ## The fix for issue #44 assumes the follwoing:
+                    ## "There is at least one hit" Not sure why
+                    ## ini as return value of which() would contain inf at all
+
+                    if(!is.infinite(ini)[1] & length(ini) > 0){
+                        x[min(ini):ncol(hits.iso)] <- NA  
+                    }
+                }
+                x
+            }))
+        }
+
+        ## set NA to 0
+        hits[is.na(hits.iso)] <- 0
+        hits <- hits[rowSums(hits) > 0, , drop = FALSE]
+        
+        ## if no first isotopic peaks exists, next
+        if (nrow(hits) == 0) {
+            next
+        }
+        
+        ## getting max. isotope cluster length
+        ## TODO: unique or not????
+        isohits <- lapply(1:nrow(hits), function(x) which(hits[x, ] %% 2 !=0))
+        isolength <- sapply(isohits, length)
+
+        ## Check if any result is found
+        if (all(isolength==0)) {
+            next
+        }
+        
+        ## itensity checks
+        ## candidate.matrix
+        ## first column - how often succeded the isotope intensity test
+        ## second column - how often could a isotope int test be performed
+        candidate.matrix <- matrix(0, nrow = length(isohits),
+                                   ncol = max(isolength) * 2)
+        
+        for (iso in 1:length(isohits)) {
+            for (candidate in 1:length(isohits[[iso]])) {
+                for (sample.index in c(1:ncol(int))) {
+                    charge <- as.numeric(row.names(hits)[iso])
+                    int.c12 <- int[j, sample.index]
+                    isotopePeak <- hits[iso,isohits[[iso]][candidate]]%/% 2 + 1
+                    if (isotopePeak == 1) {
+                        ## first isotopic peak, check C13 rule
+                        int.c13 <- int[isohits[[iso]][candidate]+j, sample.index]
+                        if (!anyNA(int.c12) && !anyNA(int.c13)) {
+                            theo.mass <- spectra[j, 1] * charge #theoretical mass
+                            numC <- abs(round(theo.mass / 12)) #max. number of C in molecule
+                            inten.max <- int.c12 * numC * 0.011 #highest possible intensity
+                            inten.min <- int.c12 * 1 * 0.011 #lowest possible intensity
+                            if ((int.c13 < inten.max && int.c13 > inten.min) ||
+                                !filter) {
+                                candidate.matrix[iso,candidate * 2 - 1] <-
+                                    candidate.matrix[iso,candidate * 2 - 1] + 1
+                                candidate.matrix[iso,candidate * 2 ] <-
+                                    candidate.matrix[iso,candidate * 2] + 1
+                            } else {
+                                candidate.matrix[iso,candidate * 2 ] <-
+                                    candidate.matrix[iso,candidate * 2] + 1
+                            }
+                        } else {
+                            ## todo
+                        }
+                    } else {
+                        ## x isotopic peak
+                        int.cx <- int[isohits[[iso]][candidate]+j, sample.index]
+                        int.available <- all(!is.na(c(int.c12, int.cx)))
+                        if (int.available) {
+                            intrange <- c((int.c12 * isomatrix[isotopePeak,"intmin"]/100),
+                            (int.c12 * isomatrix[isotopePeak,"intmax"]/100))
+                            ## filter Cx isotopic peaks muss be smaller than c12
+                            if (int.cx < intrange[2] && int.cx > intrange[1]) {
+                                candidate.matrix[iso,candidate * 2 - 1] <-
+                                    candidate.matrix[iso,candidate * 2 - 1] + 1
+                                candidate.matrix[iso,candidate * 2 ] <-
+                                    candidate.matrix[iso,candidate * 2] + 1                        
+                            } else {
+                                candidate.matrix[iso,candidate * 2 ] <-
+                                    candidate.matrix[iso,candidate * 2] + 1
+                            }
+                        } else {
+                            candidate.matrix[iso,candidate * 2 ] <-
+                                candidate.matrix[iso, candidate * 2] + 1
+                        } #end int.available
+                    }     #end if first isotopic peak
+                }         #for loop samples
+            }             #for loop candidate
+        }                 #for loop isohits
+        
+        ## calculate ratios
+        candidate.ratio <- candidate.matrix[, seq(1, ncol(candidate.matrix), 2)] /
+            candidate.matrix[, seq(2, ncol(candidate.matrix), 2)]
+        if (is.null(dim(candidate.ratio))) {
+            candidate.ratio <- matrix(candidate.ratio,
+                                      nrow = nrow(candidate.matrix))
+        }
+        if (any(is.nan(candidate.ratio))){
+            candidate.ratio[which(is.nan(candidate.ratio))] <- 0
+        }
+        
+        ## decision between multiple charges or peaks
+        for (charge in 1:nrow(candidate.matrix)) {
+            if (any(duplicated(hits[charge, isohits[[charge]]]))) {
+                ## One isotope peaks has more than one candidate
+                ## check if problem is still consistent
+                for (iso in unique(hits[charge, isohits[[charge]]])) {
+                    if(length(index <- which(hits[charge, isohits[[charge]]]==iso)) == 1) {
+                        ## now duplicates next
+                        next
+                    } else {
+                        ## find best
+                        index2 <- which.max(candidate.ratio[charge, index])
+                        save.ratio <- candidate.ratio[charge, index[index2]]
+                        candidate.ratio[charge,index] <- 0
+                        candidate.ratio[charge,index[index2]] <- save.ratio
+                        index <- index[-index2]
+                        isohits[[charge]] <- isohits[[charge]][-index]
+                    }
+                }
+            } #end if
+            
+            for (isotope in 1:ncol(candidate.ratio)) {
+                if (candidate.ratio[charge, isotope] >= minfrac) {
+                    res <- rbind(
+                        res, 
+                        c(spectra[j, 2],
+                          spectra[isohits[[charge]][isotope]+j, 2], 
+                          isotope,
+                          as.numeric(row.names(hits)[charge])))
+                } else {
+                    break
+                }
+            }
+        } # for(charge in 1:nrow(candidate.matrix)){
+    }     # end for ( j in 1:(length(mz) - 1)){
+    res
+}
+
+#' @param isomatrix `matrix`, the result from a previous run.
+#'
+#' @param mz `numeric` with the m/z values.
+#'
+#' @param ipeak `integer` with the index of the peaks (in the original data?)
+#'
+#' @param int `matrix` (even with a single column) of intensities.
+#'
+#' @param params `list` of parameters.
+#'
+#' @noRd
+findIsotopesPspec <- function(isomatrix, mz, ipeak, int, params) {
+    ## isomatrix - isotope annotations (5 column matrix)
+    ## mz - m/z vector, contains all m/z values from specific pseudospectrum
+    ## int - int vector, see above
+    ## maxiso - how many isotopic peaks are allowed
+    ## maxcharge - maximum allowed charge
+    ## devppm - scaled ppm error
+    ## mzabs - absolut error in m/z
+    res <- findIsotopePeaks(mz = mz, int = int, ipeak = ipeak,
+                            ppm = params$devppm * 1e6,
+                            tolerance = params$mzabs, maxiso = params$maxiso,
+                            maxcharge = params$maxcharge,
+                            minfrac = params$minfrac, filter = params$filter)
+    rbind(isomatrix,
+          cbind(res, intrinsic = rep(0, nrow(res))))
+}
+
+findIsotopesPspec_orig <- function(isomatrix, mz, ipeak, int, params){
     ## isomatrix - isotope annotations (5 column matrix)
     ## mz - m/z vector, contains all m/z values from specific pseudospectrum
     ## int - int vector, see above

@@ -1,6 +1,13 @@
 CHANGES IN VERSION 1.43.2
 -------------------------
 
+NEW FEATURES:
+
+    o Export functions to find isotopes based on m/z and intensity values.
+
+CHANGES IN VERSION 1.43.2
+-------------------------
+
 BUG FIXES
 
     o Change several && causing failure

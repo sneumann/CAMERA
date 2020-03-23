@@ -648,7 +648,7 @@ setMethod("findIsotopes", "xsAnnotate",
       #peak mass and intensity for pseudospectrum
       mz  <- imz[ipeak];
       int <- mint[ipeak, , drop=FALSE];
-      isomatrix <-  findIsotopesPspec(isomatrix, mz, ipeak, int, params)              
+      isomatrix <-  findIsotopesPspec(isomatrix, mz, ipeak, int, params)
     }
   }
 
@@ -1355,7 +1355,7 @@ setMethod("getPeaklist", "xsAnnotate", function(object, intval="into") {
     }
   }
           
-  rownames(peaktable)<-NULL;#Bugfix for: In data.row.names(row.names, rowsi, i) :  some row.names duplicated:
+  rownames(peaktable)<-NULL; #Bugfix for: In data.row.names(row.names, rowsi, i) : some row.names duplicated:
   return(invisible(data.frame(peaktable, isotopes, adduct, pcgroup, stringsAsFactors=FALSE, row.names=NULL)));
 })
 
