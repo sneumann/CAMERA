@@ -4,3 +4,4 @@
 src/*
 *.Rproj
 *.Rbuildignore
+.RData
