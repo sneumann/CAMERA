@@ -137,7 +137,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
           }
         }
         
-        for(i in seq(along=lmaxlabel)){
+         for(i in 1:lmaxlabel){      
           if(is.null(test[[i]])){
             test[[i]] <- mz[i];
           }
