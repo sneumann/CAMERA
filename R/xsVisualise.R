@@ -137,7 +137,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
           }
         }
         
-        for(i in seq(along=lmaxlabel)){
+         for(i in 1:lmaxlabel){      
           if(is.null(test[[i]])){
             test[[i]] <- mz[i];
           }
@@ -320,7 +320,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
 ##
 ## Loop through all requested pspectra
 ##
-  if (length(object@sample)<1) {
+  if (is.na(object@sample) || length(object@sample)<1) {
     gvals <- groupval(object@xcmsSet);
     peakmat <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
