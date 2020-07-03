@@ -750,6 +750,7 @@ getMaxScans <- function(object){
   if(nfiles == 1){
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
       xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
+      xraw@scantime <- object@xcmsSet@rt$corrected[[1]]
       maxscans <- length(xraw@scantime)     
     }else {
       stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
@@ -759,6 +760,7 @@ getMaxScans <- function(object){
     for (f in 1:nfiles){
       if(file.exists(filepaths(object@xcmsSet)[f])) { 
       xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
+      xraw@scantime <- object@xcmsSet@rt$corrected[[f]];
       maxscans <- max(maxscans, length(xraw@scantime));
       } else {
         stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n');
@@ -787,6 +789,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
 
      xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
+     xraw@scantime <- object@xcmsSet@rt$corrected[[1]]
      maxscans <- length(xraw@scantime)
      scantimes[[1]] <- xraw@scantime
      pdata <- as.data.frame(object@xcmsSet@peaks) 
@@ -809,6 +812,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
 
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
       xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
+      xraw@scantime <- object@xcmsSet@rt$corrected[[1]]
       maxscans <- length(xraw@scantime)
     } else {
       stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
@@ -832,6 +836,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
       if (file.exists(filepaths(object@xcmsSet)[f])) {
         #read sample
         xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
+        xraw@scantime <- object@xcmsSet@rt$corrected[[f]];
         maxscans.tmp <- length(xraw@scantime);
         scantimes[[f]] <- xraw@scantime
         if(maxscans.tmp > maxscans){
@@ -972,6 +977,7 @@ getAllEICs <- function(xs,index=NULL,file=NULL) {
       for (f in 1:nfiles){
 #         cat('Reading raw data file:',filepaths(xs)[f]) 
         xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
+        xraw@scantime <- xs@rt$corrected[[f]]
 #         cat(',', length(xraw@scantime),'scans. \n') 
         maxscans <- max(maxscans,length(xraw@scantime))
         scantimes[[f]] <- xraw@scantime
@@ -981,6 +987,7 @@ getAllEICs <- function(xs,index=NULL,file=NULL) {
         if (file.exists(filepaths(xs)[f])) { 
 #           cat('Reading raw data file:',filepaths(xs)[f],'\n') 
           xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
+          xraw@scantime <- xs@rt$corrected[[f]]
       #    cat('Generating EIC\'s .. \n') 
           idx.peaks <- which(index == f);
           if(length(idx.peaks)>0){
@@ -998,6 +1005,7 @@ getAllEICs <- function(xs,index=NULL,file=NULL) {
        if (file.exists(filepaths(xs)[1])) { 
          #cat('Reading raw data file:',filepaths(xs)[1],'\n') 
           xraw <- xcmsRaw(filepaths(xs)[1],profstep=0)
+          xraw@scantime <- xs@rt$corrected[[1]]
          #cat('Generating EIC\'s .. \n') 
           maxscans <- length(xraw@scantime)
           scantimes[[1]] <- xraw@scantime
