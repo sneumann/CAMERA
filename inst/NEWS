@@ -1,3 +1,11 @@
+CHANGES IN VERSION 1.45.2
+-------------------------
+
+BUG FIXES
+
+    o Thanks to Sebastien Hutinet @shutinet for fixing the adduct mass of CF3COOH. 
+      Includes a corresponding change in unit tests. Closes #61 
+
 CHANGES IN VERSION 1.43.2
 -------------------------
 
