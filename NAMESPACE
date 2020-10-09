@@ -1,7 +1,7 @@
 useDynLib(CAMERA)
 
 import("methods")
-import("xcms")
+import(xcms, except=c(plot))
 
 importFrom("RBGL", "highlyConnSG")
 importFrom("graph", "ftM2graphNEL")
