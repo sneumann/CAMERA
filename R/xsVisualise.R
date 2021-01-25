@@ -101,7 +101,6 @@ setMethod("plotEICs", "xsAnnotate", function(object,
     for (j in eicidx[o]) {
       pts <- xeic@eic[[ps]][[j]]
       points(pts, type = "l", col = lcol[cnt]);
-      cnt <- cnt + 1;
       peakrange <- peaks[,c("rtmin","rtmax"), drop=FALSE]
       ptsidx <- pts[,"rt"] >= peakrange[j,1] & pts[,"rt"] <= peakrange[j,2]
       if (naps[j]){ 
@@ -109,6 +108,7 @@ setMethod("plotEICs", "xsAnnotate", function(object,
       } else {
         points(pts[ptsidx, ], type = "l", col = col[j], lwd=1.3)
       }
+      cnt <- cnt + 1;
     }
     ## Plot Annotation Legend
     pspectrum <- getpspectra(object, grp=pspec[ps])
