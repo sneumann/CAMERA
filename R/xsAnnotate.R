@@ -1161,7 +1161,13 @@ annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.
     
     #Include into psg_list all groups that has been created after groupCorr
     cnt <- length(xa@pspectra);
-    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,cor_exp_th=cor_exp_th,calcIso=calcIso,psg_list=psg_list)
+    xa <- groupCorr(
+      xa,
+      cor_eic_th=cor_eic_th, cor_exp_th=cor_exp_th, calcIso=calcIso, psg_list=psg_list,
+      pval=pval, graphMethod=graphMethod, calcCiS=calcCiS, calcCaS=calcCaS, intval=intval
+    )
+    
+
     if(!is.null(psg_list)){
       psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
     }
