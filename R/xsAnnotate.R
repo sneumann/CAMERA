@@ -492,10 +492,12 @@ setMethod("groupCorr","xsAnnotate", function(object, cor_eic_th=0.75, pval=0.05,
   }
   
   #If object has isotope information and calcIso was selected
-  if( nrow(object@isoID) > 0 && calcIso){
-    res[[length(res)+1]] <- calcIsotopes(object);
-  }else if(nrow(object@isoID) == 0 && calcIso){
-    cat("Object contains no isotope or isotope annotation!\n");
+  if (calcIso) {
+    if (nrow(object@isoID) > 0) {
+      res[[length(res)+1]] <- calcIsotopes(object);
+    } else {
+      cat("Object contains no isotope or isotope annotation!\n");
+    }
   }
 
   #Check if we have at least 2 result matrixes
@@ -1159,7 +1161,7 @@ annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.
     
     #Include into psg_list all groups that has been created after groupCorr
     cnt <- length(xa@pspectra);
-    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,cor_exp_th=cor_exp_th,psg_list=psg_list)
+    xa <- groupCorr(xa,cor_eic_th=cor_eic_th,cor_exp_th=cor_exp_th,calcIso=calcIso,psg_list=psg_list)
     if(!is.null(psg_list)){
       psg_list <- c(psg_list,(cnt+1):length(xa@pspectra));
     }
