@@ -1,3 +1,11 @@
+CHANGES IN VERSION 1.47.1
+-------------------------
+
+BUG FIXES
+
+    o Thanks to Lain (INRAe) and Team W4M for this PR, fixing argument passing 
+      to annotatedDiffreport()
+
 CHANGES IN VERSION 1.45.2
 -------------------------
 
