@@ -10,21 +10,24 @@ setMethod("plotEICs", "xsAnnotate", function(object,
   smpls <- unique(object@psSamples[pspec])
            
   xeic  <- new("xcmsEIC");
+  xeic@eic <- vector("list", length(pspec))
   xeic@rtrange <- matrix(nrow=length(pspec), ncol=2)
   xeic@mzrange <- matrix(nrow=length(pspec), ncol=2)
   #iterator for ps-grp
-  pcpos <- 1;
+  cnt <- 0;
   #one second overlap
   rtmargin <- 1; 
   
   for (a in seq(along=smpls)) { ## sample-wise EIC collection
     #read rawData into one xcmsRaw
     xraw <- xcmsRaw(object@xcmsSet@filepaths[smpls[a]], profmethod=method)
+    xraw@scantime <- object@xcmsSet@rt$corrected[[smpls[a]]]
 
     pspecS <- pspec[which(object@psSamples[pspec] == smpls[a])]
     ## getting ALL peaks from the current sample (not that bad)
     peaks <- CAMERA:::getPeaks(object@xcmsSet, smpls[a])  
-    eic   <- lapply (pspecS, function(pc) {
+    invisible(lapply (pspecS, function(pc) {
+      cnt <<- cnt + 1
       pidx <- object@pspectra[[pc]]
       pks <- peaks[pidx, , drop=FALSE]
       gks <- object@groupInfo[pidx, , drop=FALSE]
@@ -38,14 +41,11 @@ setMethod("plotEICs", "xsAnnotate", function(object,
       eic <- xcms:::getEIC(xraw, rtrange=pks[, c("rtmin", "rtmax"), drop=FALSE],
                                  mzrange=pks[, c("mzmin", "mzmax"), drop=FALSE])
       #write resulting bounding box into xcmsEIC
-      xeic@rtrange[pcpos, ] <<- bbox[c("rtmin","rtmax")]
-      xeic@mzrange[pcpos, ] <<- bbox[c("mzmin","mzmax")]
-      cat("-->", pcpos, "\n")
-      pcpos <<- pcpos+1
-      
-      eic@eic[[1]]
-    })
-    xeic@eic <- c(xeic@eic, eic)
+      xeic@rtrange[pc, ] <<- bbox[c("rtmin","rtmax")]
+      xeic@mzrange[pc, ] <<- bbox[c("mzmin","mzmax")]
+      cat("--> ", pc, " (", cnt, " of ", length(pspec), ")", "\n", sep = "")
+      xeic@eic[[pc]] <<- eic@eic[[1]]
+    }))
   }
   names(xeic@eic) <- paste("Pseudospectrum ", pspec, sep="")
 

@@ -13,7 +13,6 @@
 \item{object = "xsAnnotate"}{
   \code{
     plotEICs(object,
-    xraw,
     pspec=1:length(object@pspectra),
     maxlabel=0, sleep=0)}
   }
@@ -24,7 +23,6 @@
 }
 \arguments{
   \item{object}{the \code{xsAnnotate} object}
-  \item{xraw}{\code{xcmsRaw} object underlying the the xsAnnotate}
   \item{maxlabel}{How many m/z labels to print}
   \item{sleep}{seconds to pause between plotting EICs}
   \item{...}{other graphical parameters}

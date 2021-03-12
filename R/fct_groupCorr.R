@@ -93,9 +93,10 @@ setMethod("calcCiS", "xsAnnotate", function(object, EIC=EIC, corval=0.75,
     #Set lower triangle to NA
     res$r[lower.tri(res$r,diag = TRUE)] <- NA;
     res$P[lower.tri(res$P,diag = TRUE)] <- NA;
+    res$n[lower.tri(res$n,diag = TRUE)] <- NA;
     
-    #Find peaks with have correlation higher corr_threshold and p <= 0.05
-    index <- which(( res$r > corval) & (res$P <= pval))
+    #Find peaks with have correlation higher corr_threshold and p <= 0.05 and > 3 comparisons
+    index <- which(( res$r > corval) & (res$P <= pval) & (res$n > 3))
     if( (length(index) + cnt)  >= nrow(resMat)){
       #resize resMat
       resMat <- rbind(resMat, create.matrix(max(length(index)+1,100000),4));
@@ -191,9 +192,10 @@ setMethod("calcCaS", "xsAnnotate", function(object, corval=0.75, pval=0.05,
       #Set lower triangle to NA
       res$r[lower.tri(res$r,diag = TRUE)] <- NA;
       res$P[lower.tri(res$P,diag = TRUE)] <- NA;
+      res$n[lower.tri(res$n,diag = TRUE)] <- NA;
       
-      #Find peaks with have correlation higher corr_threshold and p <= 0.05
-      index <- which(( res$r > corval) & (res$P <= pval))
+      #Find peaks with have correlation higher corr_threshold and p <= 0.05 and > 3 comparisons
+      index <- which(( res$r > corval) & (res$P <= pval) & (res$n > 3))
       if((length(index) + cnt)  >= nrow(resMat)){
         #resize resMat
         size <- max(100000, (cnt+length(index) + 10000))
@@ -597,9 +599,10 @@ calcCL3 <- function(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th,
     #Set lower triangle to NA
     res$r[lower.tri(res$r,diag = TRUE)] <- NA;
     res$P[lower.tri(res$P,diag = TRUE)] <- NA;
+    res$n[lower.tri(res$n,diag = TRUE)] <- NA;
     
-    #Find peaks with have correlation higher corr_threshold and p <= 0.05
-    index <- which(( res$r > cor_eic_th) & (res$P <= 0.05))
+    #Find peaks with have correlation higher corr_threshold and p <= 0.05 and > 3 comparisons
+    index <- which(( res$r > cor_eic_th) & (res$P <= 0.05) & (res$n > 3))
     if(length(index) > 0){
      for( x in 1:(length(index))){
       col <- index[x] %/% npi + 1;
@@ -750,6 +753,7 @@ getMaxScans <- function(object){
   if(nfiles == 1){
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
       xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
+      xraw@scantime <- object@xcmsSet@rt$corrected[[1]]
       maxscans <- length(xraw@scantime)     
     }else {
       stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
@@ -759,6 +763,7 @@ getMaxScans <- function(object){
     for (f in 1:nfiles){
       if(file.exists(filepaths(object@xcmsSet)[f])) { 
       xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
+      xraw@scantime <- object@xcmsSet@rt$corrected[[f]];
       maxscans <- max(maxscans, length(xraw@scantime));
       } else {
         stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n');
@@ -787,6 +792,7 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
     if (file.exists(filepaths(object@xcmsSet)[1])) { 
 
      xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
+     xraw@scantime <- object@xcmsSet@rt$corrected[[1]]
      maxscans <- length(xraw@scantime)
      scantimes[[1]] <- xraw@scantime
      pdata <- as.data.frame(object@xcmsSet@peaks) 
@@ -805,15 +811,12 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
 
     #na flag, stores if sample contains NA peaks
     na.flag <- 0;
-    maxscans <- 0;
-
-    if (file.exists(filepaths(object@xcmsSet)[1])) { 
-      xraw <- xcmsRaw(filepaths(object@xcmsSet)[1],profstep=0)
-      maxscans <- length(xraw@scantime)
-    } else {
-      stop('Raw data file:',filepaths(object@xcmsSet)[1],' not found ! \n');
-    }
-
+    # for approximation
+    maxscans <- max(sapply(object@xcmsSet@rt$corrected, length))
+	  rtrange <- range(unlist(object@xcmsSet@rt$corrected), na.rm = TRUE)
+	
+	  rtvec <- seq(rtrange[1], rtrange[2], length.out = maxscans)
+     
     #generate EIC Matrix
     EIC <- create.matrix(nrow(gval),maxscans)
 
@@ -832,13 +835,8 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
       if (file.exists(filepaths(object@xcmsSet)[f])) {
         #read sample
         xraw <- xcmsRaw(filepaths(object@xcmsSet)[f], profstep=0);
-        maxscans.tmp <- length(xraw@scantime);
+        xraw@scantime <- object@xcmsSet@rt$corrected[[f]];
         scantimes[[f]] <- xraw@scantime
-        if(maxscans.tmp > maxscans){
-          #increase columns of EIC matrix
-          EIC <- cbind(EIC,create.matrix(nrow(gval),maxscans.tmp - maxscans));
-          maxscans <- maxscans.tmp;
-        }
 
         pdata <- as.data.frame(object@xcmsSet@peaks[gval[idx.peaks,f],,drop=FALSE]) # data for peaks from file f
 
@@ -848,7 +846,12 @@ setMethod("getAllPeakEICs", "xsAnnotate", function(object, index=NULL){
         }
 
         #Generate raw data according to peak data
-        EIC[idx.peaks,] <- getEIC4Peaks(xraw,pdata,maxscans)
+        EIC.tmp <- CAMERA:::getEIC4Peaks(xraw, pdata)
+	      EIC.tmp[is.na(EIC.tmp)] <- 0
+	      EIC.tmp <- t(apply(EIC.tmp, 1, function(a) {approx(x = xraw@scantime, y = a, xout = rtvec, rule = 2)$y}))
+	      EIC.tmp[EIC.tmp == 0] <- NA
+	      EIC[idx.peaks, ] <- EIC.tmp
+	      rm(EIC.tmp)
 
       } else {
         stop('Raw data file:',filepaths(object@xcmsSet)[f],' not found ! \n')
@@ -972,6 +975,7 @@ getAllEICs <- function(xs,index=NULL,file=NULL) {
       for (f in 1:nfiles){
 #         cat('Reading raw data file:',filepaths(xs)[f]) 
         xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
+        xraw@scantime <- xs@rt$corrected[[f]]
 #         cat(',', length(xraw@scantime),'scans. \n') 
         maxscans <- max(maxscans,length(xraw@scantime))
         scantimes[[f]] <- xraw@scantime
@@ -981,6 +985,7 @@ getAllEICs <- function(xs,index=NULL,file=NULL) {
         if (file.exists(filepaths(xs)[f])) { 
 #           cat('Reading raw data file:',filepaths(xs)[f],'\n') 
           xraw <- xcmsRaw(filepaths(xs)[f],profstep=0)
+          xraw@scantime <- xs@rt$corrected[[f]]
       #    cat('Generating EIC\'s .. \n') 
           idx.peaks <- which(index == f);
           if(length(idx.peaks)>0){
@@ -998,6 +1003,7 @@ getAllEICs <- function(xs,index=NULL,file=NULL) {
        if (file.exists(filepaths(xs)[1])) { 
          #cat('Reading raw data file:',filepaths(xs)[1],'\n') 
           xraw <- xcmsRaw(filepaths(xs)[1],profstep=0)
+          xraw@scantime <- xs@rt$corrected[[1]]
          #cat('Generating EIC\'s .. \n') 
           maxscans <- length(xraw@scantime)
           scantimes[[1]] <- xraw@scantime
