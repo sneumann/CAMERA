@@ -1091,7 +1091,7 @@ setMethod("findAdducts", "xsAnnotate", function(object, ppm=5, mzabs=0.015, mult
   }
 })
 
-annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.6,
+annotateDiffreport <- function(object, class1 = levels(sampclass(object))[1], class2 = levels(sampclass(object))[2], sample=NA, nSlaves=1, sigma=6, perfwhm=0.6,
   cor_eic_th=0.75, cor_exp_th=0.75, graphMethod="hcs", pval=0.05, calcCiS=TRUE,
   calcIso=FALSE, calcCaS=FALSE, maxcharge=3, maxiso=4, minfrac=0.5,
   ppm=5, mzabs=0.015, quick=FALSE, psg_list=NULL, rules=NULL,
@@ -1101,7 +1101,7 @@ annotateDiffreport <- function(object, sample=NA, nSlaves=1, sigma=6, perfwhm=0.
   if (!class(object)=="xcmsSet") stop ("no xcmsSet object");
   
   #use diffreport from xcms
-  diffrep <- diffreport(object, sortpval=FALSE, ...);
+  diffrep <- diffreport(object, class1, class2, sortpval=FALSE, ...);
   
   if(quick){
     #Quick run, no groupCorr and findAdducts
