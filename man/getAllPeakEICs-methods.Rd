@@ -16,7 +16,7 @@
   same sample set index = rep(sample index, peak count)}
 }
 \details{
-  The function extract from the raw data the EIC curves. Therefore all .netcdf, .mzdata etc. files must be acessable.
+  The function extract from the raw data the EIC curves. Therefore all .netcdf, .mzML etc. files must be acessable.
   It returns a list with two item.
 }
 \examples{

@@ -1,7 +1,7 @@
 ## single sample MPI
 test.anno_single <- function() {
 #    if(require("Rmpi", quietly=TRUE)){
-    file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+    file <- system.file('mzML/MM14.mzML', package = "CAMERA")
     xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
     an   <- xsAnnotate(xs) # ,nSlaves=2) Disabled because of unconfigured RMPI on BioC Build machines
 

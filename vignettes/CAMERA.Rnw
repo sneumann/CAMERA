@@ -68,7 +68,7 @@ favorite parameters. For an example see below:
 \begin{verbatim}
   library(CAMERA)
   #Single sample example
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs <- xcmsSet(file,method="centWave",ppm=30,peakwidth=c(5,10))
 
   #Multiple sample
@@ -335,7 +335,7 @@ function \Rfunction{plotEICs} to visualize the raw data and the function
 The next example show the use of both functions.
 <<EICPspec1, include = FALSE, fig = TRUE, eps = FALSE, width = 12, height = 8,results=hide>>=
 library(CAMERA)
-file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+file <- system.file('mzML/MM14.mzML', package = "CAMERA")
 xs   <- xcmsSet(file, method="centWave",ppm=30, peakwidth=c(5,10))
 an   <- xsAnnotate(xs)
 an   <- groupFWHM(an)
@@ -376,7 +376,7 @@ xsAnnotate object. It handles also all functions parameters.
 
 \begin{verbatim}
  library(CAMERA)
- file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+ file <- system.file('mzML/MM14.mzML', package = "CAMERA")
  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
  xsa  <- annotate(xs)
 \end{verbatim}
@@ -425,7 +425,7 @@ Those can be applied as shown in the example. For creating your own rule
 table, see \ref{sec:ruletable}.
 
 \begin{verbatim}
- file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+ file <- system.file('mzML/MM14.mzML', package = "CAMERA")
  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
  an   <- xsAnnotate(xs)
  an   <- groupFWHM(an)
@@ -447,7 +447,7 @@ the expected isotopes within one cluster and their charges.
 
 \begin{verbatim}
  library(CAMERA)
- file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+ file <- system.file('mzML/MM14.mzML', package = "CAMERA")
  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
  an   <- xsAnnotate(xs)
  an   <- groupFWHM(an)
@@ -463,7 +463,7 @@ the expected isotopes within one cluster and their charges.
 
 \begin{verbatim}
  library(CAMERA)
- file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+ file <- system.file('mzML/MM14.mzML', package = "CAMERA")
  xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
  an   <- xsAnnotate(xs)
  an   <- groupFWHM(an)
@@ -480,7 +480,7 @@ both methods is in the results. \Rfunction{findNeutralLossSpecs} returns an
 artificial xcmsSet containing the peaks, which have the neutral loss. 
 \begin{verbatim}
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   an   <- xsAnnotate(xs)
   an   <- groupFWHM(an)
@@ -496,7 +496,7 @@ artificial xcmsSet containing the peaks, which have the neutral loss.
 a boolean vector for every pseudospectrum, where a hit is marked with TRUE.
 \begin{verbatim}
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   an   <- xsAnnotate(xs)
   an   <- groupFWHM(an)
@@ -511,7 +511,7 @@ of the resulting list correspond to those from the whole peaklist.
 
 \begin{verbatim}
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   an   <- xsAnnotate(xs)
   an   <- groupFWHM(an)
@@ -530,7 +530,7 @@ object. This peaklist can be directly saved as an csv file.
 
 \begin{verbatim}
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   xsa   <- xsAnnotate(xs)
   xsa   <- groupFWHM(xsa)
@@ -549,7 +549,7 @@ Note: The indixes for the isotopes, are those from the whole peaklist. See
 \ref{sec:getPeaklist}.
 \begin{verbatim}
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   xsa   <- xsAnnotate(xs)
   xsa   <- groupFWHM(xsa)
@@ -565,7 +565,7 @@ It's recommended to use groupFWHM before, otherwise the runtime is very long!!
 
 \begin{verbatim}
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   xsa   <- xsAnnotate(xs)
   xsa   <- groupFWHM(xsa)
@@ -581,7 +581,7 @@ RT\_med value.
 
 \begin{verbatim}
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   xsa   <- xsAnnotate(xsa)
   xsa   <- groupFWHM(xsa)

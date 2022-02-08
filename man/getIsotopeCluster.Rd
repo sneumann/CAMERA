@@ -23,7 +23,7 @@
 \examples{
   #single sample
   library(CAMERA)
-  file <- system.file('mzdata/MM14.mzdata', package = "CAMERA")
+  file <- system.file('mzML/MM14.mzML', package = "CAMERA")
   xs   <- xcmsSet(file, method="centWave", ppm=30, peakwidth=c(5,10))
   an   <- xsAnnotate(xs)
   an   <- groupFWHM(an)

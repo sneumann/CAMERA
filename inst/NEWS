@@ -1,3 +1,10 @@
+CHANGES IN VERSION 1.51.1
+-------------------------
+
+USER VISIBLE CHANGES:
+
+    o Move to mzML for example data and vignette following the removal of mzData support in mzR
+
 CHANGES IN VERSION 1.47.1
 -------------------------
 
