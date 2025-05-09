@@ -631,7 +631,7 @@ calcCL3 <- function(object, EIC=EIC, scantimes=scantimes, cor_eic_th=cor_eic_th,
 
 calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
   xs <- object@xcmsSet;
-  if(is.na(object@sample)){
+  if(is.null(object@sample)){
     peaki <- getPeaksIdxCol(xs,col=NULL)
 #     peaks <- groupval(xs,value="maxo")
   }else if(object@sample == -1){
@@ -678,7 +678,7 @@ calcCL <-function(object, EIC, scantimes, cor_eic_th, psg_list=NULL){
     #end percent output
 
     #select sample f
-#     if(is.na(object@sample)){
+#     if(is.null(object@sample)){
 #       if(length(pi)>1){
 #         f <- as.numeric(which.max(apply(peaks[pi,],2,function(x){mean(x,na.rm=TRUE)}))) #errechne höchsten Peaks, oder als mean,median
 #         psSamples[i] <- f;

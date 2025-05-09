@@ -1,3 +1,10 @@
+CHANGES IN VERSION 1.65.1
+-------------------------
+
+BUG FIXES
+
+    o Fix a few more logic expressions causing "the condition has length > 1" type issues
+
 CHANGES IN VERSION 1.59.1
 -------------------------
 

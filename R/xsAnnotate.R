@@ -2241,14 +2241,14 @@ getPeaks <- function(xs, index=1){
   if (!class(xs) == "xcmsSet") {
     stop ("Parameter xs is no xcmsSet object\n")
   }
-  if (!is.numeric(index) && index > length(sampnames(xs)) | index < -1 | index == 0) {
+  if (!is.numeric(index) && any(index > length(sampnames(xs))) | any(index < -1) | any(index == 0)) {
     stop("Parameter index must be between 1 and number of samples or -1\n")
   }
   
   #Testing if xcmsSet is grouped
   if (nrow(xs@groups) > 0) {
     #Should all peaks returned
-    if(index == -1) {
+    if(all(index == -1)) {
       ts <- xs@peaks;
     } else {
       #get peak indices for sample index

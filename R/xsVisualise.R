@@ -320,7 +320,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
 ##
 ## Loop through all requested pspectra
 ##
-  if (is.na(object@sample) || length(object@sample)<1) {
+  if (is.null(object@sample) || length(object@sample)<1) {
     gvals <- groupval(object@xcmsSet);
     peakmat <- object@xcmsSet@peaks;
     groupmat <- groups(object@xcmsSet);
@@ -333,7 +333,7 @@ setMethod("plotPsSpectrum", "xsAnnotate", function(object, pspec=1:length(object
   for (psp in pspec) {
     pspectrum <- getpspectra(object, grp=psp);
     pindex<-object@pspectra[[psp]];
-    if(is.na(object@sample)){
+    if(is.null(object@sample)){
       intensity <- max_mat[object@psSamples[psp],pindex]
       intensity[which(is.na(intensity))] <- 1; #fix if NA
     }else{
